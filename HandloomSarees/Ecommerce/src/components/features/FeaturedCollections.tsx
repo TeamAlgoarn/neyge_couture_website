@@ -5,27 +5,206 @@ import img1 from '@/assets/img8.jpg';
 import img2 from '@/assets/img9.jpg';
 import img3 from '@/assets/img10.jpg';
 
-const collections = [
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+
+.fc-root {
+  position: relative;
+  padding: 100px 0 110px;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
+  overflow: hidden;
+  font-family: 'Jost', sans-serif;
+}
+
+/* bg decoration */
+.fc-orb-a {
+  position: absolute; top: -60px; right: -60px;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(196,152,10,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.fc-orb-b {
+  position: absolute; bottom: -80px; left: -80px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(128,0,32,.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.fc-wrap {
+  max-width: 1280px; margin: 0 auto;
+  padding: 0 56px; position: relative; z-index: 1;
+}
+@media(max-width:900px){ .fc-wrap { padding: 0 24px; } }
+@media(max-width:480px){ .fc-wrap { padding: 0 16px; } }
+
+/* HEADER */
+.fc-head {
+  text-align: center; margin-bottom: 64px;
+  transition: opacity .9s, transform .9s;
+}
+.fc-head.hidden { opacity: 0; transform: translateY(28px); }
+.fc-head.visible { opacity: 1; transform: translateY(0); }
+
+.fc-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(196,152,10,.12); border: 1px solid rgba(196,152,10,.35);
+  padding: 7px 20px; border-radius: 100px; margin-bottom: 18px;
+}
+.fc-ey {
+  font-family: 'Jost'; font-size: 11px; letter-spacing: .26em;
+  text-transform: uppercase; color: #C4980A; font-weight: 600;
+}
+.fc-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 5.5vw, 60px);
+  font-weight: 400; color: #800020; line-height: 1.07; margin-bottom: 16px;
+}
+.fc-gd {
+  width: 56px; height: 1px; background: #C4980A; margin: 0 auto 20px;
+}
+.fc-subtitle {
+  font-family: 'Jost'; font-size: 15px; font-weight: 300;
+  color: #4a3828; line-height: 1.8; max-width: 520px; margin: 0 auto;
+}
+
+/* GRID */
+.fc-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;
+}
+@media(max-width:900px){ .fc-grid { grid-template-columns: 1fr; gap: 22px; } }
+
+/* CARD */
+.fc-card {
+  position: relative; border-radius: 24px; overflow: hidden;
+  aspect-ratio: 3 / 4;
+  box-shadow: 0 16px 56px rgba(0,0,0,.14);
+  transition: transform .65s cubic-bezier(.4,0,.2,1), box-shadow .65s, opacity .7s;
+  display: block; text-decoration: none;
+}
+.fc-card.hidden { opacity: 0; transform: translateY(40px); }
+.fc-card.visible { opacity: 1; transform: translateY(0); }
+.fc-card:hover { transform: translateY(-8px); box-shadow: 0 28px 80px rgba(0,0,0,.22); }
+
+.fc-card-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 1s cubic-bezier(.4,0,.2,1);
+}
+.fc-card:hover .fc-card-img { transform: scale(1.08); }
+
+/* gradient overlay */
+.fc-card-overlay {
+  position: absolute; inset: 0;
+  transition: opacity .5s;
+}
+
+/* Gold shimmer sweep */
+.fc-card-shine {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.fc-card-shine::after {
+  content: '';
+  position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(196,152,10,.22), transparent);
+  transform: skewX(-15deg);
+  transition: left 0s;
+}
+.fc-card:hover .fc-card-shine::after {
+  left: 130%;
+  transition: left 1.1s cubic-bezier(.4,0,.2,1);
+}
+
+/* Glass panel */
+.fc-card-panel {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 26px 28px;
+  backdrop-filter: blur(12px);
+  background: rgba(0,0,0,.32);
+  border-top: 1px solid rgba(196,152,10,.35);
+}
+
+.fc-card-line {
+  height: 2px; background: #C4980A;
+  width: 48px;
+  margin-bottom: 14px;
+  border-radius: 1px;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+.fc-card:hover .fc-card-line { width: 80px; }
+
+.fc-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 500; color: white; line-height: 1.1;
+  margin-bottom: 8px;
+  transition: transform .45s;
+}
+.fc-card:hover .fc-card-title { transform: translateY(-3px); }
+
+.fc-card-desc {
+  font-family: 'Jost'; font-size: 13px; font-weight: 300;
+  color: rgba(255,255,255,.8); line-height: 1.6;
+  margin-bottom: 18px;
+  transition: transform .45s .04s;
+}
+.fc-card:hover .fc-card-desc { transform: translateY(-3px); }
+
+.fc-card-cta {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Jost'; font-size: 12px; letter-spacing: .14em;
+  font-weight: 600; text-transform: uppercase; color: #D4AF37;
+  position: relative;
+}
+.fc-card-cta-label {
+  position: relative;
+}
+.fc-card-cta-label::after {
+  content: ''; position: absolute; left: 0; bottom: -2px;
+  width: 0; height: 1px; background: #D4AF37;
+  transition: width .45s;
+}
+.fc-card:hover .fc-card-cta-label::after { width: 100%; }
+
+.fc-card-arrow {
+  transition: transform .45s;
+}
+.fc-card:hover .fc-card-arrow { transform: translateX(5px); }
+
+/* gold ring on hover */
+.fc-card-ring {
+  position: absolute; inset: 0; border-radius: 24px;
+  border: 1.5px solid transparent;
+  transition: border-color .45s;
+  pointer-events: none; z-index: 3;
+}
+.fc-card:hover .fc-card-ring { border-color: rgba(196,152,10,.55); }
+
+@media(max-width:480px){
+  .fc-card-panel { padding: 20px 20px; }
+}
+`;
+
+const COLLECTIONS = [
   {
     title: 'Wedding Collection',
-    description: 'Luxurious silk sarees for your special day',
+    description: 'Luxurious silk sarees woven for your most cherished day',
     image: img1,
     link: '/shop?occasion=Wedding',
-    overlay: 'from-[#800020]/80 via-[#4B0082]/60 to-black/70',
+    overlay: 'linear-gradient(to top, rgba(128,0,32,.88) 0%, rgba(75,0,130,.55) 45%, transparent 80%)',
   },
   {
     title: 'Festive Sarees',
-    description: 'Celebrate traditions with vibrant colors',
+    description: 'Celebrate traditions with vibrant heritage colours',
     image: img2,
     link: '/shop?occasion=Festive',
-    overlay: 'from-[#4B0082]/80 via-[#800020]/60 to-black/70',
+    overlay: 'linear-gradient(to top, rgba(75,0,130,.88) 0%, rgba(128,0,32,.55) 45%, transparent 80%)',
   },
   {
     title: 'Casual Elegance',
-    description: 'Comfortable cotton for everyday wear',
+    description: 'Handwoven cotton for effortless everyday grace',
     image: img3,
     link: '/shop?occasion=Casual',
-    overlay: 'from-[#D4AF37]/50 via-[#800020]/70 to-black/80',
+    overlay: 'linear-gradient(to top, rgba(10,4,2,.90) 0%, rgba(128,0,32,.55) 45%, transparent 80%)',
   },
 ];
 
@@ -35,106 +214,64 @@ export function FeaturedCollections() {
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setIsVisible(true);
-        });
-      },
-      { threshold: 0.15 }
+      entries => { if (entries[0].isIntersecting) setIsVisible(true); },
+      { threshold: 0.12 }
     );
-
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className="py-28 relative overflow-hidden bg-gradient-to-b from-[#F5E6D3] via-white to-[#F5E6D3]"
-    >
-      <div className="container mx-auto px-6 relative z-10">
-        {/* Header */}
-        <div className={`text-center mb-20 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="inline-flex items-center gap-2 mb-5 px-6 py-2 bg-[#D4AF37]/10 rounded-full border border-[#D4AF37]/40">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-            <span className="text-sm font-semibold tracking-wider text-[#800020] uppercase">
-              Curated Collections
-            </span>
+    <>
+      <style>{CSS}</style>
+      <section className="fc-root" ref={sectionRef}>
+        <div className="fc-orb-a" /><div className="fc-orb-b" />
+
+        <div className="fc-wrap">
+
+          {/* Header */}
+          <div className={`fc-head ${isVisible ? 'visible' : 'hidden'}`}>
+            <div className="fc-badge">
+              <Sparkles size={13} color="#C4980A" />
+              <span className="fc-ey">Curated Collections</span>
+            </div>
+            <h2 className="fc-title">Featured Collections</h2>
+            <div className="fc-gd" />
+            <p className="fc-subtitle">
+              Discover timeless handwoven elegance crafted by master artisans across India.
+            </p>
           </div>
 
-          <h2 className="text-5xl md:text-6xl font-serif font-bold text-[#800020] mb-5">
-            Featured Collections
-          </h2>
+          {/* Cards */}
+          <div className="fc-grid">
+            {COLLECTIONS.map((col, i) => (
+              <Link
+                key={i}
+                to={col.link}
+                className={`fc-card ${isVisible ? 'visible' : 'hidden'}`}
+                style={{ transitionDelay: `${i * 180}ms` }}
+              >
+                <img src={col.image} alt={col.title} className="fc-card-img" />
+                <div className="fc-card-overlay" style={{ background: col.overlay }} />
+                <div className="fc-card-shine" />
 
-          <p className="text-lg text-gray-700 max-w-2xl mx-auto font-light">
-            Discover timeless handwoven elegance crafted by master artisans.
-          </p>
-        </div>
-
-        {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {collections.map((collection, index) => (
-            <Link
-              key={index}
-              to={collection.link}
-              className={`group relative aspect-[3/4] rounded-3xl overflow-hidden shadow-xl transition-all duration-700 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`}
-              style={{ transitionDelay: `${index * 200}ms` }}
-            >
-              {/* Image */}
-              <img
-                src={collection.image}
-                alt={collection.title}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
-              />
-
-              {/* Luxury Overlay (No White Fade) */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-t ${collection.overlay} opacity-90 group-hover:opacity-95 transition duration-500`}
-              />
-
-              {/* Glass Content Panel */}
-              <div className="absolute bottom-0 w-full p-8 backdrop-blur-md bg-black/30 border-t border-[#D4AF37]/40">
-                <div className="w-14 h-1 bg-[#D4AF37] mb-4 transition-all duration-500 group-hover:w-24"></div>
-
-                <h3 className="text-3xl md:text-4xl font-serif font-bold text-white mb-3 group-hover:-translate-y-1 transition duration-500">
-                  {collection.title}
-                </h3>
-
-                <p className="text-white/90 text-lg mb-6 font-light group-hover:-translate-y-1 transition duration-500 delay-75">
-                  {collection.description}
-                </p>
-
-                <div className="flex items-center gap-2 text-[#D4AF37] font-semibold text-lg group-hover:gap-4 transition-all duration-500">
-                  <span className="relative">
-                    Explore Now
-                    <span className="absolute left-0 bottom-0 h-0.5 w-0 bg-[#D4AF37] group-hover:w-full transition-all duration-500"></span>
-                  </span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-500" />
+                <div className="fc-card-panel">
+                  <div className="fc-card-line" />
+                  <h3 className="fc-card-title">{col.title}</h3>
+                  <p className="fc-card-desc">{col.description}</p>
+                  <div className="fc-card-cta">
+                    <span className="fc-card-cta-label">Explore Now</span>
+                    <ArrowRight size={14} className="fc-card-arrow" />
+                  </div>
                 </div>
-              </div>
 
-              {/* Golden Shine */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-[1200ms] ease-in-out"></div>
-              </div>
-            </Link>
-          ))}
+                <div className="fc-card-ring" />
+              </Link>
+            ))}
+          </div>
+
         </div>
-      </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
-
-        .font-serif {
-          font-family: 'Playfair Display', serif;
-        }
-
-        .font-light {
-          font-family: 'Cormorant Garamond', serif;
-        }
-      `}</style>
-    </section>
+      </section>
+    </>
   );
 }

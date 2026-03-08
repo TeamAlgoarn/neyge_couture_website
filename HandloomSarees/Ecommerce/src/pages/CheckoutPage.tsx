@@ -6,344 +6,458 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Shield } from 'lucide-react';
 
+const C = {
+  maroon: '#800020', maroonDk: '#5a0016',
+  gold: '#C4980A', goldV: '#D4AF37',
+  cream: '#F5E6D3', creamLt: '#FFF9F0',
+  warmGrey: '#4a3828', indigo: '#4B0082',
+};
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+.co-root {
+  font-family: 'Jost', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
+  min-height: 100vh; color: #1a1010; line-height: 1;
+}
+.co-wrap {
+  max-width: 1200px; margin: 0 auto; padding: 0 56px;
+}
+@media(max-width:900px){.co-wrap{padding:0 24px;}}
+@media(max-width:480px){.co-wrap{padding:0 16px;}}
+
+.co-ey {
+  font-family:'Jost';font-size:11px;letter-spacing:.25em;
+  text-transform:uppercase;color:#C4980A;font-weight:600;
+}
+
+/* PAGE TOP */
+.co-page-top { padding-top: 140px; padding-bottom: 80px; }
+@media(max-width:640px){.co-page-top{padding-top:110px;padding-bottom:60px;}}
+
+/* ANIMATIONS */
+@keyframes coFadeUp  {from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes coFadeIn  {from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes coShimmer {0%{left:-80%}100%{left:120%}}
+@keyframes coSpin    {to{transform:rotate(360deg)}}
+
+.co-fadein {animation:coFadeIn  .8s cubic-bezier(.4,0,.2,1) both;}
+.co-fadeup {animation:coFadeUp  .8s cubic-bezier(.4,0,.2,1) both;}
+.co-d1{animation-delay:.1s} .co-d2{animation-delay:.2s}
+
+/* HEADER */
+.co-header { margin-bottom: 44px; }
+.co-header-badge {
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(196,152,10,.12);border:1px solid rgba(196,152,10,.35);
+  padding:7px 18px;border-radius:100px;margin-bottom:16px;
+}
+.co-header-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(34px,5.5vw,58px);font-weight:400;color:#800020;line-height:1.06;
+}
+
+/* LAYOUT */
+.co-layout {
+  display:grid;grid-template-columns:1fr 360px;gap:32px;align-items:start;
+}
+@media(max-width:1024px){.co-layout{grid-template-columns:1fr;}}
+
+/* SECTION CARDS */
+.co-card {
+  background:rgba(255,249,240,.95);backdrop-filter:blur(10px);
+  border:1px solid rgba(196,152,10,.22);border-radius:24px;
+  padding:32px 36px;margin-bottom:20px;
+  box-shadow:0 8px 36px rgba(0,0,0,.06);
+}
+@media(max-width:600px){.co-card{padding:22px 18px;border-radius:18px;}}
+
+.co-card-head {
+  display:flex;align-items:center;gap:14px;
+  padding-bottom:20px;margin-bottom:24px;
+  border-bottom:1px solid rgba(196,152,10,.18);
+}
+.co-card-icon {
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#800020,#4B0082);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(128,0,32,.25);
+}
+.co-card-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(20px,3vw,24px);font-weight:500;color:#800020;
+}
+
+/* ADDRESS BLOCK */
+.co-address-block {
+  background:rgba(196,152,10,.06);border:1px solid rgba(196,152,10,.28);
+  border-radius:18px;padding:20px 22px;
+}
+.co-address-name {
+  font-family:'Cormorant Garamond',serif;
+  font-size:19px;font-weight:500;color:#800020;margin-bottom:5px;
+}
+.co-address-phone {
+  font-family:'Jost';font-size:13px;color:#4a3828;font-weight:500;margin-bottom:8px;
+}
+.co-address-line {
+  font-family:'Jost';font-size:13px;color:#9a8070;font-weight:300;line-height:1.65;
+}
+.co-address-dot {
+  width:8px;height:8px;border-radius:50%;background:#C4980A;
+  flex-shrink:0;margin-top:5px;
+}
+
+.co-no-address {
+  text-align:center;padding:36px 20px;
+  border:1.5px dashed rgba(196,152,10,.3);border-radius:16px;
+}
+.co-no-address-text {
+  font-family:'Jost';font-size:13px;color:#9a8070;font-weight:300;margin-top:12px;
+}
+
+/* PAYMENT OPTIONS */
+.co-pay-option {
+  display:flex;align-items:center;gap:14px;
+  padding:16px 18px;border-radius:18px;
+  border:1.5px solid rgba(196,152,10,.25);
+  cursor:pointer;margin-bottom:12px;
+  background:white;
+  transition:border-color .25s,background .25s,box-shadow .25s,transform .25s;
+}
+.co-pay-option:hover {
+  border-color:rgba(196,152,10,.5);
+  background:rgba(255,249,240,.9);
+  box-shadow:0 6px 24px rgba(128,0,32,.08);
+}
+.co-pay-option.selected {
+  border-color:#C4980A;
+  background:rgba(255,249,240,.95);
+  box-shadow:0 8px 28px rgba(196,152,10,.18);
+  transform:scale(1.01);
+}
+.co-pay-icon {
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .25s;
+}
+.co-pay-option.selected .co-pay-icon { transform:scale(1.1); }
+.co-pay-title {
+  font-family:'Jost';font-size:13px;font-weight:600;color:#800020;margin-bottom:2px;
+}
+.co-pay-sub {
+  font-family:'Jost';font-size:11px;color:#9a8070;font-weight:300;
+}
+.co-pay-radio {
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  border:2px solid rgba(196,152,10,.4);
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s,background .2s;
+  margin-left:auto;
+}
+.co-pay-option.selected .co-pay-radio {
+  border-color:#C4980A;background:#C4980A;
+}
+
+/* ORDER SUMMARY SIDEBAR */
+.co-summary {
+  background:rgba(255,249,240,.97);backdrop-filter:blur(12px);
+  border:1px solid rgba(196,152,10,.25);border-radius:24px;
+  box-shadow:0 16px 60px rgba(0,0,0,.09);
+  overflow:hidden;position:sticky;top:110px;
+}
+.co-summary-bar {
+  background:linear-gradient(135deg,#800020 0%,#5a0016 55%,#4B0082 100%);
+  padding:22px 28px;position:relative;overflow:hidden;
+}
+.co-summary-bar::after {
+  content:'';position:absolute;top:-50px;right:-50px;
+  width:160px;height:160px;border-radius:50%;
+  border:1px solid rgba(212,175,55,.15);pointer-events:none;
+}
+.co-summary-bar-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;font-weight:400;color:white;position:relative;z-index:1;
+}
+.co-summary-body { padding:24px 26px 28px; }
+
+/* Cart items list */
+.co-item-list {
+  max-height:220px;overflow-y:auto;margin-bottom:20px;
+}
+.co-item-list::-webkit-scrollbar{width:4px;}
+.co-item-list::-webkit-scrollbar-track{background:#F5E6D3;}
+.co-item-list::-webkit-scrollbar-thumb{background:linear-gradient(to bottom,#C4980A,#800020);border-radius:2px;}
+
+.co-item-row {
+  display:flex;gap:12px;padding:12px 0;
+  border-bottom:1px solid rgba(196,152,10,.14);
+}
+.co-item-row:last-child{border-bottom:none;}
+.co-item-img {
+  width:52px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;
+  border:1px solid rgba(196,152,10,.25);
+}
+.co-item-name {
+  font-family:'Jost';font-size:12px;font-weight:500;color:#800020;
+  margin-bottom:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.co-item-qty  {font-family:'Jost';font-size:11px;color:#9a8070;font-weight:300;}
+.co-item-price{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:#800020;margin-top:2px;}
+
+/* Summary rows */
+.co-sum-row {
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 0;border-bottom:1px solid rgba(196,152,10,.12);
+}
+.co-sum-row:last-of-type{border-bottom:none;}
+.co-sum-key {font-family:'Jost';font-size:13px;color:#4a3828;font-weight:400;}
+.co-sum-val {font-family:'Jost';font-size:13px;color:#800020;font-weight:600;}
+.co-sum-free {
+  display:flex;align-items:center;gap:5px;
+  font-family:'Jost';font-size:13px;color:#059669;font-weight:600;
+}
+
+/* Total strip */
+.co-total-strip {
+  display:flex;justify-content:space-between;align-items:center;
+  background:linear-gradient(135deg,#800020 0%,#4B0082 100%);
+  border-radius:16px;padding:16px 20px;margin:16px 0 20px;
+}
+.co-total-label {
+  font-family:'Jost';font-size:12px;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.65);font-weight:500;
+}
+.co-total-val {
+  font-family:'Cormorant Garamond',serif;
+  font-size:28px;font-weight:600;color:#D4AF37;
+}
+
+/* Place order button */
+.co-place-btn {
+  width:100%;padding:16px;border:none;border-radius:100px;
+  background:linear-gradient(135deg,#D4AF37 0%,#b8960f 100%);
+  color:#800020;
+  font-family:'Jost';font-size:13px;letter-spacing:.12em;
+  font-weight:600;text-transform:uppercase;cursor:pointer;
+  transition:transform .35s,box-shadow .35s;
+  box-shadow:0 6px 24px rgba(212,175,55,.38);
+  position:relative;overflow:hidden;margin-bottom:10px;
+}
+.co-place-btn::after {
+  content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+  animation:coShimmer 3s ease infinite;
+}
+.co-place-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(212,175,55,.52);}
+.co-place-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+
+.co-place-note {
+  font-family:'Jost';font-size:11px;letter-spacing:.04em;
+  color:#9a8070;text-align:center;font-weight:300;
+}
+
+/* Spinner */
+.co-spinner {
+  display:inline-block;width:16px;height:16px;border-radius:50%;
+  border:2.5px solid rgba(128,0,32,.25);border-top-color:#800020;
+  animation:coSpin .7s linear infinite;vertical-align:middle;margin-right:8px;
+}
+
+@media(max-width:480px){
+  .co-header-title{font-size:32px;}
+  .co-summary-body{padding:18px 18px 22px;}
+}
+`;
+
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, getCartTotal, clearCart } = useCart();
   const user = authService.getCurrentUser();
-  
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const subtotal = getCartTotal();
   const shipping = subtotal > 2999 ? 0 : 150;
-  const total = subtotal + shipping;
+  const total    = subtotal + shipping;
 
   const handlePlaceOrder = async () => {
-    if (!user) {
-      toast.error('Please log in to continue');
-      navigate('/login');
-      return;
-    }
-
-    if (user.addresses.length === 0) {
-      toast.error('Please add a delivery address');
-      return;
-    }
-
+    if (!user) { toast.error('Please log in to continue'); navigate('/login'); return; }
+    if (user.addresses.length === 0) { toast.error('Please add a delivery address'); return; }
     setIsProcessing(true);
-
-    // Simulate payment processing
     setTimeout(() => {
       const orderId = 'ORD' + Date.now();
-      
-      // Mock order creation
       const mockOrder = {
-        id: orderId,
-        userId: user.id,
-        items: cart,
-        total: subtotal,
-        discount: 0,
-        finalTotal: total,
-        status: 'confirmed',
-        shippingAddress: user.addresses[0],
-        paymentMethod,
-        createdAt: new Date().toISOString(),
+        id: orderId, userId: user.id, items: cart,
+        total: subtotal, discount: 0, finalTotal: total,
+        status: 'confirmed', shippingAddress: user.addresses[0],
+        paymentMethod, createdAt: new Date().toISOString(),
         estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       };
-
-      // Store order in localStorage
       const orders = JSON.parse(localStorage.getItem('handloom_orders') || '[]');
       orders.push(mockOrder);
       localStorage.setItem('handloom_orders', JSON.stringify(orders));
-
-      clearCart();
-      setIsProcessing(false);
+      clearCart(); setIsProcessing(false);
       toast.success('Order placed successfully!');
       navigate(`/order-confirmation/${orderId}`);
     }, 2000);
   };
 
-  if (cart.length === 0) {
-    navigate('/cart');
-    return null;
-  }
+  if (cart.length === 0) { navigate('/cart'); return null; }
+  if (!user)             { navigate('/login'); return null; }
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-
-  const paymentOptions = [
-    {
-      value: 'upi',
-      icon: Smartphone,
-      title: 'UPI Payment',
-      subtitle: 'Pay via UPI apps',
-      color: 'from-blue-400 to-blue-600',
-    },
-    {
-      value: 'card',
-      icon: CreditCard,
-      title: 'Credit / Debit Card',
-      subtitle: 'Visa, Mastercard, Rupay',
-      color: 'from-purple-400 to-purple-600',
-    },
-    {
-      value: 'wallet',
-      icon: Wallet,
-      title: 'Wallets',
-      subtitle: 'Paytm, PhonePe, Amazon Pay',
-      color: 'from-green-400 to-green-600',
-    },
+  const PAY_OPTIONS = [
+    { value: 'upi',    Icon: Smartphone, title: 'UPI Payment',        sub: 'Pay via UPI apps',              bg: 'rgba(59,130,246,.12)',  border: 'rgba(59,130,246,.35)',  color: '#2563eb' },
+    { value: 'card',   Icon: CreditCard, title: 'Credit / Debit Card', sub: 'Visa, Mastercard, Rupay',       bg: 'rgba(139,92,246,.12)',  border: 'rgba(139,92,246,.35)', color: '#7c3aed' },
+    { value: 'wallet', Icon: Wallet,     title: 'Wallets',             sub: 'Paytm, PhonePe, Amazon Pay',   bg: 'rgba(16,185,129,.12)',  border: 'rgba(16,185,129,.35)', color: '#059669' },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F5E6D3] via-white to-[#F5E6D3] pt-24 md:pt-38 pb-14">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="mb-8 md:mb-12 pt-24 luxury-fade-in">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 md:px-6 py-2 bg-[#D4AF37]/10 rounded-full border border-[#D4AF37]/40">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-            <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#800020]">
-              Secure Checkout
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-[#800020]">
-            Complete Your Order
-          </h1>
-        </div>
+    <>
+      <style>{CSS}</style>
+      <div className="co-root">
+        <div className="co-wrap co-page-top">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-          
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Delivery Address */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-xl border border-[#D4AF37]/20 p-6 md:p-8 luxury-fade-in-up">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#800020] to-[#4B0082] rounded-full flex items-center justify-center">
-                  <MapPin className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                </div>
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-[#800020]">
-                  Delivery Address
-                </h2>
-              </div>
-              
-              {user.addresses.length > 0 ? (
-                <div className="border-2 border-[#D4AF37]/30 rounded-2xl p-4 md:p-6 bg-gradient-to-br from-[#FFF9F0] to-[#F5E6D3] hover:shadow-lg transition-shadow">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37] mt-2"></div>
-                    <div className="flex-1">
-                      <p className="font-bold text-lg text-[#800020] mb-1">{user.addresses[0].name}</p>
-                      <p className="text-gray-700 font-medium mb-2">{user.addresses[0].phone}</p>
-                      <p className="text-gray-600 text-sm md:text-base">
-                        {user.addresses[0].addressLine1}
-                        {user.addresses[0].addressLine2 && `, ${user.addresses[0].addressLine2}`}
-                      </p>
-                      <p className="text-gray-600 text-sm md:text-base">
-                        {user.addresses[0].city}, {user.addresses[0].state} - {user.addresses[0].pincode}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center p-8 border-2 border-dashed border-[#D4AF37]/30 rounded-2xl">
-                  <MapPin className="w-12 h-12 text-[#D4AF37] mx-auto mb-3" />
-                  <p className="text-gray-600">No address added. Please add a delivery address.</p>
-                </div>
-              )}
+          {/* Header */}
+          <div className="co-header co-fadein">
+            <div className="co-header-badge">
+              <Shield size={13} color={C.gold} />
+              <span className="co-ey">Secure Checkout</span>
             </div>
-
-            {/* Payment Method */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-xl border border-[#D4AF37]/20 p-6 md:p-8 luxury-fade-in-up" style={{ animationDelay: '100ms' }}>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#800020] to-[#4B0082] rounded-full flex items-center justify-center">
-                  <Shield className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                </div>
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-[#800020]">
-                  Payment Method
-                </h2>
-              </div>
-              
-              <div className="space-y-4">
-                {paymentOptions.map((option) => {
-                  const Icon = option.icon;
-                  const isSelected = paymentMethod === option.value;
-                  
-                  return (
-                    <label 
-                      key={option.value}
-                      className={`flex items-center gap-4 p-4 md:p-6 border-2 rounded-2xl cursor-pointer transition-all duration-300 ${
-                        isSelected
-                          ? 'border-[#D4AF37] bg-gradient-to-r from-[#FFF9F0] to-[#F5E6D3] shadow-lg scale-[1.02]'
-                          : 'border-gray-200 bg-white hover:border-[#D4AF37]/50 hover:shadow-md'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="payment"
-                        value={option.value}
-                        checked={isSelected}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="sr-only"
-                      />
-                      
-                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br ${option.color} flex items-center justify-center shadow-lg ${isSelected ? 'scale-110' : ''} transition-transform`}>
-                        <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                      </div>
-                      
-                      <div className="flex-1">
-                        <p className="font-bold text-[#800020] text-sm md:text-base">{option.title}</p>
-                        <p className="text-xs md:text-sm text-gray-600">{option.subtitle}</p>
-                      </div>
-                      
-                      <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center ${
-                        isSelected ? 'border-[#D4AF37] bg-[#D4AF37]' : 'border-gray-300'
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-3 h-3 md:w-4 md:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
+            <h1 className="co-header-title">Complete Your Order</h1>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl border border-[#D4AF37]/20 p-6 md:p-8 sticky top-24 luxury-fade-in" style={{ animationDelay: '200ms' }}>
-              
-              <div className="flex items-center gap-2 mb-6">
-                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-[#800020]">Order Summary</h2>
-              </div>
+          <div className="co-layout">
 
-              {/* Cart Items */}
-              <div className="space-y-3 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
-                {cart.map((item) => (
-                  <div key={item.saree.id} className="flex gap-3 p-3 bg-gradient-to-r from-[#FFF9F0] to-[#F5E6D3] rounded-xl border border-[#D4AF37]/20">
-                    <img
-                      src={item.saree.images[0]}
-                      alt={item.saree.name}
-                      className="w-16 h-20 object-cover rounded-lg shadow-md"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#800020] line-clamp-1 mb-1">{item.saree.name}</p>
-                      <p className="text-xs text-gray-600 mb-1">Qty: {item.quantity}</p>
-                      <p className="text-sm font-bold text-[#800020]">
-                        {formatCurrency(item.saree.price * item.quantity)}
-                      </p>
+            {/* Left column */}
+            <div>
+
+              {/* Delivery Address */}
+              <div className="co-card co-fadeup">
+                <div className="co-card-head">
+                  <div className="co-card-icon"><MapPin size={18} color="white" /></div>
+                  <h2 className="co-card-title">Delivery Address</h2>
+                </div>
+                {user.addresses.length > 0 ? (
+                  <div className="co-address-block">
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <div className="co-address-dot" />
+                      <div>
+                        <div className="co-address-name">{user.addresses[0].name}</div>
+                        <div className="co-address-phone">{user.addresses[0].phone}</div>
+                        <div className="co-address-line">
+                          {user.addresses[0].addressLine1}
+                          {user.addresses[0].addressLine2 && `, ${user.addresses[0].addressLine2}`}
+                        </div>
+                        <div className="co-address-line">
+                          {user.addresses[0].city}, {user.addresses[0].state} – {user.addresses[0].pincode}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                ) : (
+                  <div className="co-no-address">
+                    <MapPin size={36} color={C.gold} style={{ margin: '0 auto' }} />
+                    <p className="co-no-address-text">No address added. Please add a delivery address.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment */}
+              <div className="co-card co-fadeup co-d1">
+                <div className="co-card-head">
+                  <div className="co-card-icon"><Shield size={18} color="white" /></div>
+                  <h2 className="co-card-title">Payment Method</h2>
+                </div>
+                {PAY_OPTIONS.map(({ value, Icon, title, sub, bg, border, color }) => (
+                  <label
+                    key={value}
+                    className={`co-pay-option${paymentMethod === value ? ' selected' : ''}`}
+                    onClick={() => setPaymentMethod(value)}
+                  >
+                    <input type="radio" name="payment" value={value}
+                      checked={paymentMethod === value} onChange={() => setPaymentMethod(value)}
+                      style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} />
+                    <div className="co-pay-icon" style={{ background: bg, border: `1px solid ${border}` }}>
+                      <Icon size={18} color={color} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="co-pay-title">{title}</div>
+                      <div className="co-pay-sub">{sub}</div>
+                    </div>
+                    <div className="co-pay-radio">
+                      {paymentMethod === value && (
+                        <svg width="10" height="10" viewBox="0 0 20 20" fill="white">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  </label>
                 ))}
               </div>
-
-              {/* Price Breakdown */}
-              <div className="space-y-4 mb-6 pb-6 border-b-2 border-[#D4AF37]/30">
-                <div className="flex justify-between text-gray-700">
-                  <span className="text-sm md:text-base">Subtotal</span>
-                  <span className="font-bold text-[#800020]">{formatCurrency(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-gray-700">
-                  <span className="text-sm md:text-base">Shipping</span>
-                  <span className="font-bold text-[#800020]">
-                    {shipping === 0 ? (
-                      <span className="text-green-600 flex items-center gap-1">
-                        <Sparkles className="w-4 h-4" /> FREE
-                      </span>
-                    ) : (
-                      formatCurrency(shipping)
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center mb-6 p-4 bg-gradient-to-br from-[#800020] to-[#4B0082] rounded-2xl">
-                <span className="text-white font-semibold text-sm md:text-base">Total Amount</span>
-                <span className="text-2xl md:text-3xl font-serif font-bold text-[#D4AF37]">{formatCurrency(total)}</span>
-              </div>
-
-              {/* Place Order Button */}
-              <button
-                onClick={handlePlaceOrder}
-                disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-[#800020] to-[#4B0082] hover:from-[#4B0082] hover:to-[#800020] disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-6 py-4 rounded-full font-semibold transition-all hover:scale-105 shadow-xl mb-4 text-sm md:text-base relative overflow-hidden group"
-              >
-                {isProcessing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  'Place Order'
-                )}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-              </button>
-
-              <p className="text-xs text-center text-gray-600">
-                By placing this order, you agree to our Terms & Conditions
-              </p>
             </div>
+
+            {/* Order Summary */}
+            <div className="co-summary co-fadein co-d2">
+              <div className="co-summary-bar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, position: 'relative', zIndex: 1 }}>
+                  <Sparkles size={13} color="rgba(212,175,55,.75)" />
+                  <span style={{ fontFamily: "'Jost'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.45)' }}>Neyge Couture</span>
+                </div>
+                <div className="co-summary-bar-title">Order Summary</div>
+              </div>
+
+              <div className="co-summary-body">
+
+                {/* Items */}
+                <div className="co-item-list">
+                  {cart.map(item => (
+                    <div key={item.saree.id} className="co-item-row">
+                      <img src={item.saree.images[0]} alt={item.saree.name} className="co-item-img" />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="co-item-name">{item.saree.name}</div>
+                        <div className="co-item-qty">Qty: {item.quantity}</div>
+                        <div className="co-item-price">{formatCurrency(item.saree.price * item.quantity)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Price rows */}
+                <div className="co-sum-row">
+                  <span className="co-sum-key">Subtotal</span>
+                  <span className="co-sum-val">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="co-sum-row">
+                  <span className="co-sum-key">Shipping</span>
+                  {shipping === 0
+                    ? <span className="co-sum-free"><Sparkles size={12} /> FREE</span>
+                    : <span className="co-sum-val">{formatCurrency(shipping)}</span>
+                  }
+                </div>
+
+                {/* Total */}
+                <div className="co-total-strip">
+                  <span className="co-total-label">Total Amount</span>
+                  <span className="co-total-val">{formatCurrency(total)}</span>
+                </div>
+
+                <button className="co-place-btn" onClick={handlePlaceOrder} disabled={isProcessing}>
+                  {isProcessing
+                    ? <><span className="co-spinner" />Processing…</>
+                    : 'Place Order ✦'
+                  }
+                </button>
+                <p className="co-place-note">By placing this order, you agree to our Terms & Conditions</p>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
-
-      <style>{`
-        .luxury-fade-in {
-          animation: luxuryFadeIn 0.8s ease-out both;
-        }
-
-        .luxury-fade-in-up {
-          animation: luxuryFadeInUp 1s ease-out both;
-        }
-
-        @keyframes luxuryFadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        @keyframes luxuryFadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(40px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #F5E6D3;
-          border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #D4AF37, #800020);
-          border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #800020, #D4AF37);
-        }
-      `}</style>
-    </div>
+    </>
   );
 }

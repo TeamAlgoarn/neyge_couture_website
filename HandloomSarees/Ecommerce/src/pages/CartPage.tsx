@@ -3,269 +3,582 @@ import { Minus, Plus, Trash2, ShoppingBag, Sparkles, ArrowRight } from 'lucide-r
 import { useCart } from '@/hooks/useCarts';
 import { formatCurrency } from '@/lib/utils';
 
+// ─── Brand palette ────────────────────────────────────────────────────────────
+const C = {
+  maroon:   '#800020',
+  maroonDk: '#5a0016',
+  gold:     '#C4980A',
+  goldV:    '#D4AF37',
+  cream:    '#F5E6D3',
+  creamLt:  '#FFF9F0',
+  warmGrey: '#4a3828',
+  indigo:   '#4B0082',
+};
+
+// ─── CSS ──────────────────────────────────────────────────────────────────────
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.cart-root {
+  font-family: 'Jost', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
+  min-height: 100vh;
+  color: #1a1010;
+  line-height: 1;
+}
+
+/* ── Wrap ── */
+.cart-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 56px;
+}
+@media(max-width: 900px) { .cart-wrap { padding: 0 24px; } }
+@media(max-width: 480px) { .cart-wrap { padding: 0 16px; } }
+
+/* ── Eyebrow ── */
+.cart-ey {
+  font-family: 'Jost'; font-size: 11px;
+  letter-spacing: .25em; text-transform: uppercase;
+  color: #C4980A; font-weight: 600;
+}
+
+/* ── Gd ── */
+.cart-gd { width: 48px; height: 1px; background: #C4980A; display: block; }
+
+/* ─────────────────────────────
+   ANIMATIONS
+───────────────────────────── */
+@keyframes cartFadeUp  { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+@keyframes cartFadeIn  { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+@keyframes cartShimmer { 0%{left:-80%} 100%{left:120%} }
+@keyframes cartPop     { from{opacity:0;transform:translateY(28px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+.cart-fadein { animation: cartFadeIn  .8s cubic-bezier(.4,0,.2,1) both; }
+.cart-fadeup { animation: cartFadeUp  .8s cubic-bezier(.4,0,.2,1) both; }
+.cart-pop    { animation: cartPop     .6s cubic-bezier(.34,1.56,.64,1) both; }
+.cart-d1 { animation-delay:.1s }
+.cart-d2 { animation-delay:.2s }
+
+/* ─────────────────────────────
+   PAGE TOP (clears navbar)
+───────────────────────────── */
+.cart-page-top { padding-top: 140px; padding-bottom: 80px; }
+@media(max-width: 640px) { .cart-page-top { padding-top: 110px; padding-bottom: 60px; } }
+
+/* ─────────────────────────────
+   EMPTY STATE
+───────────────────────────── */
+.cart-empty-root {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F5E6D3 100%);
+  padding: 24px; text-align: center;
+}
+.cart-empty-icon {
+  width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 28px;
+  background: rgba(196,152,10,.1); border: 1.5px solid rgba(196,152,10,.3);
+  display: flex; align-items: center; justify-content: center;
+}
+.cart-empty-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(28px, 5vw, 44px); font-weight: 400;
+  color: #800020; margin-bottom: 12px;
+}
+.cart-empty-sub {
+  font-family: 'Jost'; font-size: 14px; font-weight: 300;
+  color: #4a3828; line-height: 1.75; margin-bottom: 32px;
+}
+
+/* ─────────────────────────────
+   PAGE HEADER
+───────────────────────────── */
+.cart-header { margin-bottom: 44px; }
+.cart-header-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(196,152,10,.12); border: 1px solid rgba(196,152,10,.35);
+  padding: 7px 18px; border-radius: 100px; margin-bottom: 16px;
+}
+.cart-header-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 6vw, 60px);
+  font-weight: 400; color: #800020; line-height: 1.06; margin-bottom: 6px;
+}
+.cart-header-count {
+  font-family: 'Jost'; font-size: 13px; color: #9a8070; font-weight: 300;
+}
+
+/* ─────────────────────────────
+   LAYOUT
+───────────────────────────── */
+.cart-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 32px;
+  align-items: start;
+}
+@media(max-width: 1024px) { .cart-layout { grid-template-columns: 1fr; } }
+
+/* ─────────────────────────────
+   CART ITEM CARD
+───────────────────────────── */
+.cart-item {
+  background: rgba(255,249,240,.95); backdrop-filter: blur(10px);
+  border: 1px solid rgba(196,152,10,.22);
+  border-radius: 22px; padding: 22px 24px;
+  margin-bottom: 16px;
+  transition: box-shadow .35s, border-color .3s;
+  box-shadow: 0 6px 28px rgba(0,0,0,.06);
+}
+.cart-item:hover {
+  box-shadow: 0 14px 48px rgba(128,0,32,.1);
+  border-color: rgba(196,152,10,.42);
+}
+
+.cart-item-inner {
+  display: flex; gap: 20px; align-items: flex-start;
+}
+@media(max-width: 560px) {
+  .cart-item-inner { flex-direction: column; }
+}
+
+/* Image */
+.cart-item-img-wrap {
+  width: 100px; flex-shrink: 0;
+  border-radius: 16px; overflow: hidden;
+  border: 1px solid rgba(196,152,10,.25);
+  box-shadow: 0 6px 20px rgba(0,0,0,.1);
+}
+@media(max-width: 560px) { .cart-item-img-wrap { width: 100%; height: 200px; } }
+.cart-item-img-wrap img {
+  width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block;
+  transition: transform .6s cubic-bezier(.4,0,.2,1);
+}
+@media(max-width: 560px) { .cart-item-img-wrap img { aspect-ratio: unset; height: 200px; } }
+.cart-item-img-wrap:hover img { transform: scale(1.05); }
+
+/* Body */
+.cart-item-body { flex: 1; min-width: 0; }
+
+.cart-item-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 500; color: #800020;
+  text-decoration: none; display: block; margin-bottom: 8px;
+  transition: color .2s; line-height: 1.2;
+}
+.cart-item-name:hover { color: #C4980A; }
+
+.cart-item-tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+}
+.cart-item-tag {
+  padding: 4px 12px; border-radius: 100px;
+  background: rgba(196,152,10,.08); border: 1px solid rgba(196,152,10,.25);
+  font-family: 'Jost'; font-size: 11px; color: #4a3828; font-weight: 400;
+}
+
+/* Qty + remove row */
+.cart-item-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+
+.cart-qty-row {
+  display: flex; align-items: center; gap: 0;
+  background: rgba(196,152,10,.08); border: 1px solid rgba(196,152,10,.25);
+  border-radius: 100px; padding: 4px;
+}
+.cart-qty-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: white; border: 1px solid rgba(196,152,10,.3);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .25s, transform .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.cart-qty-btn:hover { background: #D4AF37; transform: scale(1.1); }
+.cart-qty-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.cart-qty-btn:hover svg { color: white !important; }
+.cart-qty-val {
+  min-width: 32px; text-align: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px; font-weight: 500; color: #800020;
+}
+
+.cart-remove-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 100px;
+  border: 1.5px solid rgba(200,50,50,.3);
+  background: transparent; color: #c0392b;
+  font-family: 'Jost'; font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: background .25s, color .25s, transform .2s;
+}
+.cart-remove-btn:hover {
+  background: #c0392b; color: white; transform: scale(1.04);
+}
+
+/* Price */
+.cart-item-price {
+  text-align: right; flex-shrink: 0;
+}
+@media(max-width: 560px) { .cart-item-price { text-align: left; } }
+.cart-item-price-main {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px; font-weight: 600; color: #800020; display: block;
+}
+.cart-item-price-orig {
+  font-family: 'Jost'; font-size: 12px; color: #9a8070;
+  text-decoration: line-through; font-weight: 300; margin-top: 3px;
+}
+
+/* ─────────────────────────────
+   ORDER SUMMARY
+───────────────────────────── */
+.cart-summary {
+  background: rgba(255,249,240,.97); backdrop-filter: blur(12px);
+  border: 1px solid rgba(196,152,10,.25);
+  border-radius: 24px;
+  box-shadow: 0 16px 60px rgba(0,0,0,.09);
+  overflow: hidden;
+  position: sticky; top: 110px;
+}
+
+/* Summary maroon top bar */
+.cart-summary-bar {
+  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #4B0082 100%);
+  padding: 22px 28px; position: relative; overflow: hidden;
+}
+.cart-summary-bar::after {
+  content: ''; position: absolute; top: -50px; right: -50px;
+  width: 160px; height: 160px; border-radius: 50%;
+  border: 1px solid rgba(212,175,55,.15); pointer-events: none;
+}
+.cart-summary-bar-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 400; color: white; position: relative; z-index: 1;
+}
+
+/* Summary body */
+.cart-summary-body { padding: 26px 28px 28px; }
+
+/* Row */
+.cart-sum-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(196,152,10,.14);
+}
+.cart-sum-row:last-of-type { border-bottom: none; }
+.cart-sum-key {
+  font-family: 'Jost'; font-size: 13px; color: #4a3828; font-weight: 400;
+}
+.cart-sum-val {
+  font-family: 'Jost'; font-size: 13px; color: #800020; font-weight: 600;
+}
+.cart-sum-free {
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'Jost'; font-size: 13px; color: #059669; font-weight: 600;
+}
+
+/* Free shipping nudge */
+.cart-ship-nudge {
+  background: rgba(196,152,10,.07); border: 1px solid rgba(196,152,10,.22);
+  border-radius: 12px; padding: 11px 14px; margin: 8px 0;
+}
+.cart-ship-nudge-text {
+  font-family: 'Jost'; font-size: 12px; color: #4a3828; font-weight: 300; line-height: 1.5;
+}
+
+/* Total strip */
+.cart-total-strip {
+  display: flex; justify-content: space-between; align-items: center;
+  background: linear-gradient(135deg, #800020 0%, #4B0082 100%);
+  border-radius: 16px; padding: 16px 20px; margin: 18px 0;
+}
+.cart-total-label {
+  font-family: 'Jost'; font-size: 13px; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
+}
+.cart-total-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px; font-weight: 600; color: #D4AF37;
+}
+
+/* Checkout button */
+.cart-checkout-btn {
+  display: block; width: 100%; padding: 16px;
+  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
+  color: #800020; border: none; border-radius: 100px; text-align: center;
+  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
+  font-weight: 600; text-transform: uppercase; text-decoration: none;
+  cursor: pointer; transition: transform .35s, box-shadow .35s;
+  box-shadow: 0 6px 24px rgba(212,175,55,.38);
+  position: relative; overflow: hidden; margin-bottom: 12px;
+}
+.cart-checkout-btn::after {
+  content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  animation: cartShimmer 3s ease infinite;
+}
+.cart-checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
+
+.cart-continue-link {
+  display: block; text-align: center;
+  font-family: 'Jost'; font-size: 12px; letter-spacing: .1em;
+  text-transform: uppercase; color: #4a3828; font-weight: 500;
+  text-decoration: none; transition: color .2s; padding: 6px 0;
+}
+.cart-continue-link:hover { color: #800020; }
+
+/* Trust signals */
+.cart-trust { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(196,152,10,.18); }
+.cart-trust-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+}
+.cart-trust-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.cart-trust-text {
+  font-family: 'Jost'; font-size: 12px; color: #4a3828; font-weight: 400;
+}
+
+/* ─────────────────────────────
+   BUTTONS SHARED
+───────────────────────────── */
+.cart-btn-shop {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 16px 44px;
+  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
+  color: #800020; border-radius: 100px;
+  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
+  font-weight: 600; text-transform: uppercase; text-decoration: none;
+  transition: transform .35s, box-shadow .35s;
+  box-shadow: 0 6px 24px rgba(212,175,55,.38);
+  position: relative; overflow: hidden;
+}
+.cart-btn-shop::after {
+  content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  animation: cartShimmer 3s ease infinite;
+}
+.cart-btn-shop:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
+
+/* ─────────────────────────────
+   RESPONSIVE
+───────────────────────────── */
+@media(max-width: 480px) {
+  .cart-header-title { font-size: 34px; }
+  .cart-item { padding: 18px 16px; border-radius: 18px; }
+  .cart-item-actions { flex-direction: column; align-items: flex-start; }
+  .cart-summary-body { padding: 20px 20px 22px; }
+}
+`;
+
+// ─── COMPONENT ────────────────────────────────────────────────────────────────
 export function CartPage() {
   const { cart, updateQuantity, removeFromCart, getCartTotal } = useCart();
 
   const subtotal = getCartTotal();
-  const shipping = subtotal > 2999 ? 0 : 150;
-  const total = subtotal + shipping;
+  const shipping  = subtotal > 2999 ? 0 : 150;
+  const total     = subtotal + shipping;
 
+  // ── Empty state ──
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#F5E6D3] via-white to-[#F5E6D3] flex items-center justify-center px-4">
-        <div className="text-center luxury-fade-in-up max-w-md">
-          <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-[#D4AF37]/20 to-[#800020]/10 rounded-full flex items-center justify-center">
-            <ShoppingBag className="w-16 h-16 text-[#D4AF37]" />
+      <>
+        <style>{CSS}</style>
+        <div className="cart-empty-root">
+          <div className="cart-fadeup">
+            <div className="cart-empty-icon">
+              <ShoppingBag size={48} color={C.gold} />
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <span className="cart-ey">Your Selection</span>
+            </div>
+            <h2 className="cart-empty-title">Your Cart is Empty</h2>
+            <p className="cart-empty-sub">
+              Discover our beautiful collection<br />of handcrafted sarees
+            </p>
+            <Link to="/shop" className="cart-btn-shop">
+              Continue Shopping <ArrowRight size={15} />
+            </Link>
           </div>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#800020] mb-4">
-            Your Cart is Empty
-          </h2>
-          <p className="text-gray-600 mb-8 text-sm md:text-base">
-            Discover our beautiful collection of handcrafted sarees
-          </p>
-          <Link
-            to="/shop"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#800020] to-[#4B0082] hover:from-[#4B0082] hover:to-[#800020] text-white px-8 py-4 rounded-full font-semibold transition-all hover:scale-105 shadow-xl"
-          >
-            Continue Shopping
-            <ArrowRight className="w-5 h-5" />
-          </Link>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F5E6D3] via-white to-[#F5E6D3] pt-28 md:pt-32 pb-14">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="mb-8 md:mb-12 pt-24 luxury-fade-in">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 md:px-6 py-2 bg-[#D4AF37]/10 rounded-full border border-[#D4AF37]/40">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-            <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#800020]">
-              Your Selection
-            </span>
+    <>
+      <style>{CSS}</style>
+      <div className="cart-root">
+        <div className="cart-wrap cart-page-top">
+
+          {/* ── Header ── */}
+          <div className="cart-header cart-fadein">
+            <div className="cart-header-badge">
+              <Sparkles size={13} color={C.gold} />
+              <span className="cart-ey">Your Selection</span>
+            </div>
+            <h1 className="cart-header-title">Shopping Cart</h1>
+            <p className="cart-header-count">{cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart</p>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-[#800020]">
-            Shopping Cart
-          </h1>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-          
-          {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4 md:space-y-6">
-            {cart.map((item, index) => (
-              <div
-                key={item.saree.id}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-xl border border-[#D4AF37]/20 p-4 md:p-6 luxury-card-stagger hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
-                  
-                  {/* Image */}
-                  <Link 
-                    to={`/product/${item.saree.id}`} 
-                    className="flex-shrink-0 w-full sm:w-32 md:w-40 group"
-                  >
-                    <div className="relative rounded-xl md:rounded-2xl overflow-hidden shadow-lg">
-                      <img
-                        src={item.saree.images[0]}
-                        alt={item.saree.name}
-                        className="w-full aspect-[4/5] sm:w-32 sm:h-40 md:w-40 md:h-52 object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-                  </Link>
+          {/* ── Layout ── */}
+          <div className="cart-layout">
 
-                  {/* Details */}
-                  <div className="flex-1 space-y-3 md:space-y-4">
-                    <div>
-                      <Link
-                        to={`/product/${item.saree.id}`}
-                        className="font-serif font-bold text-lg md:text-xl text-[#800020] hover:text-[#D4AF37] mb-2 block transition-colors line-clamp-2"
-                      >
+            {/* ── Items ── */}
+            <div>
+              {cart.map((item, i) => (
+                <div
+                  key={item.saree.id}
+                  className="cart-item cart-pop"
+                  style={{ animationDelay: `${i * 0.07}s` }}
+                >
+                  <div className="cart-item-inner">
+
+                    {/* Image */}
+                    <Link to={`/product/${item.saree.id}`} className="cart-item-img-wrap">
+                      <img src={item.saree.images[0]} alt={item.saree.name} />
+                    </Link>
+
+                    {/* Body */}
+                    <div className="cart-item-body">
+                      <Link to={`/product/${item.saree.id}`} className="cart-item-name">
                         {item.saree.name}
                       </Link>
-                      <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-gray-600">
-                        <span className="px-2 py-1 bg-[#FFF9F0] rounded-full">{item.saree.fabric}</span>
-                        <span className="text-[#D4AF37]">•</span>
-                        <span className="px-2 py-1 bg-[#FFF9F0] rounded-full">{item.saree.color}</span>
+                      <div className="cart-item-tags">
+                        <span className="cart-item-tag">{item.saree.fabric}</span>
+                        <span className="cart-item-tag">{item.saree.color}</span>
+                        <span className="cart-item-tag">{item.saree.occasion}</span>
+                      </div>
+                      <div className="cart-item-actions">
+                        {/* Qty */}
+                        <div className="cart-qty-row">
+                          <button
+                            className="cart-qty-btn"
+                            onClick={() => updateQuantity(item.saree.id, item.quantity - 1)}
+                          >
+                            <Minus size={13} color={C.maroon} />
+                          </button>
+                          <span className="cart-qty-val">{item.quantity}</span>
+                          <button
+                            className="cart-qty-btn"
+                            onClick={() => updateQuantity(item.saree.id, item.quantity + 1)}
+                            disabled={item.quantity >= item.saree.stock}
+                          >
+                            <Plus size={13} color={C.maroon} />
+                          </button>
+                        </div>
+                        {/* Remove */}
+                        <button
+                          className="cart-remove-btn"
+                          onClick={() => removeFromCart(item.saree.id)}
+                        >
+                          <Trash2 size={13} /> Remove
+                        </button>
                       </div>
                     </div>
 
-                    {/* Quantity Controls */}
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 bg-gradient-to-r from-[#FFF9F0] to-[#F5E6D3] rounded-full p-1 border border-[#D4AF37]/30">
-                        <button
-                          onClick={() => updateQuantity(item.saree.id, item.quantity - 1)}
-                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white rounded-full hover:bg-[#D4AF37] hover:text-white transition-all shadow-md hover:scale-110"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="w-8 md:w-10 text-center font-bold text-[#800020]">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.saree.id, item.quantity + 1)}
-                          disabled={item.quantity >= item.saree.stock}
-                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white rounded-full hover:bg-[#D4AF37] hover:text-white transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                      
-                      <button
-                        onClick={() => removeFromCart(item.saree.id)}
-                        className="flex items-center gap-2 px-4 py-2 text-red-500 hover:text-white hover:bg-red-500 border-2 border-red-500 rounded-full transition-all hover:scale-105"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="text-sm font-semibold hidden sm:inline">Remove</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div className="text-right sm:text-left lg:text-right space-y-1 sm:min-w-[120px]">
-                    <p className="text-2xl md:text-3xl font-serif font-bold text-[#800020]">
-                      {formatCurrency(item.saree.price * item.quantity)}
-                    </p>
-                    {item.saree.originalPrice && (
-                      <p className="text-sm text-gray-500 line-through">
-                        {formatCurrency(item.saree.originalPrice * item.quantity)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-2xl border border-[#D4AF37]/20 p-6 md:p-8 sticky top-24 luxury-fade-in">
-              
-              <div className="flex items-center gap-2 mb-6">
-                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-[#800020]">Order Summary</h2>
-              </div>
-
-              <div className="space-y-4 mb-6 pb-6 border-b-2 border-[#D4AF37]/30">
-                <div className="flex justify-between text-gray-700">
-                  <span className="text-sm md:text-base">Subtotal</span>
-                  <span className="font-bold text-[#800020]">{formatCurrency(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-gray-700">
-                  <span className="text-sm md:text-base">Shipping</span>
-                  <span className="font-bold text-[#800020]">
-                    {shipping === 0 ? (
-                      <span className="text-green-600 flex items-center gap-1">
-                        <Sparkles className="w-4 h-4" /> FREE
+                    {/* Price */}
+                    <div className="cart-item-price">
+                      <span className="cart-item-price-main">
+                        {formatCurrency(item.saree.price * item.quantity)}
                       </span>
-                    ) : (
-                      formatCurrency(shipping)
-                    )}
+                      {item.saree.originalPrice && (
+                        <p className="cart-item-price-orig">
+                          {formatCurrency(item.saree.originalPrice * item.quantity)}
+                        </p>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Summary ── */}
+            <div className="cart-summary cart-fadein cart-d1">
+
+              {/* Maroon bar */}
+              <div className="cart-summary-bar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, position: 'relative', zIndex: 1 }}>
+                  <Sparkles size={14} color="rgba(212,175,55,.8)" />
+                  <span style={{ fontFamily: "'Jost'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)' }}>
+                    Neyge Couture
                   </span>
                 </div>
+                <div className="cart-summary-bar-title">Order Summary</div>
+              </div>
+
+              <div className="cart-summary-body">
+
+                {/* Rows */}
+                <div className="cart-sum-row">
+                  <span className="cart-sum-key">Subtotal</span>
+                  <span className="cart-sum-val">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="cart-sum-row">
+                  <span className="cart-sum-key">Shipping</span>
+                  {shipping === 0 ? (
+                    <span className="cart-sum-free">
+                      <Sparkles size={12} /> FREE
+                    </span>
+                  ) : (
+                    <span className="cart-sum-val">{formatCurrency(shipping)}</span>
+                  )}
+                </div>
+
                 {shipping > 0 && (
-                  <div className="p-3 bg-gradient-to-r from-[#FFF9F0] to-[#F5E6D3] rounded-xl border border-[#D4AF37]/30">
-                    <p className="text-xs md:text-sm text-gray-700">
-                      Add <span className="font-bold text-[#800020]">{formatCurrency(2999 - subtotal)}</span> more for free shipping
+                  <div className="cart-ship-nudge">
+                    <p className="cart-ship-nudge-text">
+                      Add{' '}
+                      <strong style={{ color: C.maroon }}>{formatCurrency(2999 - subtotal)}</strong>
+                      {' '}more for free shipping
                     </p>
                   </div>
                 )}
-              </div>
 
-              <div className="flex justify-between items-center mb-6 p-4 bg-gradient-to-br from-[#800020] to-[#4B0082] rounded-2xl">
-                <span className="text-white font-semibold text-sm md:text-base">Total</span>
-                <span className="text-2xl md:text-3xl font-serif font-bold text-[#D4AF37]">{formatCurrency(total)}</span>
-              </div>
+                {/* Total */}
+                <div className="cart-total-strip">
+                  <span className="cart-total-label">Total</span>
+                  <span className="cart-total-val">{formatCurrency(total)}</span>
+                </div>
 
-              <Link
-                to="/checkout"
-                className="block w-full bg-gradient-to-r from-[#800020] to-[#4B0082] hover:from-[#4B0082] hover:to-[#800020] text-white text-center px-6 py-4 rounded-full font-semibold transition-all hover:scale-105 shadow-xl mb-4 text-sm md:text-base"
-              >
-                Proceed to Checkout
-              </Link>
+                {/* Checkout */}
+                <Link to="/checkout" className="cart-checkout-btn">
+                  Proceed to Checkout
+                </Link>
+                <Link to="/shop" className="cart-continue-link">
+                  ← Continue Shopping
+                </Link>
 
-              <Link
-                to="/shop"
-                className="block w-full text-center text-[#800020] font-semibold hover:text-[#D4AF37] transition-colors text-sm md:text-base"
-              >
-                Continue Shopping
-              </Link>
-
-              {/* Trust Signals */}
-              <div className="mt-6 pt-6 border-t-2 border-[#D4AF37]/30 space-y-3">
-                {[
-                  { text: 'Secure Checkout', color: 'from-green-400 to-emerald-500' },
-                  { text: '7-Day Easy Returns', color: 'from-blue-400 to-blue-500' },
-                  { text: '100% Authentic Products', color: 'from-purple-400 to-purple-500' },
-                ].map(({ text, color }) => (
-                  <div key={text} className="flex items-center gap-3 text-xs md:text-sm text-gray-700">
-                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0`}>
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                {/* Trust */}
+                <div className="cart-trust">
+                  {[
+                    { text: 'Secure Checkout',        bg: 'rgba(16,185,129,.12)',  border: 'rgba(16,185,129,.3)',  color: '#059669' },
+                    { text: '7-Day Easy Returns',      bg: 'rgba(59,130,246,.10)',  border: 'rgba(59,130,246,.3)',  color: '#2563eb' },
+                    { text: '100% Authentic Products', bg: 'rgba(196,152,10,.12)', border: 'rgba(196,152,10,.35)', color: '#C4980A' },
+                  ].map(({ text, bg, border, color }) => (
+                    <div key={text} className="cart-trust-item">
+                      <div className="cart-trust-dot" style={{ background: bg, border: `1px solid ${border}` }}>
+                        <svg width="11" height="11" viewBox="0 0 20 20" fill={color}>
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="cart-trust-text">{text}</span>
                     </div>
-                    <span className="font-medium">{text}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+
               </div>
             </div>
+
           </div>
         </div>
       </div>
-
-      <style>{`
-        .luxury-fade-in {
-          animation: luxuryFadeIn 0.8s ease-out both;
-        }
-
-        .luxury-fade-in-up {
-          animation: luxuryFadeInUp 1s ease-out both;
-        }
-
-        .luxury-card-stagger {
-          animation: luxuryCardEntry 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-        }
-
-        @keyframes luxuryFadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        @keyframes luxuryFadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(40px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes luxuryCardEntry {
-          from {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-      `}</style>
-    </div>
+    </>
   );
 }

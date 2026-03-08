@@ -2,465 +2,778 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SareeCard } from '@/components/features/SareeCard';
 import { SAREES } from '@/constants/sarees';
-import { ChevronDown, Sliders, X, Sparkles } from 'lucide-react';
+import { ChevronDown, X, Sparkles, SlidersHorizontal, ChevronRight, Tag } from 'lucide-react';
 
-const FABRICS = ['Silk', 'Cotton', 'Linen', 'Khadi'];
+// ─── Import hero image (same as HomePage g3.png) ─────────────────────────────
+import shopHeroImg from '@/assets/g17.png';
+
+const FABRICS   = ['Silk', 'Cotton', 'Linen', 'Khadi'];
 const OCCASIONS = ['Wedding', 'Casual', 'Festive', 'Party'];
-const COLORS = ['Red', 'Blue', 'Green', 'Gold', 'Pink', 'Purple', 'White', 'Multicolor'];
+const COLORS    = ['Red', 'Blue', 'Green', 'Gold', 'Pink', 'Purple', 'White', 'Multicolor'];
 
 const SORT_OPTIONS = [
-  { value: 'popular', label: 'Most Popular' },
-  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'popular',    label: 'Most Popular'       },
+  { value: 'price-asc',  label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'newest', label: 'Newest First' },
+  { value: 'newest',     label: 'Newest First'        },
 ];
 
+// ─── Brand palette ────────────────────────────────────────────────────────────
+const C = {
+  maroon:     "#800020",
+  maroonDark: "#5a0016",
+  gold:       "#C4980A",
+  goldV:      "#D4AF37",
+  cream:      "#F5E6D3",
+  creamLight: "#FFF9F0",
+  warmGrey:   "#4a3828",
+};
+
+// ─── CSS ──────────────────────────────────────────────────────────────────────
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+.sp-root {
+  font-family: 'Jost', sans-serif;
+  background: #FFF9F0;
+  color: #1a1010;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1;
+}
+
+/* ── Wrap ── */
+.sp-wrap { max-width: 1320px; margin: 0 auto; padding: 0 56px; }
+@media(max-width: 900px)  { .sp-wrap { padding: 0 20px; } }
+@media(max-width: 480px)  { .sp-wrap { padding: 0 16px; } }
+
+/* ── Eyebrow ── */
+.sp-ey {
+  font-family: 'Jost', sans-serif; font-size: 11px;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: #C4980A; font-weight: 600;
+}
+
+/* ─────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────── */
+@keyframes spFadeUp   { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spFadeIn   { from{opacity:0} to{opacity:1} }
+@keyframes spSlideUp  { from{transform:translateY(100%)} to{transform:translateY(0)} }
+@keyframes spSlideIn  { from{transform:translateX(-100%)} to{transform:translateX(0)} }
+@keyframes spOrb      { 0%,100%{transform:scale(1);opacity:.14} 50%{transform:scale(1.28);opacity:.26} }
+@keyframes silkMove   { 0%{transform:translateX(-100%) skewX(-12deg)} 100%{transform:translateX(220%) skewX(-12deg)} }
+@keyframes shimmerBtn { 0%{left:-80%} 100%{left:120%} }
+@keyframes spCardIn   { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+.sp-fadein  { animation: spFadeIn  0.35s ease both; }
+.sp-card    { animation: spCardIn  0.6s ease  both; }
+.sp-fade    { animation: spFadeUp  0.9s  cubic-bezier(.4,0,.2,1) both; }
+.sp-d0 { animation-delay:0s    }
+.sp-d1 { animation-delay:.12s  }
+.sp-d2 { animation-delay:.24s  }
+.sp-d3 { animation-delay:.36s  }
+.sp-d4 { animation-delay:.50s  }
+.sp-d5 { animation-delay:.65s  }
+
+/* ─────────────────────────────────────
+   HERO
+───────────────────────────────────── */
+.sp-hero {
+  position: relative;
+  height: 100vh; min-height: 600px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.sp-hero-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center top;
+}
+.sp-hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    rgba(0,0,0,.38) 0%,
+    rgba(60,0,15,.52) 50%,
+    rgba(0,0,0,.72) 100%);
+}
+.sp-hero-silk {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.sp-hero-silk-bar {
+  position: absolute; top: 0; bottom: 0; width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent);
+  animation: silkMove 16s linear infinite;
+}
+.sp-hero-content {
+  position: relative; z-index: 2;
+  text-align: center; color: white;
+  padding: 80px 24px 0;   /* ← was: 0 24px — add 80px top */
+  max-width: 760px; width: 100%;
+}
+.sp-hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.1); backdrop-filter: blur(8px);
+  border: 1px solid rgba(212,175,55,.5);
+  padding: 8px 10px; border-radius: 100px; margin-bottom: 22px;
+}
+.sp-hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(38px, 7vw, 74px);
+  font-weight: 300; line-height: 1.06; margin-bottom: 16px;
+}
+.sp-hero-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(16px, 2.5vw, 21px);
+  font-style: italic; font-weight: 300;
+  color: rgba(255,255,255,.82); margin-bottom: 14px;
+}
+.sp-hero-divider {
+  width: 56px; height: 1px; background: #D4AF37;
+  margin: 0 auto 20px; opacity: .8;
+}
+.sp-hero-desc {
+  font-family: 'Jost'; font-size: 15px; font-weight: 300;
+  color: rgba(255,255,255,.78); line-height: 1.85;
+  max-width: 520px; margin: 0 auto 28px;
+}
+.sp-hero-pills {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px;
+}
+.sp-hero-pill {
+  padding: 7px 16px;
+  background: rgba(255,255,255,.12); backdrop-filter: blur(6px);
+  border: 1px solid rgba(212,175,55,.45); border-radius: 100px;
+  font-family: 'Jost'; font-size: 11px; letter-spacing: .12em;
+  color: rgba(255,255,255,.9); text-transform: uppercase; font-weight: 500;
+}
+.sp-hero-count {
+  font-family: 'Jost'; font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: rgba(255,255,255,.42);
+}
+.sp-scroll-ind {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: spFadeUp 1s ease 1.4s both;
+}
+
+/* ─────────────────────────────────────
+   TOOLBAR
+───────────────────────────────────── */
+.sp-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(196,152,10,.18);
+  margin-bottom: 24px;
+  flex-wrap: wrap; gap: 12px;
+}
+.sp-toolbar-left {
+  font-family: 'Jost'; font-size: 14px; color: #4a3828; font-weight: 400;
+}
+.sp-toolbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ── Filter trigger ── */
+.sp-filter-trigger {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 22px;
+  background: rgba(255,249,240,.9); backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(196,152,10,.35); border-radius: 100px;
+  font-family: 'Jost'; font-size: 13px; font-weight: 600;
+  color: #800020; cursor: pointer;
+  transition: transform .3s, box-shadow .3s;
+  box-shadow: 0 3px 16px rgba(0,0,0,.07);
+}
+.sp-filter-trigger:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.1); }
+.sp-filter-badge {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #800020; color: white;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Sort ── */
+.sp-sort-wrap { position: relative; }
+.sp-sort {
+  appearance: none; -webkit-appearance: none;
+  background: rgba(255,249,240,.9); backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(196,152,10,.35);
+  padding: 10px 40px 10px 18px; border-radius: 100px;
+  font-family: 'Jost'; font-size: 13px; font-weight: 500;
+  color: #800020; cursor: pointer;
+  transition: box-shadow .3s; box-shadow: 0 3px 16px rgba(0,0,0,.07);
+}
+.sp-sort:focus { outline: none; border-color: #C4980A; }
+.sp-sort:hover { box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+
+/* ─────────────────────────────────────
+   ACTIVE CHIPS
+───────────────────────────────────── */
+.sp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.sp-chip-active {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  background: rgba(128,0,32,.08); border: 1px solid rgba(128,0,32,.25);
+  border-radius: 100px;
+  font-family: 'Jost'; font-size: 12px; color: #800020; font-weight: 500;
+  cursor: pointer; transition: background .2s;
+}
+.sp-chip-active:hover { background: rgba(128,0,32,.15); }
+
+/* ─────────────────────────────────────
+   GRID
+───────────────────────────────────── */
+.sp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 28px;
+}
+@media(max-width: 640px) {
+  .sp-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+@media(max-width: 360px) {
+  .sp-grid { grid-template-columns: 1fr; }
+}
+@media(max-width: 640px) {
+  .sp-hero-content {
+    padding-top: 130px;   /* ← add this line */
+  }
+}
+/* ─────────────────────────────────────
+   FILTER PANEL
+───────────────────────────────────── */
+.sp-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(8,2,2,.5); backdrop-filter: blur(3px);
+  animation: spFadeIn .3s ease both;
+}
+
+/* Desktop: slides in from LEFT; Mobile: slides up from BOTTOM */
+.sp-panel {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 360px; max-width: 88vw; z-index: 61;
+  display: flex; flex-direction: column;
+  box-shadow: 20px 0 80px rgba(0,0,0,.24);
+  animation: spSlideIn .42s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Panel header ── */
+.sp-panel-head {
+  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #4B0082 100%);
+  padding: 36px 28px 28px; position: relative; overflow: hidden; flex-shrink: 0;
+}
+.sp-panel-head::after {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 200px; height: 200px; border-radius: 50%;
+  border: 1px solid rgba(212,175,55,.15); pointer-events: none;
+}
+.sp-panel-head::before {
+  content: ''; position: absolute; top: -100px; right: -100px;
+  width: 320px; height: 320px; border-radius: 50%;
+  border: 1px solid rgba(212,175,55,.08); pointer-events: none;
+}
+.sp-panel-shine {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.sp-panel-shine::after {
+  content: ''; position: absolute;
+  top: -50%; left: -80%; width: 60%; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent);
+  animation: shimmerBtn 4s ease infinite;
+}
+.sp-panel-close {
+  position: absolute; top: 18px; right: 18px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .2s; z-index: 2;
+}
+.sp-panel-close:hover { background: rgba(255,255,255,.22); }
+.sp-panel-eyebrow {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px; position: relative; z-index: 1;
+}
+.sp-panel-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px; font-weight: 400; color: white; position: relative; z-index: 1;
+  margin-bottom: 6px;
+}
+.sp-panel-subtitle {
+  font-family: 'Jost'; font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: rgba(255,255,255,.45); position: relative; z-index: 1;
+}
+
+/* ── Stats bar ── */
+.sp-panel-stats {
+  display: flex; background: rgba(255,249,240,.98);
+  border-bottom: 1px solid rgba(196,152,10,.18); flex-shrink: 0;
+}
+.sp-panel-stat {
+  flex: 1; padding: 13px 10px; text-align: center;
+  border-right: 1px solid rgba(196,152,10,.14);
+}
+.sp-panel-stat:last-child { border-right: none; }
+.sp-panel-stat-n {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 21px; font-weight: 500; color: #800020; line-height: 1;
+}
+.sp-panel-stat-l {
+  font-family: 'Jost'; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: #9a8070; margin-top: 3px; font-weight: 500;
+}
+
+/* ── Body ── */
+.sp-panel-body {
+  flex: 1; overflow-y: auto;
+  background: linear-gradient(180deg, #FFF9F0 0%, #F8EEE2 100%);
+  padding: 0 24px;
+}
+.sp-panel-body::-webkit-scrollbar { width: 4px; }
+.sp-panel-body::-webkit-scrollbar-track { background: #F5E6D3; }
+.sp-panel-body::-webkit-scrollbar-thumb { background: #C4980A; border-radius: 2px; }
+
+/* ── Accordion ── */
+.sp-acc {
+  border-bottom: 1px solid rgba(196,152,10,.2);
+}
+.sp-acc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0; cursor: pointer; user-select: none;
+}
+.sp-acc-head:hover .sp-acc-label { color: #800020; }
+.sp-acc-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px; font-weight: 500; color: #3a1818; transition: color .2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.sp-acc-cnt {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 19px; height: 19px; border-radius: 50%;
+  background: #800020; color: white;
+  font-family: 'Jost'; font-size: 10px; font-weight: 700;
+}
+.sp-acc-chev {
+  color: #C4980A; transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sp-acc-chev.open { transform: rotate(90deg); }
+.sp-acc-body {
+  overflow: hidden;
+  max-height: 0; opacity: 0;
+  transition: max-height .38s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+}
+.sp-acc-body.open { max-height: 400px; opacity: 1; }
+
+/* ── Chips inside accordion ── */
+.sp-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0 18px; }
+.sp-chip {
+  padding: 7px 16px; border-radius: 100px;
+  border: 1.5px solid rgba(196,152,10,.35);
+  font-family: 'Jost'; font-size: 12px; letter-spacing: .05em;
+  color: #4a3828; background: white; cursor: pointer;
+  transition: all .25s cubic-bezier(.4,0,.2,1); font-weight: 400;
+}
+.sp-chip:hover {
+  border-color: #800020; color: #800020;
+  background: rgba(128,0,32,.05); transform: translateY(-1px);
+}
+.sp-chip.on {
+  background: linear-gradient(135deg, #800020 0%, #5a0016 100%);
+  border-color: #800020; color: white;
+  box-shadow: 0 4px 14px rgba(128,0,32,.3); font-weight: 500;
+}
+
+/* ── Price ── */
+.sp-price-wrap { padding: 14px 0 22px; }
+.sp-price-track-outer {
+  position: relative; height: 4px;
+  background: rgba(196,152,10,.22); border-radius: 100px; margin: 14px 0 4px;
+}
+.sp-price-fill {
+  position: absolute; left: 0; top: 0; height: 100%;
+  background: linear-gradient(90deg, #C4980A, #D4AF37);
+  border-radius: 100px; pointer-events: none; transition: width .1s;
+}
+.sp-slider {
+  width: 100%; appearance: none; -webkit-appearance: none;
+  height: 4px; background: transparent;
+  border-radius: 100px; cursor: pointer; display: block;
+}
+.sp-slider::-webkit-slider-thumb {
+  appearance: none; -webkit-appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #800020; border: 2.5px solid white;
+  box-shadow: 0 2px 10px rgba(128,0,32,.4); cursor: pointer;
+  transition: transform .2s;
+}
+.sp-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.sp-price-row {
+  display: flex; justify-content: space-between; align-items: center; margin-top: 10px;
+}
+.sp-price-lbl { font-family: 'Jost'; font-size: 12px; color: #9a8070; }
+.sp-price-val { font-family: 'Cormorant Garamond',serif; font-size: 19px; font-weight: 600; color: #800020; }
+
+/* ── Footer ── */
+.sp-panel-footer {
+  padding: 18px 24px 28px;
+  background: rgba(255,249,240,.98);
+  border-top: 1px solid rgba(196,152,10,.18);
+  flex-shrink: 0;
+}
+.sp-btn-apply {
+  width: 100%; padding: 15px; border: none; border-radius: 100px;
+  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
+  color: #800020;
+  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
+  font-weight: 600; text-transform: uppercase; cursor: pointer;
+  transition: transform .3s, box-shadow .3s;
+  box-shadow: 0 6px 24px rgba(212,175,55,.38);
+  position: relative; overflow: hidden;
+}
+.sp-btn-apply::after {
+  content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  animation: shimmerBtn 3s ease infinite;
+}
+.sp-btn-apply:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
+.sp-btn-clear {
+  width: 100%; padding: 11px; margin-top: 10px;
+  background: transparent; border: 1.5px solid rgba(196,152,10,.35);
+  color: #4a3828; border-radius: 100px;
+  font-family: 'Jost'; font-size: 12px; letter-spacing: .1em;
+  text-transform: uppercase; cursor: pointer; font-weight: 500;
+  transition: border-color .25s, color .25s;
+}
+.sp-btn-clear:hover { border-color: #800020; color: #800020; }
+
+/* ─────────────────────────────────────
+   EMPTY STATE
+───────────────────────────────────── */
+.sp-empty { text-align: center; padding: 90px 0; }
+
+/* ─────────────────────────────────────
+   MOBILE OVERRIDES
+───────────────────────────────────── */
+@media(max-width: 640px) {
+  .sp-panel {
+    top: auto; left: 0; right: 0; bottom: 0;
+    width: 100%; max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 92vh;
+    animation: spSlideUp .42s cubic-bezier(.16,1,.3,1) both;
+    box-shadow: 0 -20px 80px rgba(0,0,0,.24);
+  }
+  .sp-panel-head { border-radius: 24px 24px 0 0; padding: 28px 22px 24px; }
+  .sp-panel-title { font-size: 24px; }
+  .sp-hero { height: 100vh; min-height: 480px; }
+  .sp-hero-desc { font-size: 14px; }
+  .sp-toolbar { gap: 10px; }
+  .sp-toolbar-left { font-size: 13px; }
+}
+
+@media(max-width: 400px) {
+  .sp-hero-pills { gap: 6px; }
+  .sp-hero-pill  { font-size: 10px; padding: 6px 12px; }
+  .sp-hero-title { font-size: 34px; }
+}
+`;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENT
+═══════════════════════════════════════════════════════════════════════════ */
 export function ShopPage() {
   const [searchParams] = useSearchParams();
-  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  const [selectedFabrics, setSelectedFabrics] = useState<string[]>(() => {
-    const fabric = searchParams.get('fabric');
-    return fabric ? [fabric] : [];
-  });
+  const [selectedFabrics,   setSelectedFabrics]   = useState<string[]>(() => { const f = searchParams.get('fabric');   return f ? [f] : []; });
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>(() => { const o = searchParams.get('occasion'); return o ? [o] : []; });
+  const [selectedColors,    setSelectedColors]    = useState<string[]>([]);
+  const [priceRange,        setPriceRange]        = useState<[number,number]>([0, 50000]);
+  const [sortBy,            setSortBy]            = useState('popular');
 
-  const [selectedOccasions, setSelectedOccasions] = useState<string[]>(() => {
-    const occasion = searchParams.get('occasion');
-    return occasion ? [occasion] : [];
-  });
+  const toggle = (v: string, set: React.Dispatch<React.SetStateAction<string[]>>) =>
+    set(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
 
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
-  const [sortBy, setSortBy] = useState<string>('popular');
-
-  const toggleFilter = (
-    value: string,
-    setState: React.Dispatch<React.SetStateAction<string[]>>
-  ) => {
-    setState((prev: string[]) =>
-      prev.includes(value)
-        ? prev.filter((v: string) => v !== value)
-        : [...prev, value]
-    );
+  const clearAll = () => {
+    setSelectedFabrics([]); setSelectedOccasions([]);
+    setSelectedColors([]); setPriceRange([0, 50000]);
   };
 
+  const activeCount =
+    selectedFabrics.length + selectedOccasions.length + selectedColors.length +
+    (priceRange[1] < 50000 ? 1 : 0);
+
   const filteredSarees = useMemo(() => {
-    let filtered = [...SAREES];
-
-    if (selectedFabrics.length)
-      filtered = filtered.filter((s) => selectedFabrics.includes(s.fabric));
-
-    if (selectedOccasions.length)
-      filtered = filtered.filter((s) => selectedOccasions.includes(s.occasion));
-
-    if (selectedColors.length)
-      filtered = filtered.filter((s) => selectedColors.includes(s.color));
-
-    filtered = filtered.filter(
-      (s) => s.price >= priceRange[0] && s.price <= priceRange[1]
-    );
-
-    if (sortBy === 'price-asc') filtered.sort((a, b) => a.price - b.price);
-    else if (sortBy === 'price-desc') filtered.sort((a, b) => b.price - a.price);
-    else if (sortBy === 'newest')
-      filtered.sort((a, b) => (b.newArrival ? 1 : 0) - (a.newArrival ? 1 : 0));
-    else filtered.sort((a, b) => b.rating - a.rating);
-
-    return filtered;
+    let f = [...SAREES];
+    if (selectedFabrics.length)   f = f.filter(s => selectedFabrics.includes(s.fabric));
+    if (selectedOccasions.length) f = f.filter(s => selectedOccasions.includes(s.occasion));
+    if (selectedColors.length)    f = f.filter(s => selectedColors.includes(s.color));
+    f = f.filter(s => s.price >= priceRange[0] && s.price <= priceRange[1]);
+    if      (sortBy === 'price-asc')  f.sort((a,b) => a.price - b.price);
+    else if (sortBy === 'price-desc') f.sort((a,b) => b.price - a.price);
+    else if (sortBy === 'newest')     f.sort((a,b) => (b.newArrival?1:0)-(a.newArrival?1:0));
+    else                              f.sort((a,b) => b.rating - a.rating);
+    return f;
   }, [selectedFabrics, selectedOccasions, selectedColors, priceRange, sortBy]);
 
+  const activeChips: { label: string; onRemove: () => void }[] = [
+    ...selectedFabrics.map(v   => ({ label: v, onRemove: () => setSelectedFabrics(p  => p.filter(x=>x!==v)) })),
+    ...selectedOccasions.map(v => ({ label: v, onRemove: () => setSelectedOccasions(p=> p.filter(x=>x!==v)) })),
+    ...selectedColors.map(v    => ({ label: v, onRemove: () => setSelectedColors(p   => p.filter(x=>x!==v)) })),
+    ...(priceRange[1] < 50000  ? [{ label: `≤ ₹${priceRange[1].toLocaleString('en-IN')}`, onRemove: () => setPriceRange([0,50000]) }] : []),
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f5f0eb] via-[#faf8f6] to-[#f5f0eb]">
-      
-      {/* HERO SECTION */}
-      <div className="relative pt-28 pb-16 overflow-hidden">
-        {/* Background ornamental elements */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-[#800020] rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#B8860B] rounded-full blur-3xl"></div>
-        </div>
+    <>
+      <style>{CSS}</style>
+      <div className="sp-root">
 
-        {/* Decorative pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800020' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
+        {/* ══ HERO ══ */}
+        <section className="sp-hero">
+          <img src={shopHeroImg} alt="Shop" className="sp-hero-img" />
+          <div className="sp-hero-overlay" />
+          <div className="sp-hero-silk"><div className="sp-hero-silk-bar" /></div>
 
-        <div className="max-w-[1400px] mx-auto px-6 text-center relative z-10">
-          {/* Heritage Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2 mb-6 bg-white/80 backdrop-blur-sm rounded-full border border-[#B8860B]/20 shadow-sm animate-fade-in">
-            <Sparkles className="w-4 h-4 text-[#B8860B]" />
-            <span className="text-sm tracking-[0.2em] text-[#800020] font-medium uppercase">
-              Handcrafted Excellence
-            </span>
-          </div>
+          {/* Gold orb */}
+          <div style={{
+            position:"absolute", bottom:"12%", left:"50%", transform:"translateX(-50%)",
+            width:260, height:260, borderRadius:"50%",
+            background:"radial-gradient(circle, rgba(212,175,55,.14) 0%, transparent 70%)",
+            animation:"spOrb 8s ease-in-out infinite", pointerEvents:"none"
+          }} />
 
-          {/* Main Heading */}
-          <h1 className="text-5xl md:text-6xl font-serif text-[#800020] mb-4 leading-[1.1] animate-slide-up" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Discover Timeless Elegance
-          </h1>
-          
-          <p className="text-lg md:text-xl text-[#8B4513] mb-3 font-light animate-slide-up" style={{ animationDelay: '0.1s', fontFamily: "'Cormorant Garamond', serif" }}>
-            A Curated Collection of Handloom Masterpieces
-          </p>
-
-          <p className="max-w-2xl mx-auto text-sm md:text-base text-gray-600 leading-relaxed mb-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            Each saree in our collection tells a unique story of heritage, artistry, and skilled craftsmanship. 
-            From vibrant silks to delicate cottons, explore pieces that celebrate India's rich weaving traditions 
-            while embracing contemporary sophistication.
-          </p>
-
-          {/* Feature Pills */}
-          <div className="flex flex-wrap justify-center gap-3 mb-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <div className="px-4 py-2 bg-white/60 backdrop-blur rounded-full border border-[#B8860B]/20 text-xs font-medium text-[#800020]">
-              ✨ Authentic Handloom
-            </div>
-            <div className="px-4 py-2 bg-white/60 backdrop-blur rounded-full border border-[#B8860B]/20 text-xs font-medium text-[#800020]">
-              🧵 Premium Fabrics
-            </div>
-            <div className="px-4 py-2 bg-white/60 backdrop-blur rounded-full border border-[#B8860B]/20 text-xs font-medium text-[#800020]">
-              🎨 Exclusive Designs
-            </div>
-            <div className="px-4 py-2 bg-white/60 backdrop-blur rounded-full border border-[#B8860B]/20 text-xs font-medium text-[#800020]">
-              ⭐ Artisan Crafted
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-500 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-            Browse {SAREES.length} exquisite pieces, each one a testament to timeless beauty
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-[1400px] mx-auto px-6 pb-20 -mt-4">
-
-        {/* MOBILE ACTION BAR */}
-        <div className="flex items-center justify-between mb-6 lg:hidden">
-          <button
-            onClick={() => setShowFilters(true)}
-            className="flex items-center gap-2 px-6 py-3.5 rounded-full bg-white/90 backdrop-blur border border-[#B8860B]/30 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-          >
-            <Sliders className="w-4 h-4 text-[#800020]" />
-            <span className="font-medium text-[#800020]">Filters</span>
-          </button>
-
-          <SortSelect sortBy={sortBy} setSortBy={setSortBy} />
-        </div>
-
-        <div className="flex gap-12">
-
-          {/* DESKTOP SIDEBAR */}
-          <aside className="hidden lg:block w-[280px] flex-shrink-0">
-            <div className="bg-white/90 backdrop-blur rounded-2xl shadow-lg p-6 border border-[#B8860B]/10 sticky top-28">
-              <h3 className="text-xl font-serif text-[#800020] mb-6 pb-3 border-b border-[#B8860B]/20">
-                Refine Your Search
-              </h3>
-              <FiltersContent
-                selectedFabrics={selectedFabrics}
-                selectedOccasions={selectedOccasions}
-                selectedColors={selectedColors}
-                toggleFilter={toggleFilter}
-                setSelectedFabrics={setSelectedFabrics}
-                setSelectedOccasions={setSelectedOccasions}
-                setSelectedColors={setSelectedColors}
-                priceRange={priceRange}
-                setPriceRange={setPriceRange}
-              />
-            </div>
-          </aside>
-
-          {/* PRODUCTS */}
-          <div className="flex-1">
-
-            {/* DESKTOP SORT */}
-            <div className="hidden lg:flex justify-between items-center mb-8 pb-4 border-b border-[#B8860B]/10">
-              <p className="text-gray-600 font-light">
-                Showing <span className="font-semibold text-[#800020]">{filteredSarees.length}</span> of <span className="font-semibold">{SAREES.length}</span> exquisite pieces
-              </p>
-              <SortSelect sortBy={sortBy} setSortBy={setSortBy} />
+          <div className="sp-hero-content">
+            <div className="sp-fade sp-d0">
+              <div className="sp-hero-badge">
+                <Sparkles size={13} color="#D4AF37" />
+                <span className="sp-ey" style={{ color:"rgba(212,175,55,.95)" }}>Handcrafted Excellence</span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredSarees.map((saree, index) => (
-                <div 
-                  key={saree.id} 
-                  className="animate-fade-in-up"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <SareeCard saree={saree} />
-                </div>
+            <h1 className="sp-hero-title sp-fade sp-d1">
+              Discover Timeless<br />
+              <em style={{ fontStyle:"italic", fontWeight:300 }}>Elegance</em>
+            </h1>
+
+            <p className="sp-hero-sub sp-fade sp-d2">
+              A Curated Collection of Handloom Masterpieces
+            </p>
+
+            <div className="sp-fade sp-d2">
+              <div className="sp-hero-divider" />
+            </div>
+
+            <p className="sp-hero-desc sp-fade sp-d3">
+              Each saree tells a unique story of heritage, artistry, and skilled craftsmanship.
+              Explore pieces that celebrate India's rich weaving traditions while embracing
+              contemporary sophistication.
+            </p>
+
+            <div className="sp-hero-pills sp-fade sp-d4">
+              {["✦  Authentic Handloom","✦  Premium Fabrics","✦  Exclusive Designs","✦  Artisan Crafted"].map(l => (
+                <span key={l} className="sp-hero-pill">{l}</span>
               ))}
             </div>
 
-            {filteredSarees.length === 0 && (
-              <div className="text-center py-20">
-                <p className="text-xl text-gray-500 font-light mb-4">No sarees match your filters</p>
-                <p className="text-gray-400">Try adjusting your selection to discover more</p>
-              </div>
-            )}
+            <p className="sp-hero-count sp-fade sp-d5">
+              Browse {SAREES.length} exquisite pieces — each a testament to timeless beauty
+            </p>
           </div>
-        </div>
-      </div>
 
-      {/* MOBILE FILTER DRAWER */}
-      {showFilters && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
-            onClick={() => setShowFilters(false)}
-          />
-          <div className="absolute right-0 top-0 h-full w-[90%] max-w-md bg-gradient-to-b from-white to-[#faf8f6] shadow-2xl animate-slide-in-right overflow-y-auto">
-            <div className="flex items-center justify-between p-8 border-b border-[#B8860B]/20 bg-white/50 backdrop-blur">
-              <h3 className="text-2xl font-serif text-[#800020]">Refine Your Search</h3>
-              <button 
-                onClick={() => setShowFilters(false)}
-                className="p-2 rounded-full hover:bg-[#800020]/10 transition-colors"
-              >
-                <X className="w-6 h-6 text-[#800020]" />
+          {/* Scroll indicator */}
+          <div className="sp-scroll-ind">
+            <span style={{ fontFamily:"'Jost'", fontSize:9, letterSpacing:".22em", color:"rgba(255,255,255,.35)", textTransform:"uppercase", writingMode:"vertical-rl" }}>Scroll</span>
+            <div style={{ width:1, height:40, background:"linear-gradient(to bottom, rgba(212,175,55,.6), transparent)" }} />
+          </div>
+        </section>
+
+        {/* ══ CONTENT ══ */}
+        <div className="sp-wrap" style={{ paddingTop:40, paddingBottom:100 }}>
+
+          {/* Toolbar */}
+          <div className="sp-toolbar">
+            <div className="sp-toolbar-left">
+              Showing{" "}
+              <strong style={{ color:C.maroon }}>{filteredSarees.length}</strong>
+              {" "}of{" "}
+              <strong>{SAREES.length}</strong> exquisite pieces
+            </div>
+            <div className="sp-toolbar-right">
+              <button className="sp-filter-trigger" onClick={() => setShowFilters(true)}>
+                <SlidersHorizontal size={14} />
+                Filters
+                {activeCount > 0 && <span className="sp-filter-badge">{activeCount}</span>}
+              </button>
+              <SortSelect sortBy={sortBy} setSortBy={setSortBy} />
+            </div>
+          </div>
+
+          {/* Active filter chips */}
+          {activeChips.length > 0 && (
+            <div className="sp-chips">
+              {activeChips.map((c, i) => (
+                <button key={i} className="sp-chip-active" onClick={c.onRemove}>
+                  {c.label} <X size={12} />
+                </button>
+              ))}
+              <button className="sp-chip-active" onClick={clearAll}
+                style={{ borderColor:"rgba(196,152,10,.4)", color:C.warmGrey }}>
+                Clear all ×
               </button>
             </div>
+          )}
 
-            <div className="p-8">
-              <FiltersContent
-                selectedFabrics={selectedFabrics}
-                selectedOccasions={selectedOccasions}
-                selectedColors={selectedColors}
-                toggleFilter={toggleFilter}
-                setSelectedFabrics={setSelectedFabrics}
-                setSelectedOccasions={setSelectedOccasions}
-                setSelectedColors={setSelectedColors}
-                priceRange={priceRange}
-                setPriceRange={setPriceRange}
-              />
+          {/* Grid */}
+          <div className="sp-grid">
+            {filteredSarees.map((saree, i) => (
+              <div key={saree.id} className="sp-card"
+                style={{ animationDelay:`${Math.min(i * 0.04, 0.6)}s` }}>
+                <SareeCard saree={saree} />
+              </div>
+            ))}
+          </div>
+
+          {filteredSarees.length === 0 && (
+            <div className="sp-empty">
+              <div style={{ color:C.gold, fontSize:32, marginBottom:16 }}>✦</div>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:26, color:C.maroon, marginBottom:10 }}>
+                No sarees match your filters
+              </p>
+              <p style={{ fontFamily:"'Jost'", fontSize:14, color:C.warmGrey, fontWeight:300, marginBottom:28 }}>
+                Try adjusting your selection to discover more
+              </p>
+              <button className="sp-btn-clear" style={{ width:"auto", padding:"12px 32px" }} onClick={clearAll}>
+                Clear all filters
+              </button>
             </div>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* Animations */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
-        
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slide-up {
-          from { 
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+        {/* ══ PREMIUM FILTER PANEL ══ */}
+        {showFilters && (
+          <>
+            <div className="sp-overlay" onClick={() => setShowFilters(false)} />
+            <div className="sp-panel" onClick={e => e.stopPropagation()}>
 
-        @keyframes slide-in-right {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
+              {/* Maroon Header */}
+              <div className="sp-panel-head">
+                <div className="sp-panel-shine" />
+                <button className="sp-panel-close" onClick={() => setShowFilters(false)}>
+                  <X size={15} color="white" />
+                </button>
+                <div className="sp-panel-eyebrow">
+                  <Tag size={13} color="rgba(212,175,55,.75)" />
+                  <span style={{ fontFamily:"'Jost'", fontSize:10, letterSpacing:".2em", textTransform:"uppercase", color:"rgba(255,255,255,.48)" }}>
+                    Neyge Couture
+                  </span>
+                </div>
+                <div className="sp-panel-title">Refine Your Search</div>
+                <div className="sp-panel-subtitle">Discover your perfect saree</div>
+              </div>
 
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+              {/* Stats bar */}
+              <div className="sp-panel-stats">
+                {[[String(filteredSarees.length),"Results"],[String(activeCount||"—"),"Active"],[String(SAREES.length),"Total"]].map(([n,l])=>(
+                  <div key={l} className="sp-panel-stat">
+                    <div className="sp-panel-stat-n">{n}</div>
+                    <div className="sp-panel-stat-l">{l}</div>
+                  </div>
+                ))}
+              </div>
 
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out forwards;
-        }
+              {/* Scrollable body */}
+              <div className="sp-panel-body">
 
-        .animate-slide-up {
-          animation: slide-up 0.8s ease-out forwards;
-        }
+                <AccordionSection title="Fabric"   items={FABRICS}   selected={selectedFabrics}   toggle={v=>toggle(v,setSelectedFabrics)}   defaultOpen />
+                <AccordionSection title="Occasion" items={OCCASIONS} selected={selectedOccasions} toggle={v=>toggle(v,setSelectedOccasions)} defaultOpen />
+                <AccordionSection title="Colour"   items={COLORS}    selected={selectedColors}    toggle={v=>toggle(v,setSelectedColors)} />
 
-        .animate-slide-in-right {
-          animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
+                {/* Price Range */}
+                <div className="sp-acc">
+                  <div className="sp-acc-head" style={{ cursor:"default" }}>
+                    <span className="sp-acc-label">Price Range</span>
+                  </div>
+                  <div className="sp-price-wrap">
+                    <div className="sp-price-track-outer">
+                      <div className="sp-price-fill" style={{ width:`${(priceRange[1]/50000)*100}%` }} />
+                    </div>
+                    <input
+                      type="range" min="0" max="50000" step="1000"
+                      value={priceRange[1]}
+                      onChange={e => setPriceRange([0, parseInt(e.target.value)])}
+                      className="sp-slider"
+                    />
+                    <div className="sp-price-row">
+                      <span className="sp-price-lbl">₹0</span>
+                      <span className="sp-price-val">₹{priceRange[1].toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </div>
 
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out forwards;
-        }
+                {/* bottom padding */}
+                <div style={{ height: 16 }} />
+              </div>
 
-        /* Custom scrollbar for filters */
-        .overflow-y-auto::-webkit-scrollbar {
-          width: 6px;
-        }
+              {/* Footer */}
+              <div className="sp-panel-footer">
+                <button className="sp-btn-apply" onClick={() => setShowFilters(false)}>
+                  Show {filteredSarees.length} Results
+                </button>
+                {activeCount > 0 && (
+                  <button className="sp-btn-clear" onClick={clearAll}>Clear All Filters</button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
-        .overflow-y-auto::-webkit-scrollbar-track {
-          background: #f5f0eb;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-thumb {
-          background: #B8860B;
-          border-radius: 3px;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-          background: #800020;
-        }
-      `}</style>
-    </div>
-  );
-}
-
-/* ---------------- COMPONENTS ---------------- */
-
-function SortSelect({
-  sortBy,
-  setSortBy,
-}: {
-  sortBy: string;
-  setSortBy: (v: string) => void;
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={sortBy}
-        onChange={(e) => setSortBy(e.target.value)}
-        className="appearance-none bg-white/90 backdrop-blur border border-[#B8860B]/30 pl-5 pr-12 py-3.5 rounded-full text-sm font-medium text-[#800020] focus:outline-none focus:ring-2 focus:ring-[#800020] focus:border-transparent shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-      >
-        {SORT_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#800020] pointer-events-none" />
-    </div>
-  );
-}
-
-function FiltersContent({
-  selectedFabrics,
-  selectedOccasions,
-  selectedColors,
-  toggleFilter,
-  setSelectedFabrics,
-  setSelectedOccasions,
-  setSelectedColors,
-  priceRange,
-  setPriceRange,
-}: {
-  selectedFabrics: string[];
-  selectedOccasions: string[];
-  selectedColors: string[];
-  toggleFilter: (
-    value: string,
-    setState: React.Dispatch<React.SetStateAction<string[]>>
-  ) => void;
-  setSelectedFabrics: React.Dispatch<React.SetStateAction<string[]>>;
-  setSelectedOccasions: React.Dispatch<React.SetStateAction<string[]>>;
-  setSelectedColors: React.Dispatch<React.SetStateAction<string[]>>;
-  priceRange: [number, number];
-  setPriceRange: React.Dispatch<React.SetStateAction<[number, number]>>;
-}) {
-  return (
-    <>
-      <FilterSection
-        title="Fabric"
-        items={FABRICS}
-        selected={selectedFabrics}
-        toggle={(v) => toggleFilter(v, setSelectedFabrics)}
-      />
-      <FilterSection
-        title="Occasion"
-        items={OCCASIONS}
-        selected={selectedOccasions}
-        toggle={(v) => toggleFilter(v, setSelectedOccasions)}
-      />
-      <FilterSection
-        title="Color"
-        items={COLORS}
-        selected={selectedColors}
-        toggle={(v) => toggleFilter(v, setSelectedColors)}
-      />
-
-      <div className="mt-6 pt-4 border-t border-[#B8860B]/10">
-        <h4 className="font-serif text-base mb-4 text-[#800020]">Price Range</h4>
-        <div className="relative">
-          <input
-            type="range"
-            min="0"
-            max="50000"
-            step="1000"
-            value={priceRange[1]}
-            onChange={(e) =>
-              setPriceRange([0, parseInt(e.target.value)])
-            }
-            className="w-full h-2 bg-[#B8860B]/20 rounded-full appearance-none cursor-pointer 
-                     [&::-webkit-slider-thumb]:appearance-none 
-                     [&::-webkit-slider-thumb]:w-5 
-                     [&::-webkit-slider-thumb]:h-5 
-                     [&::-webkit-slider-thumb]:rounded-full 
-                     [&::-webkit-slider-thumb]:bg-[#800020]
-                     [&::-webkit-slider-thumb]:border-2
-                     [&::-webkit-slider-thumb]:border-white
-                     [&::-webkit-slider-thumb]:shadow-lg
-                     [&::-webkit-slider-thumb]:cursor-pointer
-                     [&::-webkit-slider-thumb]:transition-transform
-                     [&::-webkit-slider-thumb]:hover:scale-110
-                     [&::-moz-range-thumb]:w-5
-                     [&::-moz-range-thumb]:h-5
-                     [&::-moz-range-thumb]:rounded-full
-                     [&::-moz-range-thumb]:bg-[#800020]
-                     [&::-moz-range-thumb]:border-2
-                     [&::-moz-range-thumb]:border-white
-                     [&::-moz-range-thumb]:shadow-lg
-                     [&::-moz-range-thumb]:cursor-pointer"
-          />
-          <div className="flex justify-between mt-4">
-            <span className="text-sm text-gray-500">₹0</span>
-            <span className="text-sm font-semibold text-[#800020]">
-              ₹{priceRange[1].toLocaleString('en-IN')}
-            </span>
-          </div>
-        </div>
       </div>
     </>
   );
 }
 
-function FilterSection({
-  title,
-  items,
-  selected,
-  toggle,
-}: {
-  title: string;
-  items: string[];
-  selected: string[];
-  toggle: (value: string) => void;
-}) {
+/* ─── Sort Select ─────────────────────────────────────────────────────────── */
+function SortSelect({ sortBy, setSortBy }: { sortBy: string; setSortBy: (v:string)=>void }) {
   return (
-    <div className="mb-6 pb-4 border-b border-[#B8860B]/10 last:border-0">
-      <h4 className="font-serif text-base mb-4 text-[#800020]">{title}</h4>
-      <div className="space-y-3">
-        {items.map((item) => (
-          <label 
-            key={item} 
-            className="flex items-center gap-3 cursor-pointer group"
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(item)}
-              onChange={() => toggle(item)}
-              className="w-4 h-4 rounded border-2 border-[#B8860B]/30 text-[#800020] 
-                       focus:ring-2 focus:ring-[#800020] focus:ring-offset-2 
-                       cursor-pointer transition-all duration-200
-                       checked:bg-[#800020] checked:border-[#800020]"
-            />
-            <span className="text-xs text-gray-700 group-hover:text-[#800020] transition-colors duration-200">
+    <div className="sp-sort-wrap">
+      <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="sp-sort">
+        {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+      <ChevronDown size={14} color={C.maroon}
+        style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
+    </div>
+  );
+}
+
+/* ─── Accordion Section ───────────────────────────────────────────────────── */
+function AccordionSection({
+  title, items, selected, toggle, defaultOpen = false,
+}: {
+  title: string; items: string[];
+  selected: string[]; toggle: (v: string) => void;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="sp-acc">
+      <div className="sp-acc-head" onClick={() => setOpen(p => !p)}>
+        <span className="sp-acc-label">
+          {title}
+          {selected.length > 0 && <span className="sp-acc-cnt">{selected.length}</span>}
+        </span>
+        <ChevronRight size={15} className={`sp-acc-chev${open ? " open" : ""}`} />
+      </div>
+      <div className={`sp-acc-body${open ? " open" : ""}`}>
+        <div className="sp-chip-grid">
+          {items.map(item => (
+            <button
+              key={item}
+              className={`sp-chip${selected.includes(item) ? " on" : ""}`}
+              onClick={() => toggle(item)}
+            >
               {item}
-            </span>
-          </label>
-        ))}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
