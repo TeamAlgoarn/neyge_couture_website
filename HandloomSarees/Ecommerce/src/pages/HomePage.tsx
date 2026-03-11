@@ -551,7 +551,7 @@ function LoomStory() {
               ))}
             </div>
             <div className={`rv d6 ${on ? "on" : ""}`}>
-              <Link to="/artisans" className="link-gold">Read the full loom story <span style={{ fontSize: 16 }}>→</span></Link>
+              <Link to="/about" className="link-gold">Read the full loom story <span style={{ fontSize: 16 }}>→</span></Link>
             </div>
           </div>
         </div>

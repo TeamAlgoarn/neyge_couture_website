@@ -52,6 +52,19 @@ const CSS = `
 @keyframes apShimmer { 0%{left:-80%} 100%{left:120%} }
 @keyframes apOrb     { 0%,100%{transform:scale(1);opacity:.12} 50%{transform:scale(1.25);opacity:.22} }
 @keyframes apCounter { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes flowThread1 {
+  0%   { d: path("M0,30 C220,5 440,55 660,30 C880,5 1100,55 1320,30"); }
+  25%  { d: path("M0,20 C200,50 440,8  660,25 C880,45 1100,8  1320,20"); }
+  50%  { d: path("M0,38 C200,10 440,58 660,38 C880,10 1100,58 1320,38"); }
+  75%  { d: path("M0,18 C220,55 460,5  660,22 C860,55 1080,5  1320,18"); }
+  100% { d: path("M0,30 C220,5 440,55 660,30 C880,5 1100,55 1320,30"); }
+}
+@keyframes flowThread2 {
+  0%   { d: path("M0,45 C180,15 400,65 660,42 C920,15 1100,62 1320,45"); }
+  33%  { d: path("M0,35 C200,65 420,12 660,35 C900,62 1120,12 1320,35"); }
+  66%  { d: path("M0,52 C160,18 420,68 660,50 C900,20 1140,65 1320,52"); }
+  100% { d: path("M0,45 C180,15 400,65 660,42 C920,15 1100,62 1320,45"); }
+}
 
 .ap-fade { animation: apFadeUp .85s cubic-bezier(.4,0,.2,1) both; }
 .ap-d0 { animation-delay:0s    }
@@ -180,7 +193,7 @@ const CSS = `
 }
 
 /* ─────────────────────────────
-   TWO-COLUMN LAYOUT (text + quote)
+   TWO-COLUMN LAYOUT
 ───────────────────────────── */
 .ap-two-col {
   display: grid; grid-template-columns: 1fr 1fr;
@@ -221,6 +234,213 @@ const CSS = `
   font-family: 'Jost'; font-size: 11px; letter-spacing: .12em;
   text-transform: uppercase; color: #9a8070; font-weight: 500;
   line-height: 1.5;
+}
+
+/* ─────────────────────────────
+   REGION CARDS (NEW)
+───────────────────────────── */
+.ap-region-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-top: 28px;
+}
+@media(max-width: 700px) { .ap-region-grid { grid-template-columns: 1fr 1fr; } }
+@media(max-width: 480px) { .ap-region-grid { grid-template-columns: 1fr; } }
+
+.ap-region-card {
+  background: rgba(255,249,240,.9);
+  border: 1px solid rgba(196,152,10,.25);
+  border-radius: 18px; padding: 24px 20px;
+  transition: transform .35s, box-shadow .35s, border-color .3s;
+  position: relative; overflow: hidden;
+}
+.ap-region-card::after {
+  content: ''; position: absolute; bottom: -20px; right: -20px;
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 1px solid rgba(196,152,10,.12); pointer-events: none;
+}
+.ap-region-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(128,0,32,.1);
+  border-color: rgba(196,152,10,.5);
+}
+.ap-region-icon {
+  font-size: 24px; margin-bottom: 12px; display: block;
+}
+.ap-region-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 500; color: #800020;
+  margin-bottom: 6px; line-height: 1.2;
+}
+.ap-region-state {
+  font-family: 'Jost'; font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: #C4980A; font-weight: 600;
+  margin-bottom: 12px; display: block;
+}
+.ap-region-desc {
+  font-family: 'Jost'; font-size: 13px; font-weight: 300;
+  color: #4a3828; line-height: 1.75;
+}
+
+/* ─────────────────────────────
+   PROCESS STEPS (NEW)
+───────────────────────────── */
+.ap-process-steps {
+  display: flex; flex-direction: column; gap: 0; margin-top: 28px;
+}
+.ap-step {
+  display: flex; gap: 24px; align-items: flex-start;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(196,152,10,.15);
+}
+.ap-step:last-child { border-bottom: none; }
+.ap-step-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 42px; font-weight: 300; color: rgba(196,152,10,.3);
+  line-height: 1; flex-shrink: 0; width: 52px; text-align: right;
+}
+.ap-step-content {}
+.ap-step-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 500; color: #800020;
+  margin-bottom: 6px; line-height: 1.2;
+}
+.ap-step-desc {
+  font-family: 'Jost'; font-size: 14px; font-weight: 300;
+  color: #4a3828; line-height: 1.8;
+}
+
+/* ─────────────────────────────
+   ARTISAN PROFILE CARDS (NEW)
+───────────────────────────── */
+.ap-profiles-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 20px; margin-top: 28px;
+}
+@media(max-width: 600px) { .ap-profiles-grid { grid-template-columns: 1fr; } }
+
+.ap-profile-card {
+  background: rgba(255,249,240,.9);
+  border: 1px solid rgba(196,152,10,.25);
+  border-radius: 18px; padding: 28px 24px;
+  transition: transform .35s, box-shadow .35s;
+}
+.ap-profile-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 44px rgba(128,0,32,.1);
+}
+.ap-profile-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+}
+.ap-profile-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(196,152,10,.2) 0%, rgba(128,0,32,.15) 100%);
+  border: 1.5px solid rgba(196,152,10,.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.ap-profile-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 500; color: #800020; line-height: 1.1;
+}
+.ap-profile-role {
+  font-family: 'Jost'; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: #C4980A; font-weight: 600; margin-top: 3px;
+}
+.ap-profile-quote {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; font-style: italic; font-weight: 400;
+  color: #5a3020; line-height: 1.72;
+  border-left: 2px solid rgba(196,152,10,.4);
+  padding-left: 14px; margin-bottom: 14px;
+}
+.ap-profile-region {
+  font-family: 'Jost'; font-size: 12px; font-weight: 400;
+  color: #9a8070; letter-spacing: .06em;
+}
+
+/* ─────────────────────────────
+   PHILOSOPHY BAND (NEW — dark)
+───────────────────────────── */
+.ap-philosophy {
+  background: linear-gradient(135deg, #800020 0%, #5a0016 60%, #4B0082 100%);
+  border-radius: 28px; padding: 56px 52px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 20px 70px rgba(128,0,32,.25);
+  margin-bottom: 48px;
+}
+.ap-philosophy::before {
+  content: ''; position: absolute; top: -80px; right: -60px;
+  width: 260px; height: 260px; border-radius: 50%;
+  border: 1px solid rgba(212,175,55,.12); pointer-events: none;
+}
+.ap-philosophy::after {
+  content: ''; position: absolute; bottom: -70px; left: -50px;
+  width: 220px; height: 220px; border-radius: 50%;
+  border: 1px solid rgba(212,175,55,.08); pointer-events: none;
+}
+.ap-philosophy-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px; position: relative; z-index: 1;
+}
+@media(max-width: 700px) { .ap-philosophy-grid { grid-template-columns: 1fr; gap: 24px; } }
+
+.ap-phil-item {}
+.ap-phil-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 48px; font-weight: 300; color: rgba(212,175,55,.25);
+  line-height: 1; margin-bottom: 10px;
+}
+.ap-phil-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 500; color: white;
+  margin-bottom: 10px; line-height: 1.2;
+}
+.ap-phil-desc {
+  font-family: 'Jost'; font-size: 13px; font-weight: 300;
+  color: rgba(255,255,255,.7); line-height: 1.8;
+}
+
+/* ─────────────────────────────
+   GOLDEN THREAD DIVIDER (NEW)
+───────────────────────────── */
+.ap-thread-divider {
+  width: 100%; overflow: hidden; line-height: 0;
+  padding: 8px 0; pointer-events: none;
+}
+
+/* ─────────────────────────────
+   TIMELINE (NEW)
+───────────────────────────── */
+.ap-timeline {
+  position: relative; padding-left: 32px; margin-top: 28px;
+}
+.ap-timeline::before {
+  content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 1px; background: linear-gradient(to bottom, rgba(196,152,10,.5), rgba(196,152,10,.1));
+}
+.ap-tl-item {
+  position: relative; padding: 0 0 32px 24px;
+}
+.ap-tl-item:last-child { padding-bottom: 0; }
+.ap-tl-dot {
+  position: absolute; left: -4px; top: 6px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #C4980A; border: 2px solid rgba(255,249,240,.9);
+  box-shadow: 0 0 0 3px rgba(196,152,10,.2);
+}
+.ap-tl-year {
+  font-family: 'Jost'; font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: #C4980A; font-weight: 600;
+  margin-bottom: 6px;
+}
+.ap-tl-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 500; color: #800020;
+  margin-bottom: 6px; line-height: 1.2;
+}
+.ap-tl-desc {
+  font-family: 'Jost'; font-size: 14px; font-weight: 300;
+  color: #4a3828; line-height: 1.78;
 }
 
 /* ─────────────────────────────
@@ -267,10 +487,9 @@ const CSS = `
 }
 @media(max-width: 700px)  { .ap-cta { padding: 48px 28px; } }
 @media(max-width: 480px)  { .ap-cta { padding: 40px 20px; border-radius: 20px; } }
-@media(max-width: 640px) {
-  .ap-header { padding-top: 160px; }  /* ← add this */
-}
-/* ── Section label row (eyebrow + divider) ── */
+@media(max-width: 640px)  { .ap-header { padding-top: 160px; } }
+
+/* ── Section label row ── */
 .ap-section-label {
   display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
 }
@@ -279,8 +498,31 @@ const CSS = `
 }
 `;
 
+// ─── Golden Thread Divider Component ─────────────────────────────────────────
+function ThreadDivider() {
+  return (
+    <div className="ap-thread-divider">
+      <svg viewBox="0 0 1080 50" preserveAspectRatio="none"
+        style={{ width: '100%', height: 50, display: 'block' }}>
+        <path
+          d="M0,25 C180,5 360,45 540,25 C720,5 900,45 1080,25"
+          stroke="rgba(196,152,10,0.3)" strokeWidth="1.2" fill="none"
+          style={{ animation: 'flowThread1 6s ease-in-out infinite' }}
+        />
+        <path
+          d="M0,35 C150,15 380,55 540,32 C700,12 900,52 1080,35"
+          stroke="rgba(196,152,10,0.15)" strokeWidth="0.8" fill="none"
+          style={{ animation: 'flowThread2 9s ease-in-out infinite' }}
+        />
+      </svg>
+    </div>
+  );
+}
+
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 export function ArtisanPage() {
+
+  // ── Original data ──
   const FEATURES = [
     { icon: "🧵", text: "Ancient weaving techniques preserved across generations" },
     { icon: "🌿", text: "Sustainable production practices & natural materials"   },
@@ -293,6 +535,155 @@ export function ArtisanPage() {
     { num: "12",   lbl: "Weaving Regions"    },
     { num: "100%", lbl: "Handloom Certified" },
     { num: "0",    lbl: "Machine Production" },
+  ];
+
+  // ── New: Weaving Regions ──
+  const REGIONS = [
+    {
+      icon: "🏛️",
+      name: "Banarasi",
+      state: "Varanasi, Uttar Pradesh",
+      desc: "Home to the finest silk brocades in the world. Banarasi weaves are known for their intricate gold and silver zari work, inspired by Mughal motifs and temple architecture.",
+    },
+    {
+      icon: "🌺",
+      name: "Kanchipuram",
+      state: "Tamil Nadu",
+      desc: "Woven from pure mulberry silk with contrasting borders, Kanchipuram sarees are considered the gold standard of South Indian bridal wear. Each takes up to two weeks to complete.",
+    },
+    {
+      icon: "🎋",
+      name: "Jamdani",
+      state: "Murshidabad, West Bengal",
+      desc: "A UNESCO Intangible Cultural Heritage. Jamdani features geometric and floral patterns woven directly onto fine muslin — a technique so delicate it is called 'weaving air'.",
+    },
+    {
+      icon: "🦚",
+      name: "Sambalpuri",
+      state: "Odisha",
+      desc: "Celebrated for its 'Bandha' tie-and-dye technique. Sambalpuri artisans dye each thread before weaving, creating vibrant ikat patterns of peacocks, lotuses, and temple wheels.",
+    },
+    {
+      icon: "🌊",
+      name: "Pochampally",
+      state: "Telangana",
+      desc: "Famous for its geometric ikat patterns. Known as the 'Silk City of India', Pochampally weaving communities have turned this art into a GI-tagged national treasure.",
+    },
+    {
+      icon: "🌾",
+      name: "Chanderi",
+      state: "Madhya Pradesh",
+      desc: "Translucent, lightweight, and exquisitely delicate — Chanderi sarees combine silk and cotton to create fabrics that drape like a whisper. Motifs draw from nature and royalty.",
+    },
+  ];
+
+  // ── New: The Making Process ──
+  const PROCESS_STEPS = [
+    {
+      num: "01",
+      title: "Thread Selection & Natural Dyeing",
+      desc: "The journey begins with raw silk or cotton yarn, hand-selected for quality. Natural dyes — indigo, turmeric, pomegranate rind, madder root — are prepared in clay vessels over open fires, a process unchanged for centuries.",
+    },
+    {
+      num: "02",
+      title: "Warping the Loom",
+      desc: "Hundreds of individual threads are stretched and aligned on the wooden loom with mathematical precision. This preparation alone can take a master weaver two full days before a single shuttle passes through.",
+    },
+    {
+      num: "03",
+      title: "The Weaving",
+      desc: "With hands and feet moving in perfect rhythm, the weaver interlaces weft threads through the warp. Intricate motifs — flowers, birds, temple borders — emerge row by row, each an act of memory and devotion.",
+    },
+    {
+      num: "04",
+      title: "Zari & Embellishment",
+      desc: "Gold and silver zari threads, hand-drawn from pure metal wire, are woven into borders and pallus. A single Banarasi saree may contain over 5,600 individual zari insertions by hand.",
+    },
+    {
+      num: "05",
+      title: "Quality & Finishing",
+      desc: "Each saree is hand-inspected thread by thread, washed in soft water, sun-dried on bamboo frames, and lightly starched. Only pieces that meet our artisan council's standards carry the Neyge seal.",
+    },
+  ];
+
+  // ── New: Artisan Voices ──
+  const ARTISAN_PROFILES = [
+    {
+      emoji: "👩",
+      name: "Radha Devi",
+      role: "Master Weaver · Murshidabad",
+      region: "Jamdani Specialist · 38 years of craft",
+      quote: "I learned to weave when I was seven. My mother said: 'The loom will never leave you hungry, and it will never leave you silent.' She was right on both counts.",
+    },
+    {
+      emoji: "👨",
+      name: "Rameshwar Prasad",
+      role: "Zari Master · Varanasi",
+      region: "Banarasi Brocade · 3rd Generation",
+      quote: "My grandfather said gold thread is not for showing off. It is for saying — this family worked hard, this moment matters, this woman deserves to feel like a queen.",
+    },
+    {
+      emoji: "👩",
+      name: "Lakshmi Bai",
+      role: "Ikat Dyer · Pochampally",
+      region: "Pochampally Ikat · 22 years of practice",
+      quote: "The dye does not know the design yet. The thread does not know its colour. But between my hands and the water and the sun — the saree knows exactly who it is becoming.",
+    },
+    {
+      emoji: "👨",
+      name: "Mohan Das",
+      role: "Sambalpuri Weaver · Odisha",
+      region: "Bandha Tie-Dye · GI Certified",
+      quote: "People ask me how long one saree takes. I say: twenty years to learn how, and five days to weave. The twenty years is the part they wear.",
+    },
+  ];
+
+  // ── New: Philosophy pillars ──
+  const PHILOSOPHY = [
+    {
+      num: "I",
+      title: "Soul Before Scale",
+      desc: "We will never sacrifice the intimacy of handwork for the speed of machines. Every saree that leaves our hands is made entirely by human hands — no exceptions.",
+    },
+    {
+      num: "II",
+      title: "Story Before Sale",
+      desc: "We believe a saree's value is not its price tag but the life lived in its making. We document every artisan's story so the wearer knows exactly whose hands made their garment.",
+    },
+    {
+      num: "III",
+      title: "Heritage Before Trend",
+      desc: "Fashion changes with seasons. Handloom endures across centuries. We make sarees that are relevant today not because they are trendy, but because they are true.",
+    },
+  ];
+
+  // ── New: Neyge Timeline ──
+  const TIMELINE = [
+    {
+      year: "2019",
+      title: "The First Loom Visit",
+      desc: "Our founders visited a struggling Jamdani weaver collective in Murshidabad. Seventeen artisans, four working looms. The seeds of Neyge were planted that afternoon.",
+    },
+    {
+      year: "2020",
+      title: "First Artisan Partnership",
+      desc: "We partnered with 12 weavers across Bengal and Varanasi, committing to fixed fair wages regardless of market fluctuation — a first for the region.",
+    },
+    {
+      year: "2021",
+      title: "GI Certification Network",
+      desc: "Neyge helped 31 artisans complete their Geographical Indication (GI) certification, giving their craft official government recognition and legal protection.",
+    },
+    {
+      year: "2022",
+      title: "Six Regions, One Mission",
+      desc: "We expanded to six weaving regions — Varanasi, Murshidabad, Odisha, Telangana, Tamil Nadu, and Madhya Pradesh — while maintaining direct relationships with every weaver.",
+    },
+    {
+      year: "2024",
+      title: "500 Artisans Empowered",
+      desc: "Over 500 artisan families now earn consistent, dignified income through Neyge. Average artisan income has increased by 3.2x since their first season with us.",
+    },
   ];
 
   return (
@@ -330,7 +721,9 @@ export function ArtisanPage() {
         {/* ── Sections ── */}
         <div className="ap-wrap" style={{ paddingBottom: 80 }}>
 
-          {/* ── Section 1 — Heritage Meets Craftsmanship ── */}
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 1 — Heritage Meets Craftsmanship (ORIGINAL)
+          ───────────────────────────────────────────────────────────────── */}
           <section className="ap-section ap-fade ap-d2">
             <div className="ap-card">
               <div className="ap-card-title-wrap">
@@ -368,7 +761,11 @@ export function ArtisanPage() {
             </div>
           </section>
 
-          {/* ── Section 2 — Hands Behind the Heritage ── */}
+          <ThreadDivider />
+
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 2 — Hands Behind the Heritage (ORIGINAL)
+          ───────────────────────────────────────────────────────────────── */}
           <section className="ap-section ap-fade ap-d2">
             <div className="ap-card">
               <div className="ap-card-title-wrap">
@@ -400,7 +797,9 @@ export function ArtisanPage() {
             </div>
           </section>
 
-          {/* ── Section 3 — Crafting Change ── */}
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 3 — Crafting Change (ORIGINAL)
+          ───────────────────────────────────────────────────────────────── */}
           <section className="ap-section ap-fade ap-d2">
             <div className="ap-card">
               <div className="ap-card-title-wrap">
@@ -417,7 +816,6 @@ export function ArtisanPage() {
                 fair wages, ethical sourcing, and the preservation of disappearing crafts.
               </p>
 
-              {/* Stats */}
               <div style={{ border: '1px solid rgba(196,152,10,.2)', borderRadius: 20, overflow: 'hidden', marginTop: 32 }}>
                 <div className="ap-stats-grid">
                   {STATS.map((s, i) => (
@@ -431,7 +829,174 @@ export function ArtisanPage() {
             </div>
           </section>
 
-          {/* ── Section 4 — Final CTA ── */}
+          <ThreadDivider />
+
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 4 — NEW: Artisan Voices
+          ───────────────────────────────────────────────────────────────── */}
+          <section className="ap-section ap-fade ap-d2">
+            <div className="ap-card">
+              <div className="ap-card-title-wrap">
+                <div className="ap-section-label">
+                  <span className="ap-ey">Their Words</span>
+                  <div className="ap-section-label-line" />
+                </div>
+                <h2 className="ap-card-title">In Their Own Words</h2>
+                <span className="ap-gd" />
+              </div>
+              <p className="ap-body">
+                We believe the most powerful story a saree can carry is the voice of
+                the person who made it. Here are the words of four of our master weavers —
+                spoken in their villages, translated with love.
+              </p>
+              <div className="ap-profiles-grid">
+                {ARTISAN_PROFILES.map(p => (
+                  <div key={p.name} className="ap-profile-card">
+                    <div className="ap-profile-header">
+                      <div className="ap-profile-avatar">{p.emoji}</div>
+                      <div>
+                        <div className="ap-profile-name">{p.name}</div>
+                        <div className="ap-profile-role">{p.role}</div>
+                      </div>
+                    </div>
+                    <p className="ap-profile-quote">"{p.quote}"</p>
+                    <span className="ap-profile-region">{p.region}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 5 — NEW: Weaving Regions
+          ───────────────────────────────────────────────────────────────── */}
+          <section className="ap-section ap-fade ap-d2">
+            <div className="ap-card">
+              <div className="ap-card-title-wrap">
+                <div className="ap-section-label">
+                  <span className="ap-ey">The Regions</span>
+                  <div className="ap-section-label-line" />
+                </div>
+                <h2 className="ap-card-title">Six Regions,<br />One Unbroken Thread</h2>
+                <span className="ap-gd" />
+              </div>
+              <p className="ap-body">
+                India's handloom geography is a living atlas of culture. Each region
+                has developed its own signature language of weave, dye, and motif —
+                shaped by its soil, its rivers, its gods, and its history.
+              </p>
+              <div className="ap-region-grid">
+                {REGIONS.map(r => (
+                  <div key={r.name} className="ap-region-card">
+                    <span className="ap-region-icon">{r.icon}</span>
+                    <div className="ap-region-name">{r.name}</div>
+                    <span className="ap-region-state">{r.state}</span>
+                    <p className="ap-region-desc">{r.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <ThreadDivider />
+
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 6 — NEW: The Making — Step by Step
+          ───────────────────────────────────────────────────────────────── */}
+          <section className="ap-section ap-fade ap-d2">
+            <div className="ap-card">
+              <div className="ap-card-title-wrap">
+                <div className="ap-section-label">
+                  <span className="ap-ey">The Process</span>
+                  <div className="ap-section-label-line" />
+                </div>
+                <h2 className="ap-card-title">From Thread to Treasure</h2>
+                <span className="ap-gd" />
+              </div>
+              <p className="ap-body">
+                A handloom saree is not manufactured. It is grown — slowly, deliberately,
+                step by step — the way a story is told. Here is what happens between the
+                raw thread and the moment it reaches you.
+              </p>
+              <div className="ap-process-steps">
+                {PROCESS_STEPS.map(s => (
+                  <div key={s.num} className="ap-step">
+                    <div className="ap-step-num">{s.num}</div>
+                    <div className="ap-step-content">
+                      <div className="ap-step-title">{s.title}</div>
+                      <p className="ap-step-desc">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 7 — NEW: Philosophy (dark card)
+          ───────────────────────────────────────────────────────────────── */}
+          <section className="ap-fade ap-d3">
+            <div className="ap-philosophy">
+              <div style={{ textAlign: 'center', marginBottom: 44, position: 'relative', zIndex: 1 }}>
+                <div className="ap-cta-eyebrow" style={{ justifyContent: 'center', display: 'inline-flex' }}>
+                  <Sparkles size={13} color={C.goldV} />
+                  <span style={{ fontFamily: "'Jost'", fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: C.goldV, fontWeight: 600 }}>
+                    Our Philosophy
+                  </span>
+                </div>
+                <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(28px,4.5vw,44px)', fontWeight: 400, color: 'white', marginTop: 14, lineHeight: 1.1 }}>
+                  Three Truths We Weave By
+                </h2>
+                <div style={{ width: 56, height: 1, background: 'rgba(212,175,55,.45)', margin: '18px auto 0' }} />
+              </div>
+              <div className="ap-philosophy-grid">
+                {PHILOSOPHY.map(p => (
+                  <div key={p.num} className="ap-phil-item">
+                    <div className="ap-phil-num">{p.num}</div>
+                    <div className="ap-phil-title">{p.title}</div>
+                    <p className="ap-phil-desc">{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <ThreadDivider />
+
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 8 — NEW: Our Journey — Timeline
+          ───────────────────────────────────────────────────────────────── */}
+          <section className="ap-section ap-fade ap-d2">
+            <div className="ap-card">
+              <div className="ap-card-title-wrap">
+                <div className="ap-section-label">
+                  <span className="ap-ey">Our Journey</span>
+                  <div className="ap-section-label-line" />
+                </div>
+                <h2 className="ap-card-title">The Neyge Story,<br />Year by Year</h2>
+                <span className="ap-gd" />
+              </div>
+              <p className="ap-body">
+                Neyge did not begin with a business plan. It began with a conversation
+                in a weaver's courtyard in Murshidabad — and a question that has guided
+                us ever since: <em style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 16, color: '#5a3020' }}>"What if the woman who buys the saree could hear the loom that made it?"</em>
+              </p>
+              <div className="ap-timeline">
+                {TIMELINE.map(t => (
+                  <div key={t.year} className="ap-tl-item">
+                    <div className="ap-tl-dot" />
+                    <div className="ap-tl-year">{t.year}</div>
+                    <div className="ap-tl-title">{t.title}</div>
+                    <p className="ap-tl-desc">{t.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ─────────────────────────────────────────────────────────────────
+              SECTION 9 — Final CTA (ORIGINAL)
+          ───────────────────────────────────────────────────────────────── */}
           <section className="ap-fade ap-d3">
             <div className="ap-cta">
               <div className="ap-cta-eyebrow">
