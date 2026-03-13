@@ -13,7 +13,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { VideoShoppingPage } from '@/pages/VideoShoppingPage';
 import { ArtisanPage } from '@/pages/OurArtician';
 import { Chatbot } from '@/components/features/Chatbot';
-
+import {SareeBackdropSection} from '@/pages/SareeBackdropSection';
 import './styles/luxury-styles.css';
 
 function App() {
@@ -34,6 +34,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/video-shopping" element={<VideoShoppingPage />} />
             <Route path="/about" element={<ArtisanPage />} />
+            <Route path="/backdrop" element={<SareeBackdropSection />} />
           </Routes>
         </main>
         <Footer />
