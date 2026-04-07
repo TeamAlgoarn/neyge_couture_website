@@ -95,7 +95,7 @@ import { ArtisanPage } from '@/pages/OurArtician';
 import { Chatbot } from '@/components/features/Chatbot';
 import { SareeBackdropSection } from '@/pages/SareeBackdropSection';
 import { OrderConfirmationPage } from '@/pages/OrderConfirmationPage';
-
+import { CollectionDetailPage } from '@/pages/CollectionDetailPage';
 import AdminRoute from '@/admin/components/AdminRoute';
 import AdminLogin from '@/admin/pages/AdminLogin';
 import AdminDashboard from '@/admin/pages/AdminDashboard';
@@ -126,6 +126,7 @@ function AppContent() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
+          <Route path="/collections/:slug" element={<CollectionDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/video-shopping" element={<VideoShoppingPage />} />

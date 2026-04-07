@@ -20,6 +20,8 @@ class PaymentService:
 
     @staticmethod
     def _build_checkout_snapshot(user_id: str, shipping_address: dict) -> dict:
+        user_id = str(user_id)
+
         cart = CartRepository.get_or_create_cart(user_id)
         cart_items = CartRepository.get_cart_items(cart["id"])
 
@@ -99,6 +101,8 @@ class PaymentService:
 
     @staticmethod
     def create_payment_order(user_id: str, shipping_address: dict) -> dict:
+        user_id = str(user_id)
+
         snapshot = PaymentService._build_checkout_snapshot(
             user_id=user_id,
             shipping_address=shipping_address,
@@ -166,6 +170,8 @@ class PaymentService:
         razorpay_payment_id: str,
         razorpay_signature: str,
     ) -> dict:
+        user_id = str(user_id)
+
         session = PaymentRepository.get_by_razorpay_order_id_and_user(
             razorpay_order_id=razorpay_order_id,
             user_id=user_id,

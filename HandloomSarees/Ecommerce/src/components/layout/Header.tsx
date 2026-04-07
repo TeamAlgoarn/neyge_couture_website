@@ -258,7 +258,7 @@ const NAV_LINKS = [
   { to: '/',                   label: 'Home'           },
   { to: '/shop',               label: 'Shop'           },
   { to: '/video-shopping',     label: 'Video Shopping' },
-  { to: '/collections/cotton', label: 'Cotton'         },
+
   { to: '/about',              label: 'Our Artisans'   },
 ];
 const MOBILE_LINKS = [
@@ -266,7 +266,7 @@ const MOBILE_LINKS = [
   { to: '/shop',               label: 'Shop'           },
   { to: '/video-shopping',     label: 'Video Shopping' },
   { to: '/collections/silk',   label: 'Silk'           },
-  { to: '/collections/cotton', label: 'Cotton'         },
+ 
   { to: '/about',              label: 'Our Artisans'   },
 ];
  

@@ -1,19 +1,81 @@
+import { useEffect } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle, ArrowRight } from "lucide-react";
+
+type OrderAddress = {
+  name?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  phone?: string;
+};
+
+type OrderItem = {
+  id?: string;
+};
+
+type OrderData = {
+  id?: string;
+  finalTotal?: number;
+  total_amount?: number;
+  total?: number;
+  items?: OrderItem[];
+  address?: OrderAddress;
+  shipping_address?: {
+    full_name?: string;
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    phone?: string;
+  };
+};
 
 export function OrderConfirmationPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { orderId } = useParams();
 
-  const order = location.state?.order;
+  const order = location.state?.order as OrderData | undefined;
+
+  useEffect(() => {
+    if (!order && !orderId) {
+      navigate("/", { replace: true });
+    }
+  }, [order, orderId, navigate]);
 
   if (!order && !orderId) {
-    navigate("/", { replace: true });
     return null;
   }
 
   const displayOrderId = order?.id || orderId || "";
+  const totalAmount = order?.finalTotal ?? order?.total_amount ?? order?.total ?? 0;
+  const itemCount = order?.items?.length ?? 0;
+
+  const address = order?.address
+    ? {
+        name: order.address.name,
+        line1: order.address.addressLine1,
+        line2: order.address.addressLine2,
+        city: order.address.city,
+        state: order.address.state,
+        pincode: order.address.pincode,
+        phone: order.address.phone,
+      }
+    : order?.shipping_address
+    ? {
+        name: order.shipping_address.full_name,
+        line1: order.shipping_address.line1,
+        line2: order.shipping_address.line2,
+        city: order.shipping_address.city,
+        state: order.shipping_address.state,
+        pincode: order.shipping_address.postal_code,
+        phone: order.shipping_address.phone,
+      }
+    : null;
 
   return (
     <div
@@ -64,15 +126,11 @@ export function OrderConfirmationPage() {
           }}
         >
           <p><strong>Order ID:</strong> {displayOrderId}</p>
-          {order?.finalTotal && (
-            <p><strong>Total Amount:</strong> ₹{order.finalTotal}</p>
-          )}
-          {order?.items && (
-            <p><strong>Items:</strong> {order.items.length}</p>
-          )}
+          <p><strong>Total Amount:</strong> ₹{Number(totalAmount).toLocaleString("en-IN")}</p>
+          <p><strong>Items:</strong> {itemCount}</p>
         </div>
 
-        {order?.address && (
+        {address && (
           <div
             style={{
               textAlign: "left",
@@ -83,11 +141,15 @@ export function OrderConfirmationPage() {
             }}
           >
             <p><strong>Delivery Address</strong></p>
-            <p>{order.address.name}</p>
-            <p>{order.address.addressLine1}</p>
-            <p>{order.address.city}, {order.address.state}</p>
-            <p>{order.address.pincode}</p>
-            <p>{order.address.phone}</p>
+            {address.name && <p>{address.name}</p>}
+            {address.line1 && <p>{address.line1}</p>}
+            {address.line2 && <p>{address.line2}</p>}
+            <p>
+              {address.city || ""}{address.city && address.state ? ", " : ""}
+              {address.state || ""}
+            </p>
+            {address.pincode && <p>{address.pincode}</p>}
+            {address.phone && <p>{address.phone}</p>}
           </div>
         )}
 

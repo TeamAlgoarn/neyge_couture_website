@@ -242,7 +242,7 @@ const SOCIAL_ICONS = [Facebook, Instagram, Twitter, Youtube];
 const EXPLORE = [
   { label: 'Shop All',         to: '/shop' },
   { label: 'Silk Collection',  to: '/collections/silk' },
-  { label: 'Cotton Weaves',    to: '/collections/cotton' },
+
   { label: 'Our Artisans',     to: '/about' },
   { label: 'Track Order',      to: '/track' },
 ];

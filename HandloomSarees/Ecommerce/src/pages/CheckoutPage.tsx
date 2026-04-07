@@ -473,7 +473,14 @@ import { useCart } from '@/hooks/useCarts';
 import { authService } from '@/lib/auth';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
+import api from '@/api/client';
 import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Shield } from 'lucide-react';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const C = {
   maroon: '#800020',
@@ -522,7 +529,6 @@ const CSS = `
 
 @keyframes coFadeUp  {from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 @keyframes coFadeIn  {from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-@keyframes coShimmer {0%{left:-80%}100%{left:120%}}
 @keyframes coSpin    {to{transform:rotate(360deg)}}
 
 .co-fadein {animation:coFadeIn .8s cubic-bezier(.4,0,.2,1) both;}
@@ -887,6 +893,15 @@ const CSS = `
 }
 `;
 
+type CheckoutCreateResponse = {
+  data?: {
+    razorpay_order_id: string;
+    amount: number;
+    currency: string;
+    key: string;
+  };
+};
+
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, loading, getCartTotal, clearCart } = useCart();
@@ -930,87 +945,143 @@ export function CheckoutPage() {
   const shipping = subtotal > 2999 ? 0 : 150;
   const total = subtotal + shipping;
 
-  // const handlePlaceOrder = async () => {
-  //   if (!user) {
-  //     toast.error('Please log in to continue');
-  //     navigate('/login');
-  //     return;
-  //   }
+  const loadRazorpayScript = async () => {
+    return new Promise<boolean>((resolve) => {
+      const existingScript = document.getElementById('razorpay-sdk');
+      if (existingScript) {
+        resolve(true);
+        return;
+      }
 
-  //   if (!user.addresses || user.addresses.length === 0) {
-  //     toast.error('Please add a delivery address');
-  //     return;
-  //   }
+      const script = document.createElement('script');
+      script.id = 'razorpay-sdk';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
-  //   setIsProcessing(true);
-const handlePlaceOrder = async () => {
-  if (!user) {
-    toast.error("Please log in to continue");
-    navigate("/login");
-    return;
-  }
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      toast.error('Please log in to continue');
+      navigate('/login');
+      return;
+    }
 
-  if (!user.addresses || user.addresses.length === 0) {
-    toast.error("Please add a delivery address");
-    return;
-  }
+    if (!user.addresses || user.addresses.length === 0) {
+      toast.error('Please add a delivery address');
+      return;
+    }
 
+    try {
+      setIsProcessing(true);
+
+      const sdkLoaded = await loadRazorpayScript();
+      if (!sdkLoaded) {
+        toast.error('Failed to load payment gateway');
+        setIsProcessing(false);
+        return;
+      }
+
+      const shippingAddress = {
+        full_name: user.addresses[0].name,
+        phone: user.addresses[0].phone,
+        line1: user.addresses[0].addressLine1,
+        line2: user.addresses[0].addressLine2 || '',
+        city: user.addresses[0].city,
+        state: user.addresses[0].state,
+        postal_code: user.addresses[0].pincode,
+        country: 'India',
+      };
+
+      const createRes = await api.post<CheckoutCreateResponse>('/orders/create', {
+        shipping_address: shippingAddress,
+      });
+
+      const checkoutData = createRes.data?.data;
+
+      if (!checkoutData?.razorpay_order_id || !checkoutData?.key) {
+        throw new Error('Invalid checkout response');
+      }
+
+      const options = {
+        key: checkoutData.key,
+        amount: checkoutData.amount,
+        currency: checkoutData.currency,
+        name: 'Neyge Couture',
+        description: 'Order Payment',
+        order_id: checkoutData.razorpay_order_id,
+        prefill: {
+          name: user.name || '',
+          email: user.email || '',
+          contact: user.phone || shippingAddress.phone || '',
+        },
+        theme: {
+          color: C.maroon,
+        },
+      
+        handler: async function (response: any) {
   try {
-    setIsProcessing(true);
+    const verifyRes = await api.post('/payments/verify', {
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_signature: response.razorpay_signature,
+    });
 
-    const createdOrder = {
-      id: `ORD-${Date.now()}`,
-      items: cart,
-      finalTotal: total,
-      address: user.addresses[0],
-      paymentMethod,
-      createdAt: new Date().toISOString(),
-    };
+    console.log('VERIFY RESPONSE:', verifyRes.data);
 
-    const existingOrders = JSON.parse(localStorage.getItem("handloom_orders") || "[]");
-    localStorage.setItem(
-      "handloom_orders",
-      JSON.stringify([createdOrder, ...existingOrders])
-    );
+    const createdOrder =
+      verifyRes.data?.data ||
+      verifyRes.data?.order ||
+      verifyRes.data;
 
     await clearCart();
 
-    navigate("/order-success", {
-      state: { order: createdOrder }
-    });
-  } catch (error) {
-    console.error("Order placement failed", error);
-    toast.error("Failed to place order");
+    toast.success('Order placed successfully!');
+
+    setTimeout(() => {
+      if (createdOrder?.id) {
+        navigate(`/order-confirmation/${createdOrder.id}`, {
+          state: { order: createdOrder },
+        });
+      } else {
+        navigate('/profile');
+      }
+    }, 300);
+  } catch (error: any) {
+    console.error('Payment verification failed', error);
+    toast.error(
+      error?.response?.data?.detail ||
+      error?.response?.data?.message ||
+      error?.message ||
+      'Payment verification failed'
+    );
   } finally {
     setIsProcessing(false);
   }
-
-    setTimeout(async () => {
-      const orderId = 'ORD' + Date.now();
-
-      const mockOrder = {
-        id: orderId,
-        userId: user.id,
-        items: cart,
-        total: subtotal,
-        discount: 0,
-        finalTotal: total,
-        status: 'confirmed',
-        shippingAddress: user.addresses[0],
-        paymentMethod,
-        createdAt: new Date().toISOString(),
-        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+},
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+            toast.error('Payment cancelled');
+          },
+        },
       };
 
-      const orders = JSON.parse(localStorage.getItem('handloom_orders') || '[]');
-      orders.push(mockOrder);
-      localStorage.setItem('handloom_orders', JSON.stringify(orders));
-
-      await clearCart();
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error: any) {
+      console.error('Order placement failed', error);
+      toast.error(
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to place order'
+      );
       setIsProcessing(false);
-      toast.success('Order placed successfully!');
-      navigate(`/order-confirmation/${orderId}`);
-    }, 2000);
+    }
   };
 
   const PAY_OPTIONS = [
