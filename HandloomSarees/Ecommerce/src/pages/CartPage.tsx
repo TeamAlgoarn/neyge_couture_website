@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag, Sparkles, ArrowRight } from 'lucide-react';
 import { useCart } from '@/hooks/useCarts';
 import { formatCurrency } from '@/lib/utils';
@@ -383,7 +383,13 @@ export function CartPage() {
   const subtotal = getCartTotal();
   const shipping  = subtotal > 2999 ? 0 : 150;
   const total     = subtotal + shipping;
+const navigate = useNavigate();
 
+const handleCheckout = () => {
+  console.log('Proceeding to checkout');
+  console.log('Current cart:', cart);
+  navigate('/checkout');
+};
   // ── Empty state ──
   if (cart.length === 0) {
     return (
@@ -548,12 +554,13 @@ export function CartPage() {
                 </div>
 
                 {/* Checkout */}
-                <Link to="/checkout" className="cart-checkout-btn">
-                  Proceed to Checkout
-                </Link>
-                <Link to="/shop" className="cart-continue-link">
-                  ← Continue Shopping
-                </Link>
+                <button
+  type="button"
+  className="cart-checkout-btn"
+  onClick={handleCheckout}
+>
+  Proceed to Checkout
+</button>
 
                 {/* Trust */}
                 <div className="cart-trust">
