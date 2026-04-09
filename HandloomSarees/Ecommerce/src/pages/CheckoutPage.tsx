@@ -482,44 +482,55 @@ declare global {
   }
 }
 
+// ─── Brand palette (matches HomePage, CartPage, VideoShoppingPage) ────────────
 const C = {
-  maroon: '#800020',
+  maroon:   '#800020',
   maroonDk: '#5a0016',
-  gold: '#C4980A',
-  goldV: '#D4AF37',
-  cream: '#F5E6D3',
-  creamLt: '#FFF9F0',
+  gold:     '#C4980A',
+  goldV:    '#D4AF37',
+  cream:    '#F5E6D3',
+  creamLt:  '#FFF9F0',
+  creamMid: '#F8EEE2',
+  creamDk:  '#EDD8C4',
   warmGrey: '#4a3828',
-  indigo: '#4B0082',
+  navy:     '#1B2A6B',
+  forest:   '#14402A',
+  blush:    '#F2C4CE',
 };
 
+// ─── CSS – using brand fonts and styles (Cinzel + Josefin Sans) ──────────────
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
 .co-root {
-  font-family: 'Jost', sans-serif;
-  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
+  font-family: 'Josefin Sans', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
   min-height: 100vh;
   color: #1a1010;
   line-height: 1;
 }
 .co-wrap {
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 0 56px;
+  padding: 0 64px;
 }
 @media(max-width:900px){.co-wrap{padding:0 24px;}}
 @media(max-width:480px){.co-wrap{padding:0 16px;}}
 
-.co-ey {
-  font-family:'Jost';
-  font-size:11px;
-  letter-spacing:.25em;
-  text-transform:uppercase;
-  color:#C4980A;
-  font-weight:600;
+/* ── Eyebrow (brand gold) ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #C4980A;
+  font-weight: 600;
 }
+
+/* ── Gold divider ── */
+.gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 .co-page-top {
   padding-top: 140px;
@@ -550,11 +561,12 @@ const CSS = `
   margin-bottom:16px;
 }
 .co-header-title {
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(34px,5.5vw,58px);
-  font-weight:400;
-  color:#800020;
-  line-height:1.06;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(34px, 5.5vw, 58px);
+  font-weight: 400;
+  color: #800020;
+  line-height: 1.06;
+  letter-spacing: 0.04em;
 }
 
 .co-layout {
@@ -589,17 +601,18 @@ const CSS = `
   height:42px;
   border-radius:50%;
   flex-shrink:0;
-  background:linear-gradient(135deg,#800020,#4B0082);
+  background: linear-gradient(135deg, #800020 0%, #1B2A6B 100%);
   display:flex;
   align-items:center;
   justify-content:center;
   box-shadow:0 4px 14px rgba(128,0,32,.25);
 }
 .co-card-title {
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(20px,3vw,24px);
-  font-weight:500;
-  color:#800020;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(20px, 3vw, 24px);
+  font-weight: 500;
+  color: #800020;
+  letter-spacing: 0.02em;
 }
 
 .co-address-block {
@@ -609,33 +622,34 @@ const CSS = `
   padding:20px 22px;
 }
 .co-address-name {
-  font-family:'Cormorant Garamond',serif;
-  font-size:19px;
-  font-weight:500;
-  color:#800020;
-  margin-bottom:5px;
+  font-family: 'Cinzel', serif;
+  font-size: 19px;
+  font-weight: 500;
+  color: #800020;
+  margin-bottom: 5px;
+  letter-spacing: 0.02em;
 }
 .co-address-phone {
-  font-family:'Jost';
-  font-size:13px;
-  color:#4a3828;
-  font-weight:500;
-  margin-bottom:8px;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #4a3828;
+  font-weight: 500;
+  margin-bottom: 8px;
 }
 .co-address-line {
-  font-family:'Jost';
-  font-size:13px;
-  color:#9a8070;
-  font-weight:300;
-  line-height:1.65;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #9a8070;
+  font-weight: 300;
+  line-height: 1.65;
 }
 .co-address-dot {
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:#C4980A;
-  flex-shrink:0;
-  margin-top:5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #C4980A;
+  flex-shrink: 0;
+  margin-top: 5px;
 }
 
 .co-no-address {
@@ -645,7 +659,7 @@ const CSS = `
   border-radius:16px;
 }
 .co-no-address-text {
-  font-family:'Jost';
+  font-family: 'Josefin Sans';
   font-size:13px;
   color:#9a8070;
   font-weight:300;
@@ -687,17 +701,17 @@ const CSS = `
 }
 .co-pay-option.selected .co-pay-icon { transform:scale(1.1); }
 .co-pay-title {
-  font-family:'Jost';
-  font-size:13px;
-  font-weight:600;
-  color:#800020;
-  margin-bottom:2px;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  font-weight: 600;
+  color: #800020;
+  margin-bottom: 2px;
 }
 .co-pay-sub {
-  font-family:'Jost';
-  font-size:11px;
-  color:#9a8070;
-  font-weight:300;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  color: #9a8070;
+  font-weight: 300;
 }
 .co-pay-radio {
   width:20px;
@@ -727,7 +741,7 @@ const CSS = `
   top:110px;
 }
 .co-summary-bar {
-  background:linear-gradient(135deg,#800020 0%,#5a0016 55%,#4B0082 100%);
+  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #1B2A6B 100%);
   padding:22px 28px;
   position:relative;
   overflow:hidden;
@@ -744,10 +758,11 @@ const CSS = `
   pointer-events:none;
 }
 .co-summary-bar-title {
-  font-family:'Cormorant Garamond',serif;
-  font-size:22px;
-  font-weight:400;
-  color:white;
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: white;
+  letter-spacing: 0.04em;
   position:relative;
   z-index:1;
 }
@@ -777,24 +792,24 @@ const CSS = `
   background:#f4eadc;
 }
 .co-item-name {
-  font-family:'Jost';
-  font-size:12px;
-  font-weight:500;
-  color:#800020;
-  margin-bottom:3px;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  font-weight: 500;
+  color: #800020;
+  margin-bottom: 3px;
 }
 .co-item-qty  {
-  font-family:'Jost';
-  font-size:11px;
-  color:#9a8070;
-  font-weight:300;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  color: #9a8070;
+  font-weight: 300;
 }
 .co-item-price {
-  font-family:'Cormorant Garamond',serif;
-  font-size:15px;
-  font-weight:600;
-  color:#800020;
-  margin-top:2px;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #800020;
+  margin-top: 2px;
 }
 
 .co-sum-row {
@@ -805,75 +820,96 @@ const CSS = `
   border-bottom:1px solid rgba(196,152,10,.12);
 }
 .co-sum-key {
-  font-family:'Jost';
-  font-size:13px;
-  color:#4a3828;
-  font-weight:400;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #4a3828;
+  font-weight: 400;
 }
 .co-sum-val {
-  font-family:'Jost';
-  font-size:13px;
-  color:#800020;
-  font-weight:600;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #800020;
+  font-weight: 600;
 }
 .co-sum-free {
   display:flex;
   align-items:center;
   gap:5px;
-  font-family:'Jost';
-  font-size:13px;
-  color:#059669;
-  font-weight:600;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #059669;
+  font-weight: 600;
 }
 
 .co-total-strip {
   display:flex;
   justify-content:space-between;
   align-items:center;
-  background:linear-gradient(135deg,#800020 0%,#4B0082 100%);
+  background: linear-gradient(135deg, #800020 0%, #1B2A6B 100%);
   border-radius:16px;
   padding:16px 20px;
   margin:16px 0 20px;
 }
 .co-total-label {
-  font-family:'Jost';
-  font-size:12px;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
   letter-spacing:.1em;
   text-transform:uppercase;
   color:rgba(255,255,255,.65);
   font-weight:500;
 }
 .co-total-val {
-  font-family:'Cormorant Garamond',serif;
-  font-size:28px;
-  font-weight:600;
-  color:#D4AF37;
+  font-family: 'Cinzel', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #D4AF37;
+  letter-spacing: 0.02em;
 }
 
+/* Button matches btn-gold from other pages */
 .co-place-btn {
   width:100%;
   padding:16px;
   border:none;
   border-radius:100px;
-  background:linear-gradient(135deg,#D4AF37 0%,#b8960f 100%);
-  color:#800020;
-  font-family:'Jost';
-  font-size:13px;
+  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
+  color: #800020;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
   letter-spacing:.12em;
-  font-weight:600;
-  text-transform:uppercase;
-  cursor:pointer;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
   box-shadow:0 6px 24px rgba(212,175,55,.38);
   margin-bottom:10px;
+  transition: transform .35s, box-shadow .35s;
+  position: relative;
+  overflow: hidden;
+}
+.co-place-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  animation: shimmer 3s ease infinite;
+}
+@keyframes shimmer { 0%{left:-80%} 100%{left:120%} }
+.co-place-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(212,175,55,.52);
 }
 .co-place-btn:disabled{
   opacity:.55;
   cursor:not-allowed;
+  transform: none;
 }
 
 .co-place-note {
-  font-family:'Jost';
-  font-size:11px;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
   letter-spacing:.04em;
   color:#9a8070;
   text-align:center;
@@ -928,7 +964,7 @@ export function CheckoutPage() {
         <style>{CSS}</style>
         <div className="co-root">
           <div className="co-wrap co-page-top">
-            <div style={{ textAlign: 'center', padding: '80px 0', color: C.maroon }}>
+            <div style={{ textAlign: 'center', padding: '80px 0', color: C.maroon, fontFamily: "'Josefin Sans'" }}>
               Loading checkout...
             </div>
           </div>
@@ -1021,47 +1057,46 @@ export function CheckoutPage() {
         theme: {
           color: C.maroon,
         },
-      
         handler: async function (response: any) {
-  try {
-    const verifyRes = await api.post('/payments/verify', {
-      razorpay_order_id: response.razorpay_order_id,
-      razorpay_payment_id: response.razorpay_payment_id,
-      razorpay_signature: response.razorpay_signature,
-    });
+          try {
+            const verifyRes = await api.post('/payments/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
 
-    console.log('VERIFY RESPONSE:', verifyRes.data);
+            console.log('VERIFY RESPONSE:', verifyRes.data);
 
-    const createdOrder =
-      verifyRes.data?.data ||
-      verifyRes.data?.order ||
-      verifyRes.data;
+            const createdOrder =
+              verifyRes.data?.data ||
+              verifyRes.data?.order ||
+              verifyRes.data;
 
-    await clearCart();
+            await clearCart();
 
-    toast.success('Order placed successfully!');
+            toast.success('Order placed successfully!');
 
-    setTimeout(() => {
-      if (createdOrder?.id) {
-        navigate(`/order-confirmation/${createdOrder.id}`, {
-          state: { order: createdOrder },
-        });
-      } else {
-        navigate('/profile');
-      }
-    }, 300);
-  } catch (error: any) {
-    console.error('Payment verification failed', error);
-    toast.error(
-      error?.response?.data?.detail ||
-      error?.response?.data?.message ||
-      error?.message ||
-      'Payment verification failed'
-    );
-  } finally {
-    setIsProcessing(false);
-  }
-},
+            setTimeout(() => {
+              if (createdOrder?.id) {
+                navigate(`/order-confirmation/${createdOrder.id}`, {
+                  state: { order: createdOrder },
+                });
+              } else {
+                navigate('/profile');
+              }
+            }, 300);
+          } catch (error: any) {
+            console.error('Payment verification failed', error);
+            toast.error(
+              error?.response?.data?.detail ||
+              error?.response?.data?.message ||
+              error?.message ||
+              'Payment verification failed'
+            );
+          } finally {
+            setIsProcessing(false);
+          }
+        },
         modal: {
           ondismiss: function () {
             setIsProcessing(false);
@@ -1122,9 +1157,10 @@ export function CheckoutPage() {
           <div className="co-header co-fadein">
             <div className="co-header-badge">
               <Shield size={13} color={C.gold} />
-              <span className="co-ey">Secure Checkout</span>
+              <span className="ey">Secure Checkout</span>
             </div>
             <h1 className="co-header-title">Complete Your Order</h1>
+            <div className="gd" style={{ marginTop: 16 }} />
           </div>
 
           <div className="co-layout">
@@ -1211,7 +1247,7 @@ export function CheckoutPage() {
               <div className="co-summary-bar">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <Sparkles size={13} color="rgba(212,175,55,.75)" />
-                  <span style={{ fontFamily: "'Jost'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.45)' }}>
+                  <span style={{ fontFamily: "'Josefin Sans'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.45)' }}>
                     Neyge Couture
                   </span>
                 </div>

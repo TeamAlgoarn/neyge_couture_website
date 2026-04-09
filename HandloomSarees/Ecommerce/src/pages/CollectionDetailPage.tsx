@@ -3,171 +3,238 @@ import { Link, useParams } from 'react-router-dom';
 import api from '@/api/client';
 import { ArrowRight, Sparkles, ShoppingBag } from 'lucide-react';
 
+// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
+const C = {
+  maroon:   '#800020',
+  maroonDk: '#5a0016',
+  gold:     '#C4980A',
+  goldV:    '#D4AF37',
+  cream:    '#F5E6D3',
+  creamLt:  '#FFF9F0',
+  creamMid: '#F8EEE2',
+  creamDk:  '#EDD8C4',
+  warmGrey: '#4a3828',
+  navy:     '#1B2A6B',
+  forest:   '#14402A',
+  blush:    '#F2C4CE',
+};
+
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
-.cd-root{
-  min-height:100vh;
-  background:linear-gradient(170deg,#FFF9F0 0%,#F8EEE2 50%,#F5E6D3 100%);
-  font-family:'Jost',sans-serif;
-  color:#1a1010;
-}
-.cd-wrap{
-  max-width:1280px;
-  margin:0 auto;
-  padding:130px 56px 80px;
-}
-@media(max-width:900px){.cd-wrap{padding:120px 24px 60px;}}
-@media(max-width:480px){.cd-wrap{padding:110px 16px 50px;}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
-.cd-breadcrumb{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  font-size:12px;color:#7d6857;margin-bottom:24px;
-}
-.cd-breadcrumb a{
-  color:#800020;text-decoration:none;
+.cd-root {
+  font-family: 'Josefin Sans', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
+  min-height: 100vh;
+  color: #1a1010;
+  line-height: 1;
 }
 
-.cd-hero{
-  position:relative;
-  border-radius:28px;
-  overflow:hidden;
-  min-height:420px;
-  box-shadow:0 20px 70px rgba(0,0,0,.12);
-  margin-bottom:40px;
-  background:#eee;
+.cd-wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 140px 64px 80px;
 }
-.cd-hero-img{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-}
-.cd-hero-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to top, rgba(20,10,10,.72) 0%, rgba(40,15,20,.45) 42%, rgba(0,0,0,.12) 100%);
-}
-.cd-hero-content{
-  position:relative;z-index:2;
-  padding:46px 42px;
-  max-width:760px;
-  color:white;
-}
-@media(max-width:640px){.cd-hero-content{padding:28px 22px;}}
-.cd-badge{
-  display:inline-flex;align-items:center;gap:8px;
-  background:rgba(212,175,55,.16);
-  border:1px solid rgba(212,175,55,.35);
-  padding:7px 16px;border-radius:100px;margin-bottom:16px;
-}
-.cd-ey{
-  font-size:11px;letter-spacing:.22em;text-transform:uppercase;
-  color:#D4AF37;font-weight:600;
-}
-.cd-title{
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(40px,6vw,68px);
-  font-weight:400;
-  line-height:1.02;
-  margin-bottom:14px;
-}
-.cd-desc{
-  font-size:15px;line-height:1.8;color:rgba(255,255,255,.88);
-  max-width:620px;
-}
-.cd-meta{
-  display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;
-}
-.cd-pill{
-  display:inline-flex;align-items:center;
-  padding:8px 14px;border-radius:100px;
-  background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.16);
-  font-size:12px;color:rgba(255,255,255,.92);
+@media(max-width:900px){ .cd-wrap { padding: 120px 24px 60px; } }
+@media(max-width:480px){ .cd-wrap { padding: 110px 16px 50px; } }
+
+/* ── Eyebrow ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #C4980A;
+  font-weight: 600;
 }
 
-.cd-section-head{
-  display:flex;align-items:end;justify-content:space-between;gap:16px;
-  margin-bottom:24px;flex-wrap:wrap;
+/* ── Gold divider ── */
+.gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
+
+/* ── Breadcrumb ── */
+.cd-breadcrumb {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  color: #9a8070;
+  margin-bottom: 24px;
 }
-.cd-section-title{
-  font-family:'Cormorant Garamond',serif;
-  font-size:38px;font-weight:500;color:#800020;line-height:1.1;
+.cd-breadcrumb a {
+  color: #800020;
+  text-decoration: none;
+  transition: color 0.2s;
 }
-.cd-section-sub{
-  font-size:14px;color:#6b5848;line-height:1.7;
+.cd-breadcrumb a:hover { color: #C4980A; }
+
+/* ── Back link ── */
+.cd-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 18px;
+  text-decoration: none;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  font-weight: 500;
+  color: #800020;
+  transition: gap 0.25s, color 0.25s;
+}
+.cd-back:hover { gap: 12px; color: #C4980A; }
+
+/* ── Hero section ── */
+.cd-hero {
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  min-height: 420px;
+  box-shadow: 0 20px 70px rgba(0,0,0,.12);
+  margin-bottom: 40px;
+  background: #eee;
+}
+.cd-hero-img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+}
+.cd-hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(90,0,22,.78) 0%, rgba(27,42,107,.55) 42%, rgba(0,0,0,.18) 100%);
+}
+.cd-hero-content {
+  position: relative; z-index: 2;
+  padding: 46px 42px;
+  max-width: 760px;
+  color: white;
+}
+@media(max-width:640px){ .cd-hero-content { padding: 28px 22px; } }
+.cd-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(212,175,55,.16);
+  border: 1px solid rgba(212,175,55,.35);
+  padding: 7px 16px; border-radius: 100px; margin-bottom: 16px;
+}
+.cd-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(40px, 6vw, 68px);
+  font-weight: 400;
+  line-height: 1.02;
+  margin-bottom: 14px;
+  letter-spacing: 0.04em;
+}
+.cd-desc {
+  font-family: 'Josefin Sans';
+  font-size: 15px;
+  line-height: 1.8;
+  color: rgba(255,255,255,.88);
+  max-width: 620px;
+  font-weight: 300;
+}
+.cd-meta {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px;
+}
+.cd-pill {
+  display: inline-flex; align-items: center;
+  padding: 8px 14px; border-radius: 100px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.16);
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  color: rgba(255,255,255,.92);
+  font-weight: 400;
 }
 
-.cd-state{
-  border:1px solid rgba(196,152,10,.2);
-  background:rgba(255,249,240,.95);
-  border-radius:22px;
-  padding:40px 24px;
-  text-align:center;
-  box-shadow:0 8px 30px rgba(0,0,0,.04);
+/* ── Section headers ── */
+.cd-section-head {
+  display: flex; align-items: end; justify-content: space-between; gap: 16px;
+  margin-bottom: 24px; flex-wrap: wrap;
 }
-.cd-error{color:#b42318;}
-.cd-loading{color:#6b5848;}
-
-.cd-grid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:24px;
+.cd-section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 38px; font-weight: 500; color: #800020; line-height: 1.1;
+  letter-spacing: 0.02em;
 }
-@media(max-width:1100px){.cd-grid{grid-template-columns:repeat(3,1fr);}}
-@media(max-width:820px){.cd-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:520px){.cd-grid{grid-template-columns:1fr;}}
-
-.cd-card{
-  display:block;
-  text-decoration:none;
-  background:rgba(255,249,240,.96);
-  border:1px solid rgba(196,152,10,.18);
-  border-radius:24px;
-  overflow:hidden;
-  box-shadow:0 10px 28px rgba(0,0,0,.05);
-  transition:transform .35s ease, box-shadow .35s ease, border-color .35s ease;
-}
-.cd-card:hover{
-  transform:translateY(-6px);
-  box-shadow:0 18px 44px rgba(0,0,0,.12);
-  border-color:rgba(196,152,10,.4);
-}
-.cd-card-img-wrap{
-  aspect-ratio:3/4;
-  background:#f1e4d2;
-  overflow:hidden;
-}
-.cd-card-img{
-  width:100%;height:100%;object-fit:cover;display:block;
-  transition:transform .6s ease;
-}
-.cd-card:hover .cd-card-img{transform:scale(1.06);}
-.cd-card-body{padding:18px 18px 20px;}
-.cd-card-title{
-  font-family:'Cormorant Garamond',serif;
-  font-size:24px;font-weight:500;color:#800020;line-height:1.12;
-  margin-bottom:8px;
-}
-.cd-card-desc{
-  font-size:13px;line-height:1.65;color:#6d5a4b;
-  min-height:42px;
-}
-.cd-card-bottom{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-top:16px;gap:12px;
-}
-.cd-price{
-  font-size:18px;font-weight:600;color:#800020;
-}
-.cd-link{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  font-weight:600;color:#C4980A;
+.cd-section-sub {
+  font-family: 'Josefin Sans';
+  font-size: 14px; color: #6b5848; line-height: 1.7;
+  font-weight: 300;
 }
 
-.cd-back{
-  display:inline-flex;align-items:center;gap:8px;
-  margin-bottom:18px;
-  text-decoration:none;color:#800020;font-size:13px;font-weight:500;
+/* ── State messages ── */
+.cd-state {
+  border: 1px solid rgba(196,152,10,.2);
+  background: rgba(255,249,240,.95);
+  border-radius: 24px;
+  padding: 40px 24px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,.04);
+  font-family: 'Josefin Sans';
+  font-weight: 300;
 }
+.cd-error { color: #b42318; }
+.cd-loading { color: #6b5848; }
+
+/* ── Product grid (matches home page featured products) ── */
+.cd-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+@media(max-width:1100px){ .cd-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width:820px){ .cd-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width:520px){ .cd-grid { grid-template-columns: 1fr; } }
+
+.cd-card {
+  display: block;
+  text-decoration: none;
+  background: rgba(255,249,240,.96);
+  border: 1px solid rgba(196,152,10,.18);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(0,0,0,.05);
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+}
+.cd-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 44px rgba(0,0,0,.12);
+  border-color: rgba(196,152,10,.4);
+}
+.cd-card-img-wrap {
+  aspect-ratio: 3/4;
+  background: #f1e4d2;
+  overflow: hidden;
+}
+.cd-card-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform .6s ease;
+}
+.cd-card:hover .cd-card-img { transform: scale(1.06); }
+.cd-card-body { padding: 18px 18px 20px; }
+.cd-card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 24px; font-weight: 500; color: #800020; line-height: 1.12;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+.cd-card-desc {
+  font-family: 'Josefin Sans';
+  font-size: 13px; line-height: 1.65; color: #6d5a4b;
+  min-height: 42px;
+  font-weight: 300;
+}
+.cd-card-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 16px; gap: 12px;
+}
+.cd-price {
+  font-family: 'Cinzel', serif;
+  font-size: 18px; font-weight: 600; color: #800020;
+}
+.cd-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Josefin Sans';
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  font-weight: 600; color: #C4980A;
+  transition: gap 0.25s;
+}
+.cd-card:hover .cd-link { gap: 10px; }
 `;
 
 type Collection = {
@@ -327,8 +394,8 @@ export function CollectionDetailPage() {
             <span>{collection.name}</span>
           </div>
 
-          <Link to="/" className="cd-back">
-            ← Back
+          <Link to="/shop" className="cd-back">
+            ← Back to Shop
           </Link>
 
           <section className="cd-hero">
@@ -341,7 +408,7 @@ export function CollectionDetailPage() {
             <div className="cd-hero-content">
               <div className="cd-badge">
                 <Sparkles size={13} color="#D4AF37" />
-                <span className="cd-ey">Collection</span>
+                <span className="ey">Collection</span>
               </div>
 
               <h1 className="cd-title">{collection.name}</h1>
@@ -365,10 +432,11 @@ export function CollectionDetailPage() {
               </p>
             </div>
           </div>
+          <div className="gd" style={{ marginBottom: 32 }} />
 
           {products.length === 0 ? (
             <div className="cd-state">
-              <ShoppingBag size={28} style={{ marginBottom: 12, color: '#C4980A' }} />
+              <ShoppingBag size={28} style={{ marginBottom: 12, color: C.gold }} />
               <div>No products available in this collection yet.</div>
             </div>
           ) : (

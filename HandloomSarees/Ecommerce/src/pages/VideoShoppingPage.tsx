@@ -7,7 +7,7 @@ import { CalendarScheduler } from '@/components/features/CalenderScheduler';
 import { authService } from '@/lib/auth';
 import { toast } from 'sonner';
 
-// ─── Brand palette ────────────────────────────────────────────────────────────
+// ─── Brand palette (matches home page) ────────────────────────────────────────
 const C = {
   maroon:   "#800020",
   maroonDk: "#5a0016",
@@ -15,49 +15,55 @@ const C = {
   goldV:    "#D4AF37",
   cream:    "#F5E6D3",
   creamLt:  "#FFF9F0",
+  creamMid: "#F8EEE2",
+  creamDk:  "#EDD8C4",
   warmGrey: "#4a3828",
-  indigo:   "#4B0082",
+  navy:     "#1B2A6B",
+  forest:   "#14402A",
 };
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
+// ─── CSS – using same brand classes as home page, plus video-specific additions ──
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 .vs-root {
-  font-family: 'Jost', sans-serif;
+  font-family: 'Josefin Sans', sans-serif;
   background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
   min-height: 100vh;
   color: #1a1010;
   line-height: 1;
 }
 
-/* ── Wrap ── */
+/* ── Wrap (matches home page .wrap) ── */
 .vs-wrap {
-  max-width: 1080px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 0 56px;
+  padding: 0 64px;
 }
 @media(max-width: 900px)  { .vs-wrap { padding: 0 24px; } }
 @media(max-width: 480px)  { .vs-wrap { padding: 0 16px; } }
 
-/* ── Eyebrow ── */
-.vs-ey {
-  font-family: 'Jost'; font-size: 11px;
-  letter-spacing: .25em; text-transform: uppercase;
-  color: #C4980A; font-weight: 600;
+/* ── Eyebrow label ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: var(--gold, #C4980A);
+  font-weight: 600;
 }
 
 /* ── Gold divider ── */
-.vs-gd { width: 56px; height: 1px; background: #C4980A; margin: 0 auto; display: block; }
+.gd   { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
+.gd-c { margin: 0 auto; }
 
 /* ─────────────────────────────
-   ANIMATIONS
+   ANIMATIONS (same as home page)
 ───────────────────────────── */
 @keyframes vsFadeUp   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-@keyframes vsShimmer  { 0%{left:-80%} 100%{left:120%} }
-@keyframes vsGoldBlink{ 0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0)} 50%{box-shadow:0 0 22px 3px rgba(212,175,55,.28)} }
+@keyframes goldBlink  { 0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0)} 50%{box-shadow:0 0 22px 3px rgba(212,175,55,.28)} }
 
 .vs-fade { animation: vsFadeUp .75s cubic-bezier(.4,0,.2,1) both; }
 .vs-d0 { animation-delay:0s    }
@@ -66,7 +72,7 @@ const CSS = `
 .vs-d3 { animation-delay:.32s  }
 
 /* ─────────────────────────────
-   PAGE HEADER (no hero image)
+   PAGE HEADER
 ───────────────────────────── */
 .vs-header {
   text-align: center;
@@ -80,20 +86,26 @@ const CSS = `
   margin-bottom: 22px;
 }
 .vs-header-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(36px, 5.5vw, 60px);
-  font-weight: 400; line-height: 1.08;
-  color: #800020; margin-bottom: 18px;
+  font-weight: 400;
+  line-height: 1.08;
+  color: #800020;
+  margin-bottom: 18px;
+  letter-spacing: 0.04em;
 }
 .vs-header-sub {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(16px, 2.2vw, 20px);
-  font-style: italic; font-weight: 300;
-  color: #4a3828; max-width: 560px;
-  margin: 0 auto 22px; line-height: 1.7;
+  font-style: italic;
+  font-weight: 300;
+  color: #4a3828;
+  max-width: 560px;
+  margin: 0 auto 22px;
+  line-height: 1.7;
 }
 
-/* ── Step indicator ── */
+/* ── Step indicator (brand styled) ── */
 .vs-steps {
   display: flex; justify-content: center; align-items: center;
   gap: 0; margin-bottom: 52px; flex-wrap: wrap;
@@ -104,7 +116,7 @@ const CSS = `
 .vs-step-dot {
   width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Jost'; font-size: 12px; font-weight: 600;
+  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 600;
   transition: all .35s;
 }
 .vs-step-dot.done {
@@ -114,7 +126,7 @@ const CSS = `
 .vs-step-dot.active {
   background: linear-gradient(135deg, #D4AF37, #C4980A);
   color: #800020; box-shadow: 0 4px 14px rgba(212,175,55,.35);
-  animation: vsGoldBlink 2.5s ease infinite;
+  animation: goldBlink 2.5s ease infinite;
 }
 .vs-step-dot.idle {
   background: rgba(196,152,10,.12);
@@ -122,7 +134,7 @@ const CSS = `
   color: #9a8070;
 }
 .vs-step-label {
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .1em;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .1em;
   text-transform: uppercase; margin-top: 6px; text-align: center;
   color: #9a8070;
 }
@@ -140,7 +152,7 @@ const CSS = `
 }
 
 /* ─────────────────────────────
-   ADVISOR CARDS
+   ADVISOR CARDS (brand card style)
 ───────────────────────────── */
 .vs-advisors-grid {
   display: grid;
@@ -175,19 +187,20 @@ const CSS = `
   box-shadow: 0 6px 20px rgba(0,0,0,.1);
 }
 .vs-advisor-name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 22px; font-weight: 500; color: #800020; margin-bottom: 6px;
+  letter-spacing: 0.02em;
 }
 .vs-advisor-rating {
   display: flex; align-items: center; gap: 5px; margin-bottom: 8px;
 }
 .vs-advisor-bio {
-  font-family: 'Jost'; font-size: 13px; color: #4a3828;
+  font-family: 'Josefin Sans'; font-size: 13px; color: #4a3828;
   font-weight: 300; line-height: 1.75; margin-bottom: 10px;
 }
 .vs-advisor-meta {
   display: flex; align-items: center; gap: 6px;
-  font-family: 'Jost'; font-size: 12px; color: #9a8070; flex-wrap: wrap;
+  font-family: 'Josefin Sans'; font-size: 12px; color: #9a8070; flex-wrap: wrap;
 }
 .vs-advisor-footer {
   display: flex; align-items: center; justify-content: space-between;
@@ -196,12 +209,12 @@ const CSS = `
 .vs-advisor-tag {
   padding: 5px 14px; border-radius: 100px;
   background: rgba(196,152,10,.1); border: 1px solid rgba(196,152,10,.3);
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .08em;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .08em;
   color: #800020; text-transform: uppercase; font-weight: 500;
 }
 .vs-select-btn {
   display: flex; align-items: center; gap: 6px;
-  font-family: 'Jost'; font-size: 12px; letter-spacing: .1em;
+  font-family: 'Josefin Sans'; font-size: 12px; letter-spacing: .1em;
   text-transform: uppercase; color: #C4980A; font-weight: 600;
   background: none; border: none; cursor: pointer;
   transition: gap .25s, color .25s;
@@ -209,7 +222,7 @@ const CSS = `
 .vs-select-btn:hover { gap: 10px; color: #800020; }
 
 /* ─────────────────────────────
-   STEP PANELS (schedule, prefs, confirm)
+   STEP PANELS (same as home page card style)
 ───────────────────────────── */
 .vs-panel {
   background: rgba(255,249,240,.97); backdrop-filter: blur(12px);
@@ -220,9 +233,8 @@ const CSS = `
   overflow: hidden;
 }
 
-/* Panel top bar (maroon) */
 .vs-panel-bar {
-  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #4B0082 100%);
+  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #1B2A6B 100%);
   padding: 22px 32px;
   display: flex; align-items: center; justify-content: space-between;
   position: relative; overflow: hidden;
@@ -233,25 +245,22 @@ const CSS = `
   border: 1px solid rgba(212,175,55,.15); pointer-events: none;
 }
 .vs-panel-bar-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 22px; font-weight: 400; color: white;
+  letter-spacing: 0.04em;
 }
 .vs-panel-bar-back {
   display: flex; align-items: center; gap: 6px;
-  font-family: 'Jost'; font-size: 12px; letter-spacing: .1em;
+  font-family: 'Josefin Sans'; font-size: 12px; letter-spacing: .1em;
   text-transform: uppercase; color: rgba(255,255,255,.65);
   background: none; border: none; cursor: pointer;
   transition: color .25s;
 }
 .vs-panel-bar-back:hover { color: #D4AF37; }
 
-/* Panel body */
 .vs-panel-body { padding: 36px 36px 32px; }
 @media(max-width: 600px) { .vs-panel-body { padding: 24px 20px 24px; } }
 
-/* ─────────────────────────────
-   SELECTED ADVISOR CHIP (inside panel)
-───────────────────────────── */
 .vs-selected-advisor {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 18px;
@@ -264,7 +273,7 @@ const CSS = `
 }
 
 /* ─────────────────────────────
-   FORM INPUTS
+   FORM INPUTS (brand styled)
 ───────────────────────────── */
 .vs-input, .vs-textarea {
   width: 100%;
@@ -272,7 +281,7 @@ const CSS = `
   background: white;
   border: 1.5px solid rgba(196,152,10,.3);
   border-radius: 14px;
-  font-family: 'Jost'; font-size: 14px; color: #1a1010;
+  font-family: 'Josefin Sans'; font-size: 14px; color: #1a1010;
   transition: border-color .25s, box-shadow .25s;
   line-height: 1.5;
 }
@@ -286,7 +295,7 @@ const CSS = `
 }
 .vs-textarea { resize: vertical; min-height: 110px; }
 .vs-input-label {
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .15em;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .15em;
   text-transform: uppercase; color: #C4980A; font-weight: 600;
   margin-bottom: 7px; display: block;
 }
@@ -299,49 +308,61 @@ const CSS = `
 @media(max-width: 560px) { .vs-fields-grid { grid-template-columns: 1fr; } }
 
 /* ─────────────────────────────
-   BUTTONS
+   BUTTONS (matching home page)
 ───────────────────────────── */
+.btn-gold {
+  display:inline-flex; align-items:center; gap:10px;
+  padding:14px 38px;
+  background:linear-gradient(135deg, #D4AF37 0%, #b89a0c 100%);
+  color:#800020;
+  font-family:'Josefin Sans'; font-size:10px; letter-spacing:.22em;
+  font-weight:700; text-transform:uppercase;
+  text-decoration:none; border:none; cursor:pointer;
+  transition:transform .35s cubic-bezier(.4,0,.2,1), box-shadow .35s;
+  box-shadow:0 5px 24px rgba(196,152,10,.32);
+  position:relative; overflow:hidden;
+}
+.btn-gold::after {
+  content:''; position:absolute; top:0; left:-80%; width:60%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  animation: shimmer 3s ease infinite;
+}
+@keyframes shimmer { 0%{left:-80%} 100%{left:120%} }
+.btn-gold:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(196,152,10,.48); }
+
+.btn-maroon {
+  display:inline-flex; align-items:center; gap:10px;
+  padding:14px 42px;
+  background:#800020;
+  color:white;
+  font-family:'Josefin Sans'; font-size:10px; letter-spacing:.22em;
+  font-weight:700; text-transform:uppercase;
+  text-decoration:none; border:none; cursor:pointer;
+  transition:transform .35s, box-shadow .35s, background .3s;
+  box-shadow:0 5px 24px rgba(128,0,32,.2);
+}
+.btn-maroon:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(128,0,32,.36); background:#5a0016; }
+
+.btn-outline {
+  display:inline-flex; align-items:center; gap:10px;
+  padding:13px 36px;
+  border:1.5px solid rgba(196,152,10,.5);
+  background:transparent;
+  color:#4a3828;
+  font-family:'Josefin Sans'; font-size:10px; letter-spacing:.22em;
+  font-weight:500; text-transform:uppercase;
+  cursor:pointer;
+  transition:transform .35s, background .3s, border-color .3s;
+}
+.btn-outline:hover { transform:translateY(-2px); background:rgba(196,152,10,.08); border-color:#C4980A; }
+
 .vs-btn-row {
   display: flex; gap: 14px; margin-top: 32px; flex-wrap: wrap;
 }
-.vs-btn-primary {
-  flex: 1; min-width: 140px; padding: 15px 24px;
-  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
-  color: #800020; border: none; border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
-  font-weight: 600; text-transform: uppercase; cursor: pointer;
-  transition: transform .35s, box-shadow .35s;
-  box-shadow: 0 6px 24px rgba(212,175,55,.38);
-  position: relative; overflow: hidden;
+@media(max-width: 600px) {
+  .vs-btn-row { flex-direction: column; }
+  .btn-gold, .btn-maroon, .btn-outline { width: 100%; justify-content: center; }
 }
-.vs-btn-primary::after {
-  content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
-  animation: vsShimmer 3s ease infinite;
-}
-.vs-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
-.vs-btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-
-.vs-btn-secondary {
-  flex: 1; min-width: 120px; padding: 14px 24px;
-  background: transparent;
-  border: 1.5px solid rgba(196,152,10,.4); border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .10em;
-  font-weight: 500; text-transform: uppercase; color: #4a3828; cursor: pointer;
-  transition: border-color .25s, color .25s, transform .3s;
-}
-.vs-btn-secondary:hover { border-color: #800020; color: #800020; transform: translateY(-2px); }
-
-.vs-btn-maroon {
-  flex: 1; min-width: 140px; padding: 15px 24px;
-  background: linear-gradient(135deg, #800020 0%, #4B0082 100%);
-  color: white; border: none; border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
-  font-weight: 600; text-transform: uppercase; cursor: pointer;
-  transition: transform .35s, box-shadow .35s;
-  box-shadow: 0 6px 24px rgba(128,0,32,.28);
-}
-.vs-btn-maroon:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(128,0,32,.4); }
 
 /* ─────────────────────────────
    CONFIRM STEP
@@ -351,15 +372,16 @@ const CSS = `
   background: rgba(196,152,10,.1); border: 1.5px solid rgba(196,152,10,.35);
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 28px;
-  animation: vsGoldBlink 3s ease infinite;
+  animation: goldBlink 3s ease infinite;
 }
 .vs-confirm-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 400; color: #800020; margin-bottom: 12px; text-align: center;
+  letter-spacing: 0.04em;
 }
 .vs-confirm-meta {
-  font-family: 'Jost'; font-size: 14px; color: #4a3828;
+  font-family: 'Josefin Sans'; font-size: 14px; color: #4a3828;
   font-weight: 300; text-align: center; line-height: 1.8; margin-bottom: 8px;
 }
 .vs-confirm-detail {
@@ -372,28 +394,26 @@ const CSS = `
 }
 .vs-confirm-row:last-child { border-bottom: none; }
 .vs-confirm-key {
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .12em;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .12em;
   text-transform: uppercase; color: #9a8070; font-weight: 500;
 }
 .vs-confirm-val {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 17px; font-weight: 500; color: #800020;
+  letter-spacing: 0.02em;
 }
 
 /* ─────────────────────────────
-   MOBILE
+   MOBILE ADJUSTMENTS
 ───────────────────────────── */
 @media(max-width: 600px) {
   .vs-header { padding-top: 160px;  }
   .vs-header-title { font-size: 32px; }
-  .vs-btn-row { flex-direction: column; }
-  .vs-btn-primary, .vs-btn-secondary, .vs-btn-maroon { flex: none; width: 100%; }
   .vs-advisor-inner { flex-direction: column; }
   .vs-advisor-img { width: 100%; height: 180px; border-radius: 16px; }
 }
 `;
 
-// ─── Step Indicator ───────────────────────────────────────────────────────────
 const STEPS = ['Advisor', 'Schedule', 'Preferences', 'Confirm'];
 const STEP_KEYS = ['advisors', 'schedule', 'preferences', 'confirm'];
 
@@ -419,7 +439,6 @@ function StepBar({ current }: { current: string }) {
   );
 }
 
-// ─── COMPONENT ────────────────────────────────────────────────────────────────
 export function VideoShoppingPage() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
@@ -474,19 +493,18 @@ export function VideoShoppingPage() {
       <style>{CSS}</style>
       <div className="vs-root">
 
-        {/* ── Page Header ── */}
         <header className="vs-header">
           <div className="vs-fade vs-d0">
             <div className="vs-header-badge">
               <Sparkles size={13} color={C.gold} />
-              <span className="vs-ey">Premium Experience</span>
+              <span className="ey">Premium Experience</span>
             </div>
           </div>
           <h1 className="vs-header-title vs-fade vs-d1">
-            Video Shopping<br />
+            Video Shopping
           </h1>
           <div className="vs-fade vs-d1">
-            <span className="vs-gd" style={{ marginBottom: 20 }} />
+            <span className="gd" style={{ marginBottom: 20 }} />
           </div>
           <p className="vs-header-sub vs-fade vs-d2">
             Book a private session with our expert stylists and explore
@@ -499,7 +517,6 @@ export function VideoShoppingPage() {
 
         <div className="vs-wrap" style={{ paddingBottom: 80 }}>
 
-          {/* ══ STEP 1 — ADVISORS ══ */}
           {step === 'advisors' && (
             <div className="vs-advisors-grid vs-fade vs-d0">
               {FASHION_ADVISORS.map((advisor, i) => (
@@ -515,10 +532,10 @@ export function VideoShoppingPage() {
                       <div className="vs-advisor-name">{advisor.name}</div>
                       <div className="vs-advisor-rating">
                         <Star size={13} fill={C.goldV} color={C.goldV} />
-                        <span style={{ fontFamily: "'Jost'", fontSize: 13, color: C.warmGrey, fontWeight: 500 }}>
+                        <span style={{ fontFamily: "'Josefin Sans'", fontSize: 13, color: C.warmGrey, fontWeight: 500 }}>
                           {advisor.rating}
                         </span>
-                        <span style={{ fontFamily: "'Jost'", fontSize: 11, color: '#9a8070', marginLeft: 4 }}>
+                        <span style={{ fontFamily: "'Josefin Sans'", fontSize: 11, color: '#9a8070', marginLeft: 4 }}>
                           · {advisor.experience} yrs exp
                         </span>
                       </div>
@@ -540,7 +557,6 @@ export function VideoShoppingPage() {
             </div>
           )}
 
-          {/* ══ STEP 2 — SCHEDULE ══ */}
           {step === 'schedule' && selectedAdvisor && (
             <div className="vs-panel vs-fade vs-d0">
               <div className="vs-panel-bar">
@@ -550,14 +566,13 @@ export function VideoShoppingPage() {
                 </button>
               </div>
               <div className="vs-panel-body">
-                {/* Selected advisor chip */}
                 <div className="vs-selected-advisor">
                   <img src={selectedAdvisor.image} alt={selectedAdvisor.name} />
                   <div>
-                    <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 17, fontWeight: 500, color: C.maroon }}>
+                    <div style={{ fontFamily: "'Cinzel', serif", fontSize: 17, fontWeight: 500, color: C.maroon }}>
                       {selectedAdvisor.name}
                     </div>
-                    <div style={{ fontFamily: "'Jost'", fontSize: 12, color: '#9a8070', marginTop: 3 }}>
+                    <div style={{ fontFamily: "'Josefin Sans'", fontSize: 12, color: '#9a8070', marginTop: 3 }}>
                       30-min styling session · Free of charge
                     </div>
                   </div>
@@ -573,9 +588,9 @@ export function VideoShoppingPage() {
                 />
 
                 <div className="vs-btn-row">
-                  <button className="vs-btn-secondary" onClick={() => setStep('advisors')}>← Back</button>
+                  <button className="btn-outline" onClick={() => setStep('advisors')}>← Back</button>
                   <button
-                    className="vs-btn-primary"
+                    className="btn-gold"
                     onClick={handleScheduleNext}
                     disabled={!selectedDate || !selectedTime}
                   >
@@ -586,7 +601,6 @@ export function VideoShoppingPage() {
             </div>
           )}
 
-          {/* ══ STEP 3 — PREFERENCES ══ */}
           {step === 'preferences' && (
             <div className="vs-panel vs-fade vs-d0">
               <div className="vs-panel-bar">
@@ -596,7 +610,7 @@ export function VideoShoppingPage() {
                 </button>
               </div>
               <div className="vs-panel-body">
-                <p style={{ fontFamily: "'Jost'", fontSize: 13, color: '#9a8070', fontWeight: 300, lineHeight: 1.7, marginBottom: 28 }}>
+                <p style={{ fontFamily: "'Josefin Sans'", fontSize: 13, color: '#9a8070', fontWeight: 300, lineHeight: 1.7, marginBottom: 28 }}>
                   Help your stylist prepare the perfect selection for you. All fields are optional.
                 </p>
 
@@ -626,8 +640,8 @@ export function VideoShoppingPage() {
                 </div>
 
                 <div className="vs-btn-row">
-                  <button className="vs-btn-secondary" onClick={() => setStep('schedule')}>← Back</button>
-                  <button className="vs-btn-primary" onClick={handleBookConsultation}>
+                  <button className="btn-outline" onClick={() => setStep('schedule')}>← Back</button>
+                  <button className="btn-maroon" onClick={handleBookConsultation}>
                     Book Consultation ✦
                   </button>
                 </div>
@@ -635,7 +649,6 @@ export function VideoShoppingPage() {
             </div>
           )}
 
-          {/* ══ STEP 4 — CONFIRM ══ */}
           {step === 'confirm' && selectedAdvisor && selectedDate && selectedTime && (
             <div className="vs-panel vs-fade vs-d0" style={{ maxWidth: 560 }}>
               <div className="vs-panel-bar">
@@ -665,10 +678,10 @@ export function VideoShoppingPage() {
                 </div>
 
                 <div className="vs-btn-row">
-                  <button className="vs-btn-maroon" onClick={() => navigate('/profile')}>
+                  <button className="btn-maroon" onClick={() => navigate('/profile')}>
                     View My Consultations
                   </button>
-                  <button className="vs-btn-secondary" onClick={() => navigate('/shop')}>
+                  <button className="btn-outline" onClick={() => navigate('/shop')}>
                     Continue Shopping
                   </button>
                 </div>

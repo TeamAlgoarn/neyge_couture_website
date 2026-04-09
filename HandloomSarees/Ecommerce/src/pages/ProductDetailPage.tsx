@@ -731,6 +731,7 @@ import { SareeCard } from '@/components/features/SareeCard';
 import { getProductBySlug, getProducts } from '@/api/products';
 import type { Saree } from '@/types';
 
+// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
 const C = {
   maroon: '#800020',
   maroonDk: '#5a0016',
@@ -738,38 +739,47 @@ const C = {
   goldV: '#D4AF37',
   cream: '#F5E6D3',
   creamLt: '#FFF9F0',
+  creamMid: '#F8EEE2',
+  creamDk: '#EDD8C4',
   warmGrey: '#4a3828',
-  indigo: '#4B0082',
+  navy: '#1B2A6B',
+  forest: '#14402A',
+  blush: '#F2C4CE',
 };
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 .pd-root {
-  font-family: 'Jost', sans-serif;
-  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
+  font-family: 'Josefin Sans', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
   min-height: 100vh;
   color: #1a1010;
   line-height: 1;
 }
 
 .pd-wrap {
-  max-width: 1280px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 0 56px;
+  padding: 0 64px;
 }
 @media(max-width: 900px) { .pd-wrap { padding: 0 24px; } }
 @media(max-width: 480px) { .pd-wrap { padding: 0 16px; } }
 
-.pd-ey {
-  font-family: 'Jost'; font-size: 11px;
-  letter-spacing: .25em; text-transform: uppercase;
-  color: #C4980A; font-weight: 600;
+/* ── Eyebrow ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #C4980A;
+  font-weight: 600;
 }
 
-.pd-gd { width: 48px; height: 1px; background: #C4980A; display: block; }
+/* ── Gold divider ── */
+.gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 @keyframes pdFadeUp   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
 @keyframes pdFadeIn   { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
@@ -789,7 +799,8 @@ const CSS = `
 .pd-breadcrumb {
   display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
   margin-bottom: 40px;
-  font-family: 'Jost'; font-size: 12px; letter-spacing: .06em;
+  font-family: 'Josefin Sans';
+  font-size: 12px; letter-spacing: .06em;
   color: #9a8070;
 }
 .pd-breadcrumb a { color: #9a8070; text-decoration: none; transition: color .2s; }
@@ -808,6 +819,7 @@ const CSS = `
   .pd-main-grid { grid-template-columns: 1fr; gap: 40px; }
 }
 
+/* Image gallery */
 .pd-img-main {
   position: relative;
   border-radius: 24px; overflow: hidden;
@@ -851,7 +863,8 @@ const CSS = `
   background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
   color: rgba(255,255,255,.9); border-radius: 100px;
   padding: 5px 14px;
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .1em;
+  font-family: 'Josefin Sans';
+  font-size: 11px; letter-spacing: .1em;
   z-index: 2;
 }
 
@@ -870,28 +883,34 @@ const CSS = `
 }
 .pd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
+/* Details */
 .pd-details { display: flex; flex-direction: column; gap: 22px; }
 
 .pd-badge-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .pd-badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 6px 14px; border-radius: 100px;
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .1em;
+  font-family: 'Josefin Sans';
+  font-size: 11px; letter-spacing: .1em;
   font-weight: 600; text-transform: uppercase;
 }
 .pd-badge-new  { background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.35); color: #059669; animation: pdPulse 3s ease infinite; }
-.pd-badge-best { background: linear-gradient(135deg, #800020, #4B0082); color: white; box-shadow: 0 4px 14px rgba(128,0,32,.25); }
+.pd-badge-best { background: linear-gradient(135deg, #800020, #1B2A6B); color: white; box-shadow: 0 4px 14px rgba(128,0,32,.25); }
 
 .pd-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(30px, 4.5vw, 48px);
-  font-weight: 400; line-height: 1.08; color: #800020;
+  font-weight: 400;
+  line-height: 1.08;
+  color: #800020;
+  letter-spacing: 0.04em;
 }
 
 .pd-stars { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .pd-star-row { display: flex; align-items: center; gap: 3px; }
 .pd-rating-text {
-  font-family: 'Jost'; font-size: 13px; color: #9a8070; font-weight: 400;
+  font-family: 'Josefin Sans';
+  font-size: 13px; color: #9a8070; font-weight: 400;
 }
 
 .pd-price-box {
@@ -901,22 +920,26 @@ const CSS = `
   display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px;
 }
 .pd-price-main {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(32px, 5vw, 48px);
   font-weight: 600; color: #800020; line-height: 1;
+  letter-spacing: 0.02em;
 }
 .pd-price-orig {
-  font-family: 'Jost'; font-size: 16px; color: #9a8070;
+  font-family: 'Josefin Sans';
+  font-size: 16px; color: #9a8070;
   text-decoration: line-through; font-weight: 300;
 }
 .pd-price-off {
   padding: 5px 12px; border-radius: 100px;
   background: #800020; color: white;
-  font-family: 'Jost'; font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  font-family: 'Josefin Sans';
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
 }
 
 .pd-desc {
-  font-family: 'Jost'; font-size: 14px; font-weight: 300;
+  font-family: 'Josefin Sans';
+  font-size: 14px; font-weight: 300;
   color: #4a3828; line-height: 1.88;
 }
 
@@ -928,11 +951,13 @@ const CSS = `
 }
 .pd-info-cell { padding: 4px 0; }
 .pd-info-key {
-  font-family: 'Jost'; font-size: 10px; letter-spacing: .15em;
+  font-family: 'Josefin Sans';
+  font-size: 10px; letter-spacing: .15em;
   text-transform: uppercase; color: #9a8070; font-weight: 500; margin-bottom: 5px;
 }
 .pd-info-val {
-  font-family: 'Jost'; font-size: 13px; font-weight: 600; color: #800020;
+  font-family: 'Josefin Sans';
+  font-size: 13px; font-weight: 600; color: #800020;
 }
 .pd-stock-dot {
   display: inline-block; width: 7px; height: 7px;
@@ -944,8 +969,10 @@ const CSS = `
 .pd-btn-cart {
   flex: 1; padding: 16px 24px;
   background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
-  color: #800020; border: none; border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
+  color: #800020;
+  border: none; border-radius: 100px;
+  font-family: 'Josefin Sans';
+  font-size: 13px; letter-spacing: .12em;
   font-weight: 600; text-transform: uppercase; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: transform .35s, box-shadow .35s;
@@ -985,10 +1012,12 @@ const CSS = `
 }
 .pd-trust-icon:hover { transform: scale(1.1); }
 .pd-trust-lbl {
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .06em;
+  font-family: 'Josefin Sans';
+  font-size: 11px; letter-spacing: .06em;
   color: #4a3828; font-weight: 500;
 }
 
+/* Details panel */
 .pd-details-panel {
   background: rgba(255,249,240,.95); backdrop-filter: blur(10px);
   border: 1px solid rgba(196,152,10,.22);
@@ -1005,8 +1034,11 @@ const CSS = `
   border-bottom: 1px solid rgba(196,152,10,.22);
 }
 .pd-panel-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(22px, 3.5vw, 30px); font-weight: 400; color: #800020;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(22px, 3.5vw, 30px);
+  font-weight: 400;
+  color: #800020;
+  letter-spacing: 0.04em;
 }
 
 .pd-inner-grid {
@@ -1016,9 +1048,10 @@ const CSS = `
 
 .pd-sub-title {
   display: flex; align-items: center; gap: 10px;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 20px; font-weight: 500; color: #800020;
   margin-bottom: 18px;
+  letter-spacing: 0.02em;
 }
 .pd-sub-title-bar {
   width: 3px; height: 22px;
@@ -1034,8 +1067,8 @@ const CSS = `
   transition: box-shadow .25s;
 }
 .pd-spec-row:hover { box-shadow: 0 4px 18px rgba(0,0,0,.06); }
-.pd-spec-key { font-family: 'Jost'; font-size: 13px; color: #9a8070; font-weight: 400; }
-.pd-spec-val { font-family: 'Jost'; font-size: 13px; color: #800020; font-weight: 600; }
+.pd-spec-key { font-family: 'Josefin Sans'; font-size: 13px; color: #9a8070; font-weight: 400; }
+.pd-spec-val { font-family: 'Josefin Sans'; font-size: 13px; color: #800020; font-weight: 600; }
 
 .pd-care-row {
   display: flex; align-items: flex-start; gap: 10px;
@@ -1048,7 +1081,7 @@ const CSS = `
   background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3);
   display: flex; align-items: center; justify-content: center; margin-top: 1px;
 }
-.pd-care-text { font-family: 'Jost'; font-size: 13px; color: #4a3828; font-weight: 300; line-height: 1.6; }
+.pd-care-text { font-family: 'Josefin Sans'; font-size: 13px; color: #4a3828; font-weight: 300; line-height: 1.6; }
 
 .pd-artisan {
   grid-column: 1 / -1; margin-top: 8px;
@@ -1059,10 +1092,12 @@ const CSS = `
 }
 @media(max-width: 480px) { .pd-artisan-box { padding: 18px 16px; } }
 .pd-artisan-text {
-  font-family: 'Jost'; font-size: 14px; font-weight: 300;
+  font-family: 'Josefin Sans';
+  font-size: 14px; font-weight: 300;
   color: #4a3828; line-height: 1.88;
 }
 
+/* Related products */
 .pd-related-head { text-align: center; margin-bottom: 48px; }
 .pd-related-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -1070,15 +1105,20 @@ const CSS = `
   padding: 7px 18px; border-radius: 100px; margin-bottom: 16px;
 }
 .pd-related-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(28px, 4vw, 44px); font-weight: 400; color: #800020;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 400;
+  color: #800020;
+  letter-spacing: 0.04em;
 }
 .pd-related-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
-@media(max-width: 560px) { .pd-related-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
+@media(max-width: 1100px) { .pd-related-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width: 820px) { .pd-related-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
+@media(max-width: 560px) { .pd-related-grid { grid-template-columns: 1fr; gap: 16px; } }
 
 .pd-notfound {
   min-height: 100vh; display: flex;
@@ -1089,7 +1129,8 @@ const CSS = `
 .pd-loading {
   min-height: 100vh; display: flex;
   align-items: center; justify-content: center;
-  font-family: 'Jost'; font-size: 15px; color: #4a3828;
+  font-family: 'Josefin Sans';
+  font-size: 15px; color: #4a3828;
   background: linear-gradient(170deg, #FFF9F0 0%, #F5E6D3 100%);
 }
 `;
@@ -1255,10 +1296,11 @@ export function ProductDetailPage() {
             <div style={{ color: C.gold, fontSize: 36, marginBottom: 18 }}>✦</div>
             <h2
               style={{
-                fontFamily: "'Cormorant Garamond',serif",
+                fontFamily: "'Cinzel', serif",
                 fontSize: 28,
                 color: C.maroon,
                 marginBottom: 14,
+                letterSpacing: '0.04em',
               }}
             >
               Product not found
@@ -1266,7 +1308,7 @@ export function ProductDetailPage() {
             <Link
               to="/shop"
               style={{
-                fontFamily: "'Jost'",
+                fontFamily: "'Josefin Sans'",
                 fontSize: 13,
                 color: C.gold,
                 letterSpacing: '.1em',
@@ -1387,14 +1429,12 @@ export function ProductDetailPage() {
                       key={i}
                       size={15}
                       fill={i < Math.floor(saree.rating ?? 0) ? C.goldV : 'none'}
-color={i < Math.floor(saree.rating ?? 0) ? C.goldV : '#d1c5b5'}
-                      
+                      color={i < Math.floor(saree.rating ?? 0) ? C.goldV : '#d1c5b5'}
                     />
                   ))}
                 </div>
                 <span className="pd-rating-text">
                   {saree.rating ?? 0} · {saree.reviews ?? 0} reviews
-                 
                 </span>
               </div>
 
@@ -1526,9 +1566,10 @@ color={i < Math.floor(saree.rating ?? 0) ? C.goldV : '#d1c5b5'}
               <div className="pd-related-head">
                 <div className="pd-related-badge">
                   <Sparkles size={13} color={C.gold} />
-                  <span className="pd-ey">Similar Styles</span>
+                  <span className="ey">Similar Styles</span>
                 </div>
                 <h2 className="pd-related-title">You May Also Like</h2>
+                <div className="gd" style={{ marginTop: 12 }} />
               </div>
               <div className="pd-related-grid">
                 {relatedSarees.map((s, i) => (
@@ -1544,4 +1585,3 @@ color={i < Math.floor(saree.rating ?? 0) ? C.goldV : '#d1c5b5'}
     </>
   );
 }
-

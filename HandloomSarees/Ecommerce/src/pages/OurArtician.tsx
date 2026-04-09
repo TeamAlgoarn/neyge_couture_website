@@ -1,24 +1,30 @@
 import { Sparkles } from 'lucide-react';
 import heroImage from '../assets/bg.png'; // 👈 Replace with your actual image filename
 
+// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
 const C = {
-  maroon:   "#800020",
-  gold:     "#C4980A",
-  goldV:    "#D4AF37",
-  cream:    "#F5E6D3",
-  creamLt:  "#FFF9F0",
-  warmGrey: "#4a3828",
-  indigo:   "#4B0082",
+  maroon:   '#800020',
+  maroonDk: '#5a0016',
+  gold:     '#C4980A',
+  goldV:    '#D4AF37',
+  cream:    '#F5E6D3',
+  creamLt:  '#FFF9F0',
+  creamMid: '#F8EEE2',
+  creamDk:  '#EDD8C4',
+  warmGrey: '#4a3828',
+  navy:     '#1B2A6B',
+  forest:   '#14402A',
+  blush:    '#F2C4CE',
 };
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 .ap-root {
-  font-family: 'Jost', sans-serif;
-  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
+  font-family: 'Josefin Sans', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
   min-height: 100vh;
   color: #1a1010;
   line-height: 1;
@@ -32,16 +38,21 @@ const CSS = `
 @media(max-width: 900px) { .ap-wrap { padding: 0 24px; } }
 @media(max-width: 480px) { .ap-wrap { padding: 0 16px; } }
 
-.ap-ey {
-  font-family: 'Jost'; font-size: 11px;
-  letter-spacing: .25em; text-transform: uppercase;
-  color: #C4980A; font-weight: 600;
+/* ── Eyebrow (brand gold) ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #C4980A;
+  font-weight: 600;
 }
 
-.ap-gd   { width: 56px; height: 1px; background: #C4980A; display: block; }
-.ap-gd-c { margin: 0 auto; }
+/* ── Gold divider ── */
+.gd   { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
+.gd-c { margin: 0 auto; }
 
-/* ── Animations ── */
+/* ── Animations (preserved) ── */
 @keyframes apFadeUp    { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
 @keyframes apCounter   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 @keyframes subtleKenBurns {
@@ -86,7 +97,6 @@ const CSS = `
   overflow: hidden;
 }
 
-/* Layer 1 — photograph */
 .ap-hero-bg {
   position: absolute; inset: 0;
   background-size: cover;
@@ -95,7 +105,6 @@ const CSS = `
   will-change: transform;
 }
 
-/* Layer 2 — atmospheric colour overlay */
 .ap-hero-overlay {
   position: absolute; inset: 0;
   background:
@@ -113,21 +122,18 @@ const CSS = `
     );
 }
 
-/* Layer 3 — subtle warm grain */
 .ap-hero-grain {
   position: absolute; inset: 0; opacity: .04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
   pointer-events: none;
 }
 
-/* Layer 4 — bottom cream bleed into page */
 .ap-hero-fade-btm {
   position: absolute; bottom: 0; left: 0; right: 0; height: 160px;
   background: linear-gradient(to top, #FFF9F0 0%, transparent 100%);
   z-index: 3; pointer-events: none;
 }
 
-/* Content */
 .ap-hero-inner {
   position: relative; z-index: 4;
   max-width: 820px;
@@ -143,16 +149,23 @@ const CSS = `
   margin-bottom: 30px;
   animation: apFadeUp 1s cubic-bezier(.4,0,.2,1) .1s both;
 }
-.ap-hero-badge .ap-ey { color: #D4AF37; letter-spacing: .22em; }
 
 .ap-hero-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(40px, 7vw, 82px);
-  font-weight: 300; line-height: 1.06; color: #fff;
+  font-weight: 400;
+  line-height: 1.06;
+  color: #fff;
   text-shadow: 0 8px 48px rgba(0,0,0,.50);
   animation: apFadeUp 1s cubic-bezier(.4,0,.2,1) .22s both;
+  letter-spacing: 0.04em;
 }
-.ap-hero-title em { font-style: italic; font-weight: 400; color: #D4AF37; }
+.ap-hero-title em {
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  color: #D4AF37;
+}
 
 .ap-hero-rule {
   display: block; height: 1px;
@@ -162,7 +175,8 @@ const CSS = `
 }
 
 .ap-hero-sub {
-  font-family: 'Jost'; font-size: 16px; font-weight: 300;
+  font-family: 'Josefin Sans';
+  font-size: 16px; font-weight: 300;
   color: rgba(255,255,255,.80); line-height: 1.90;
   max-width: 600px; margin: 0 auto 38px;
   text-shadow: 0 2px 16px rgba(0,0,0,.35);
@@ -174,7 +188,8 @@ const CSS = `
   animation: heroChipsFade 1s cubic-bezier(.4,0,.2,1) .55s both;
 }
 .ap-hero-chip {
-  font-family: 'Jost'; font-size: 11px; font-weight: 500;
+  font-family: 'Josefin Sans';
+  font-size: 11px; font-weight: 500;
   letter-spacing: .14em; text-transform: uppercase;
   color: rgba(255,255,255,.72);
   border: 1px solid rgba(212,175,55,.35);
@@ -183,7 +198,6 @@ const CSS = `
   backdrop-filter: blur(8px);
 }
 
-/* Scroll cue */
 .ap-hero-scroll {
   position: absolute; bottom: 170px; left: 50%;
   transform: translateX(-50%);
@@ -192,7 +206,8 @@ const CSS = `
   animation: apFadeUp 1s ease .9s both;
 }
 .ap-hero-scroll-lbl {
-  font-family: 'Jost'; font-size: 9px; letter-spacing: .24em;
+  font-family: 'Josefin Sans';
+  font-size: 9px; letter-spacing: .24em;
   text-transform: uppercase; color: rgba(212,175,55,.55); font-weight: 500;
 }
 .ap-hero-scroll-line {
@@ -228,14 +243,19 @@ const CSS = `
 @media(max-width: 480px) { .ap-card { padding: 26px 18px; border-radius: 20px; } }
 
 .ap-card-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(26px, 4vw, 40px);
-  font-weight: 400; color: #800020; margin-bottom: 10px; line-height: 1.12;
+  font-weight: 400;
+  color: #800020;
+  margin-bottom: 10px;
+  line-height: 1.12;
+  letter-spacing: 0.04em;
 }
 .ap-card-title-wrap { margin-bottom: 28px; }
 
 .ap-body {
-  font-family: 'Jost'; font-size: 15px; font-weight: 300;
+  font-family: 'Josefin Sans';
+  font-size: 15px; font-weight: 300;
   color: #4a3828; line-height: 1.88; margin-bottom: 18px;
 }
 .ap-body:last-child { margin-bottom: 0; }
@@ -273,7 +293,10 @@ const CSS = `
   background: rgba(196,152,10,.12); border: 1px solid rgba(196,152,10,.3);
   display: flex; align-items: center; justify-content: center; font-size: 14px;
 }
-.ap-feature-text { font-family: 'Jost'; font-size: 13px; font-weight: 500; color: #800020; line-height: 1.5; }
+.ap-feature-text {
+  font-family: 'Josefin Sans';
+  font-size: 13px; font-weight: 500; color: #800020; line-height: 1.5;
+}
 
 .ap-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
 @media(max-width: 700px) { .ap-two-col { grid-template-columns: 1fr; } }
@@ -294,11 +317,16 @@ const CSS = `
   .ap-stat:nth-child(3),.ap-stat:nth-child(4){border-bottom:none}
 }
 .ap-stat-num {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 38px; font-weight: 500; color: #800020; line-height: 1;
   margin-bottom: 8px; animation: apCounter .8s ease both;
+  letter-spacing: 0.02em;
 }
-.ap-stat-lbl { font-family: 'Jost'; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #9a8070; font-weight: 500; line-height: 1.5; }
+.ap-stat-lbl {
+  font-family: 'Josefin Sans';
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: #9a8070; font-weight: 500; line-height: 1.5;
+}
 
 .ap-region-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 28px; }
 @media(max-width:700px){.ap-region-grid{grid-template-columns:1fr 1fr}}
@@ -317,30 +345,70 @@ const CSS = `
 }
 .ap-region-card:hover { transform:translateY(-4px); box-shadow:0 16px 48px rgba(128,0,32,.1); border-color:rgba(196,152,10,.5); }
 .ap-region-icon  { font-size:24px; margin-bottom:12px; display:block; }
-.ap-region-name  { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:500; color:#800020; margin-bottom:6px; line-height:1.2; }
-.ap-region-state { font-family:'Jost'; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#C4980A; font-weight:600; margin-bottom:12px; display:block; }
-.ap-region-desc  { font-family:'Jost'; font-size:13px; font-weight:300; color:#4a3828; line-height:1.75; }
+.ap-region-name  {
+  font-family:'Cinzel', serif;
+  font-size:20px; font-weight:500; color:#800020; margin-bottom:6px; line-height:1.2;
+  letter-spacing:0.02em;
+}
+.ap-region-state {
+  font-family:'Josefin Sans';
+  font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  color:#C4980A; font-weight:600; margin-bottom:12px; display:block;
+}
+.ap-region-desc  {
+  font-family:'Josefin Sans';
+  font-size:13px; font-weight:300; color:#4a3828; line-height:1.75;
+}
 
 .ap-process-steps { display:flex; flex-direction:column; gap:0; margin-top:28px; }
 .ap-step { display:flex; gap:24px; align-items:flex-start; padding:24px 0; border-bottom:1px solid rgba(196,152,10,.15); }
 .ap-step:last-child { border-bottom:none; }
-.ap-step-num { font-family:'Cormorant Garamond',serif; font-size:42px; font-weight:300; color:rgba(196,152,10,.3); line-height:1; flex-shrink:0; width:52px; text-align:right; }
-.ap-step-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:500; color:#800020; margin-bottom:6px; line-height:1.2; }
-.ap-step-desc   { font-family:'Jost'; font-size:14px; font-weight:300; color:#4a3828; line-height:1.8; }
+.ap-step-num {
+  font-family:'Cinzel', serif;
+  font-size:42px; font-weight:300; color:rgba(196,152,10,.3); line-height:1; flex-shrink:0; width:52px; text-align:right;
+}
+.ap-step-title {
+  font-family:'Cinzel', serif;
+  font-size:22px; font-weight:500; color:#800020; margin-bottom:6px; line-height:1.2;
+  letter-spacing:0.02em;
+}
+.ap-step-desc   {
+  font-family:'Josefin Sans';
+  font-size:14px; font-weight:300; color:#4a3828; line-height:1.8;
+}
 
 .ap-profiles-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:28px; }
 @media(max-width:600px){.ap-profiles-grid{grid-template-columns:1fr}}
 .ap-profile-card { background:rgba(255,249,240,.9); border:1px solid rgba(196,152,10,.25); border-radius:18px; padding:28px 24px; transition:transform .35s,box-shadow .35s; }
 .ap-profile-card:hover { transform:translateY(-3px); box-shadow:0 14px 44px rgba(128,0,32,.1); }
 .ap-profile-header { display:flex; align-items:center; gap:16px; margin-bottom:16px; }
-.ap-profile-avatar { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,rgba(196,152,10,.2),rgba(128,0,32,.15)); border:1.5px solid rgba(196,152,10,.35); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
-.ap-profile-name   { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:500; color:#800020; line-height:1.1; }
-.ap-profile-role   { font-family:'Jost'; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#C4980A; font-weight:600; margin-top:3px; }
-.ap-profile-quote  { font-family:'Cormorant Garamond',serif; font-size:16px; font-style:italic; font-weight:400; color:#5a3020; line-height:1.72; border-left:2px solid rgba(196,152,10,.4); padding-left:14px; margin-bottom:14px; }
-.ap-profile-region { font-family:'Jost'; font-size:12px; font-weight:400; color:#9a8070; letter-spacing:.06em; }
+.ap-profile-avatar {
+  width:52px; height:52px; border-radius:50%;
+  background:linear-gradient(135deg,rgba(196,152,10,.2),rgba(128,0,32,.15));
+  border:1.5px solid rgba(196,152,10,.35);
+  display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;
+}
+.ap-profile-name   {
+  font-family:'Cinzel', serif;
+  font-size:20px; font-weight:500; color:#800020; line-height:1.1;
+  letter-spacing:0.02em;
+}
+.ap-profile-role   {
+  font-family:'Josefin Sans';
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#C4980A; font-weight:600; margin-top:3px;
+}
+.ap-profile-quote  {
+  font-family:'Cormorant Garamond', serif;
+  font-size:16px; font-style:italic; font-weight:400; color:#5a3020; line-height:1.72;
+  border-left:2px solid rgba(196,152,10,.4); padding-left:14px; margin-bottom:14px;
+}
+.ap-profile-region {
+  font-family:'Josefin Sans';
+  font-size:12px; font-weight:400; color:#9a8070; letter-spacing:.06em;
+}
 
 .ap-philosophy {
-  background: linear-gradient(135deg, #800020 0%, #5a0016 60%, #4B0082 100%);
+  background: linear-gradient(135deg, #800020 0%, #5a0016 60%, #1B2A6B 100%);
   border-radius:28px; padding:56px 52px;
   position:relative; overflow:hidden;
   box-shadow:0 20px 70px rgba(128,0,32,.25);
@@ -350,9 +418,19 @@ const CSS = `
 .ap-philosophy::after  { content:''; position:absolute; bottom:-70px; left:-50px; width:220px; height:220px; border-radius:50%; border:1px solid rgba(212,175,55,.08); pointer-events:none; }
 .ap-philosophy-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:32px; position:relative; z-index:1; }
 @media(max-width:700px){.ap-philosophy-grid{grid-template-columns:1fr; gap:24px}}
-.ap-phil-num   { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:300; color:rgba(212,175,55,.25); line-height:1; margin-bottom:10px; }
-.ap-phil-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:500; color:white; margin-bottom:10px; line-height:1.2; }
-.ap-phil-desc  { font-family:'Jost'; font-size:13px; font-weight:300; color:rgba(255,255,255,.7); line-height:1.8; }
+.ap-phil-num   {
+  font-family:'Cinzel', serif;
+  font-size:48px; font-weight:300; color:rgba(212,175,55,.25); line-height:1; margin-bottom:10px;
+}
+.ap-phil-title {
+  font-family:'Cinzel', serif;
+  font-size:22px; font-weight:500; color:white; margin-bottom:10px; line-height:1.2;
+  letter-spacing:0.02em;
+}
+.ap-phil-desc  {
+  font-family:'Josefin Sans';
+  font-size:13px; font-weight:300; color:rgba(255,255,255,.7); line-height:1.8;
+}
 
 .ap-thread-divider { width:100%; overflow:hidden; line-height:0; padding:8px 0; pointer-events:none; }
 
@@ -361,12 +439,22 @@ const CSS = `
 .ap-tl-item { position:relative; padding:0 0 32px 24px; }
 .ap-tl-item:last-child { padding-bottom:0; }
 .ap-tl-dot  { position:absolute; left:-4px; top:6px; width:9px; height:9px; border-radius:50%; background:#C4980A; border:2px solid rgba(255,249,240,.9); box-shadow:0 0 0 3px rgba(196,152,10,.2); }
-.ap-tl-year  { font-family:'Jost'; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#C4980A; font-weight:600; margin-bottom:6px; }
-.ap-tl-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:500; color:#800020; margin-bottom:6px; line-height:1.2; }
-.ap-tl-desc  { font-family:'Jost'; font-size:14px; font-weight:300; color:#4a3828; line-height:1.78; }
+.ap-tl-year  {
+  font-family:'Josefin Sans';
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#C4980A; font-weight:600; margin-bottom:6px;
+}
+.ap-tl-title {
+  font-family:'Cinzel', serif;
+  font-size:20px; font-weight:500; color:#800020; margin-bottom:6px; line-height:1.2;
+  letter-spacing:0.02em;
+}
+.ap-tl-desc  {
+  font-family:'Josefin Sans';
+  font-size:14px; font-weight:300; color:#4a3828; line-height:1.78;
+}
 
 .ap-cta {
-  background: linear-gradient(135deg, #800020 0%, #5a0016 50%, #4B0082 100%);
+  background: linear-gradient(135deg, #800020 0%, #5a0016 50%, #1B2A6B 100%);
   border-radius:28px; padding:72px 56px; text-align:center;
   position:relative; overflow:hidden;
   box-shadow:0 24px 80px rgba(128,0,32,.3);
@@ -374,9 +462,19 @@ const CSS = `
 .ap-cta::before { content:''; position:absolute; top:-80px; right:-80px; width:280px; height:280px; border-radius:50%; border:1px solid rgba(212,175,55,.12); pointer-events:none; }
 .ap-cta::after  { content:''; position:absolute; bottom:-100px; left:-80px; width:320px; height:320px; border-radius:50%; border:1px solid rgba(212,175,55,.08); pointer-events:none; }
 .ap-cta-eyebrow { display:inline-flex; align-items:center; gap:8px; background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.35); padding:7px 18px; border-radius:100px; margin-bottom:22px; }
-.ap-cta-title   { font-family:'Cormorant Garamond',serif; font-size:clamp(30px,5vw,52px); font-weight:400; color:white; margin-bottom:20px; line-height:1.12; }
-.ap-cta-body    { font-family:'Jost'; font-size:15px; font-weight:300; color:rgba(255,255,255,.8); line-height:1.88; max-width:600px; margin:0 auto 28px; }
-.ap-cta-italic  { font-family:'Cormorant Garamond',serif; font-size:21px; font-style:italic; font-weight:400; color:#D4AF37; line-height:1.6; position:relative; z-index:1; }
+.ap-cta-title   {
+  font-family:'Cinzel', serif;
+  font-size:clamp(30px,5vw,52px); font-weight:400; color:white; margin-bottom:20px; line-height:1.12;
+  letter-spacing:0.04em;
+}
+.ap-cta-body    {
+  font-family:'Josefin Sans';
+  font-size:15px; font-weight:300; color:rgba(255,255,255,.8); line-height:1.88; max-width:600px; margin:0 auto 28px;
+}
+.ap-cta-italic  {
+  font-family:'Cormorant Garamond', serif;
+  font-size:21px; font-style:italic; font-weight:400; color:#D4AF37; line-height:1.6; position:relative; z-index:1;
+}
 @media(max-width:700px){.ap-cta{padding:48px 28px}}
 @media(max-width:480px){.ap-cta{padding:40px 20px; border-radius:20px}}
 
@@ -471,7 +569,7 @@ export function ArtisanPage() {
           <div className="ap-hero-inner">
             <div className="ap-hero-badge">
               <Sparkles size={13} color={C.goldV} />
-              <span className="ap-ey">Our Legacy</span>
+              <span className="ey">Our Legacy</span>
             </div>
 
             <h1 className="ap-hero-title">
@@ -508,11 +606,11 @@ export function ArtisanPage() {
             <div className="ap-card">
               <div className="ap-card-title-wrap">
                 <div className="ap-section-label">
-                  <span className="ap-ey">The Craft</span>
+                  <span className="ey">The Craft</span>
                   <div className="ap-section-label-line" />
                 </div>
                 <h2 className="ap-card-title">Where Heritage Meets Craftsmanship</h2>
-                <span className="ap-gd" />
+                <span className="gd" />
               </div>
               <div className="ap-two-col">
                 <div>
@@ -522,8 +620,8 @@ export function ArtisanPage() {
                 <div>
                   <blockquote className="ap-pull">"The rhythm of the loom is not just work — it is tradition in motion."</blockquote>
                   <div style={{ marginTop:20, padding:'18px 20px', background:'rgba(196,152,10,.07)', borderRadius:16, border:'1px solid rgba(196,152,10,.2)' }}>
-                    <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:28, fontWeight:500, color:C.maroon, lineHeight:1 }}>3 Generations</div>
-                    <div style={{ fontFamily:"'Jost'", fontSize:11, letterSpacing:'.1em', color:'#9a8070', marginTop:5, textTransform:'uppercase', fontWeight:500 }}>of weaving mastery</div>
+                    <div style={{ fontFamily:"'Cinzel', serif", fontSize:28, fontWeight:500, color:C.maroon, lineHeight:1, letterSpacing:'0.02em' }}>3 Generations</div>
+                    <div style={{ fontFamily:"'Josefin Sans'", fontSize:11, letterSpacing:'.1em', color:'#9a8070', marginTop:5, textTransform:'uppercase', fontWeight:500 }}>of weaving mastery</div>
                   </div>
                 </div>
               </div>
@@ -537,11 +635,11 @@ export function ArtisanPage() {
             <div className="ap-card">
               <div className="ap-card-title-wrap">
                 <div className="ap-section-label">
-                  <span className="ap-ey">The Artisans</span>
+                  <span className="ey">The Artisans</span>
                   <div className="ap-section-label-line" />
                 </div>
                 <h2 className="ap-card-title">The Hands Behind the Heritage</h2>
-                <span className="ap-gd" />
+                <span className="gd" />
               </div>
               <p className="ap-body">Our artisans come from renowned weaving regions across India — where craftsmanship is not a profession, but a way of life.</p>
               <p className="ap-body">Many began learning the art as children, sitting beside their elders, understanding the dance between thread and tension.</p>
@@ -561,11 +659,11 @@ export function ArtisanPage() {
             <div className="ap-card">
               <div className="ap-card-title-wrap">
                 <div className="ap-section-label">
-                  <span className="ap-ey">Our Impact</span>
+                  <span className="ey">Our Impact</span>
                   <div className="ap-section-label-line" />
                 </div>
                 <h2 className="ap-card-title">Crafting Change,<br />One Loom at a Time</h2>
-                <span className="ap-gd" />
+                <span className="gd" />
               </div>
               <p className="ap-body">When you choose handloom, you support rural artisan families, fair wages, ethical sourcing, and the preservation of disappearing crafts.</p>
               <div style={{ border:'1px solid rgba(196,152,10,.2)', borderRadius:20, overflow:'hidden', marginTop:32 }}>
@@ -588,11 +686,11 @@ export function ArtisanPage() {
             <div className="ap-card">
               <div className="ap-card-title-wrap">
                 <div className="ap-section-label">
-                  <span className="ap-ey">Their Words</span>
+                  <span className="ey">Their Words</span>
                   <div className="ap-section-label-line" />
                 </div>
                 <h2 className="ap-card-title">In Their Own Words</h2>
-                <span className="ap-gd" />
+                <span className="gd" />
               </div>
               <p className="ap-body">We believe the most powerful story a saree can carry is the voice of the person who made it. Here are the words of four of our master weavers — spoken in their villages, translated with love.</p>
               <div className="ap-profiles-grid">
@@ -618,11 +716,11 @@ export function ArtisanPage() {
             <div className="ap-card">
               <div className="ap-card-title-wrap">
                 <div className="ap-section-label">
-                  <span className="ap-ey">The Regions</span>
+                  <span className="ey">The Regions</span>
                   <div className="ap-section-label-line" />
                 </div>
                 <h2 className="ap-card-title">Six Regions,<br />One Unbroken Thread</h2>
-                <span className="ap-gd" />
+                <span className="gd" />
               </div>
               <p className="ap-body">India's handloom geography is a living atlas of culture. Each region has developed its own signature language of weave, dye, and motif — shaped by its soil, its rivers, its gods, and its history.</p>
               <div className="ap-region-grid">
@@ -645,11 +743,11 @@ export function ArtisanPage() {
             <div className="ap-card">
               <div className="ap-card-title-wrap">
                 <div className="ap-section-label">
-                  <span className="ap-ey">The Process</span>
+                  <span className="ey">The Process</span>
                   <div className="ap-section-label-line" />
                 </div>
                 <h2 className="ap-card-title">From Thread to Treasure</h2>
-                <span className="ap-gd" />
+                <span className="gd" />
               </div>
               <p className="ap-body">A handloom saree is not manufactured. It is grown — slowly, deliberately, step by step — the way a story is told. Here is what happens between the raw thread and the moment it reaches you.</p>
               <div className="ap-process-steps">
@@ -672,9 +770,9 @@ export function ArtisanPage() {
               <div style={{ textAlign:'center', marginBottom:44, position:'relative', zIndex:1 }}>
                 <div className="ap-cta-eyebrow" style={{ justifyContent:'center', display:'inline-flex' }}>
                   <Sparkles size={13} color={C.goldV} />
-                  <span style={{ fontFamily:"'Jost'", fontSize:11, letterSpacing:'.2em', textTransform:'uppercase', color:C.goldV, fontWeight:600 }}>Our Philosophy</span>
+                  <span className="ey">Our Philosophy</span>
                 </div>
-                <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(28px,4.5vw,44px)', fontWeight:400, color:'white', marginTop:14, lineHeight:1.1 }}>Three Truths We Weave By</h2>
+                <h2 style={{ fontFamily:"'Cinzel', serif", fontSize:'clamp(28px,4.5vw,44px)', fontWeight:400, color:'white', marginTop:14, lineHeight:1.1, letterSpacing:'0.04em' }}>Three Truths We Weave By</h2>
                 <div style={{ width:56, height:1, background:'rgba(212,175,55,.45)', margin:'18px auto 0' }} />
               </div>
               <div className="ap-philosophy-grid">
@@ -696,15 +794,15 @@ export function ArtisanPage() {
             <div className="ap-card">
               <div className="ap-card-title-wrap">
                 <div className="ap-section-label">
-                  <span className="ap-ey">Our Journey</span>
+                  <span className="ey">Our Journey</span>
                   <div className="ap-section-label-line" />
                 </div>
                 <h2 className="ap-card-title">The Neyge Story,<br />Year by Year</h2>
-                <span className="ap-gd" />
+                <span className="gd" />
               </div>
               <p className="ap-body">
                 Neyge did not begin with a business plan. It began with a conversation in a weaver's courtyard in Murshidabad — and a question that has guided us ever since:{' '}
-                <em style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:16, color:'#5a3020' }}>"What if the woman who buys the saree could hear the loom that made it?"</em>
+                <em style={{ fontFamily:"'Cormorant Garamond', serif", fontSize:16, color:'#5a3020' }}>"What if the woman who buys the saree could hear the loom that made it?"</em>
               </p>
               <div className="ap-timeline">
                 {TIMELINE.map(t => (
@@ -724,7 +822,7 @@ export function ArtisanPage() {
             <div className="ap-cta">
               <div className="ap-cta-eyebrow">
                 <Sparkles size={13} color={C.goldV} />
-                <span style={{ fontFamily:"'Jost'", fontSize:11, letterSpacing:'.2em', textTransform:'uppercase', color:C.goldV, fontWeight:600 }}>Our Commitment</span>
+                <span className="ey">Our Commitment</span>
               </div>
               <h2 className="ap-cta-title">A Commitment<br /><em style={{ fontStyle:'italic', fontWeight:300 }}>to Authenticity</em></h2>
               <div style={{ width:56, height:1, background:'rgba(212,175,55,.5)', margin:'0 auto 24px' }} />

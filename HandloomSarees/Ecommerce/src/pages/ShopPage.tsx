@@ -1806,7 +1806,6 @@
 
 
 
-
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SareeCard } from '@/components/features/SareeCard';
@@ -1833,40 +1832,53 @@ const SORT_OPTIONS = [
   { value: 'price-desc', label: 'Price: High to Low' },
 ];
 
+// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
 const C = {
   maroon: '#800020',
-  maroonDark: '#5a0016',
+  maroonDk: '#5a0016',
   gold: '#C4980A',
   goldV: '#D4AF37',
   cream: '#F5E6D3',
-  creamLight: '#FFF9F0',
+  creamLt: '#FFF9F0',
+  creamMid: '#F8EEE2',
+  creamDk: '#EDD8C4',
   warmGrey: '#4a3828',
+  navy: '#1B2A6B',
+  forest: '#14402A',
+  blush: '#F2C4CE',
 };
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 .sp-root {
-  font-family: 'Jost', sans-serif;
-  background: #FFF9F0;
+  font-family: 'Josefin Sans', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
   color: #1a1010;
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1;
 }
 
-.sp-wrap { max-width: 1320px; margin: 0 auto; padding: 0 56px; }
-@media(max-width: 900px)  { .sp-wrap { padding: 0 20px; } }
+.sp-wrap { max-width: 1320px; margin: 0 auto; padding: 0 64px; }
+@media(max-width: 900px)  { .sp-wrap { padding: 0 24px; } }
 @media(max-width: 480px)  { .sp-wrap { padding: 0 16px; } }
 
-.sp-ey {
-  font-family: 'Jost', sans-serif; font-size: 11px;
-  letter-spacing: 0.25em; text-transform: uppercase;
-  color: #C4980A; font-weight: 600;
+/* ── Eyebrow label ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #C4980A;
+  font-weight: 600;
 }
+
+/* ── Gold divider ── */
+.gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 @keyframes spFadeUp   { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
 @keyframes spFadeIn   { from{opacity:0} to{opacity:1} }
@@ -1887,6 +1899,7 @@ html { scroll-behavior: smooth; }
 .sp-d4 { animation-delay:.50s  }
 .sp-d5 { animation-delay:.65s  }
 
+/* Hero section */
 .sp-hero {
   position: relative;
   height: 100vh; min-height: 600px;
@@ -1901,8 +1914,8 @@ html { scroll-behavior: smooth; }
   position: absolute; inset: 0;
   background: linear-gradient(180deg,
     rgba(0,0,0,.38) 0%,
-    rgba(60,0,15,.52) 50%,
-    rgba(0,0,0,.72) 100%);
+    rgba(128,0,32,.52) 50%,
+    rgba(27,42,107,.72) 100%);
 }
 .sp-hero-silk {
   position: absolute; inset: 0; overflow: hidden; pointer-events: none;
@@ -1925,9 +1938,10 @@ html { scroll-behavior: smooth; }
   padding: 8px 10px; border-radius: 100px; margin-bottom: 22px;
 }
 .sp-hero-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(38px, 7vw, 74px);
-  font-weight: 300; line-height: 1.06; margin-bottom: 16px;
+  font-weight: 400; line-height: 1.06; margin-bottom: 16px;
+  letter-spacing: 0.04em;
 }
 .sp-hero-sub {
   font-family: 'Cormorant Garamond', serif;
@@ -1940,7 +1954,7 @@ html { scroll-behavior: smooth; }
   margin: 0 auto 20px; opacity: .8;
 }
 .sp-hero-desc {
-  font-family: 'Jost'; font-size: 15px; font-weight: 300;
+  font-family: 'Josefin Sans'; font-size: 15px; font-weight: 300;
   color: rgba(255,255,255,.78); line-height: 1.85;
   max-width: 520px; margin: 0 auto 28px;
 }
@@ -1951,11 +1965,11 @@ html { scroll-behavior: smooth; }
   padding: 7px 16px;
   background: rgba(255,255,255,.12); backdrop-filter: blur(6px);
   border: 1px solid rgba(212,175,55,.45); border-radius: 100px;
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .12em;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .12em;
   color: rgba(255,255,255,.9); text-transform: uppercase; font-weight: 500;
 }
 .sp-hero-count {
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .18em;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .18em;
   text-transform: uppercase; color: rgba(255,255,255,.42);
 }
 .sp-scroll-ind {
@@ -1964,6 +1978,7 @@ html { scroll-behavior: smooth; }
   animation: spFadeUp 1s ease 1.4s both;
 }
 
+/* Toolbar */
 .sp-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 0;
@@ -1972,7 +1987,7 @@ html { scroll-behavior: smooth; }
   flex-wrap: wrap; gap: 12px;
 }
 .sp-toolbar-left {
-  font-family: 'Jost'; font-size: 14px; color: #4a3828; font-weight: 400;
+  font-family: 'Josefin Sans'; font-size: 14px; color: #4a3828; font-weight: 400;
 }
 .sp-toolbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
@@ -1981,7 +1996,7 @@ html { scroll-behavior: smooth; }
   padding: 10px 22px;
   background: rgba(255,249,240,.9); backdrop-filter: blur(8px);
   border: 1.5px solid rgba(196,152,10,.35); border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; font-weight: 600;
+  font-family: 'Josefin Sans'; font-size: 13px; font-weight: 600;
   color: #800020; cursor: pointer;
   transition: transform .3s, box-shadow .3s;
   box-shadow: 0 3px 16px rgba(0,0,0,.07);
@@ -2000,45 +2015,41 @@ html { scroll-behavior: smooth; }
   background: rgba(255,249,240,.9); backdrop-filter: blur(8px);
   border: 1.5px solid rgba(196,152,10,.35);
   padding: 10px 40px 10px 18px; border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; font-weight: 500;
+  font-family: 'Josefin Sans'; font-size: 13px; font-weight: 500;
   color: #800020; cursor: pointer;
   transition: box-shadow .3s; box-shadow: 0 3px 16px rgba(0,0,0,.07);
 }
 .sp-sort:focus { outline: none; border-color: #C4980A; }
 .sp-sort:hover { box-shadow: 0 8px 24px rgba(0,0,0,.1); }
 
+/* Active chips */
 .sp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .sp-chip-active {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 14px;
   background: rgba(128,0,32,.08); border: 1px solid rgba(128,0,32,.25);
   border-radius: 100px;
-  font-family: 'Jost'; font-size: 12px; color: #800020; font-weight: 500;
+  font-family: 'Josefin Sans'; font-size: 12px; color: #800020; font-weight: 500;
   cursor: pointer; transition: background .2s;
 }
 .sp-chip-active:hover { background: rgba(128,0,32,.15); }
 
+/* Product grid */
 .sp-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 28px;
 }
-@media(max-width: 640px) {
-  .sp-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-}
-@media(max-width: 360px) {
-  .sp-grid { grid-template-columns: 1fr; }
-}
-@media(max-width: 640px) {
-  .sp-hero-content { padding-top: 130px; }
-}
+@media(max-width: 1100px) { .sp-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width: 820px) { .sp-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
+@media(max-width: 480px) { .sp-grid { grid-template-columns: 1fr; gap: 16px; } }
 
+/* Filter panel overlay */
 .sp-overlay {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(8,2,2,.5); backdrop-filter: blur(3px);
   animation: spFadeIn .3s ease both;
 }
-
 .sp-panel {
   position: fixed; top: 0; left: 0; bottom: 0;
   width: 360px; max-width: 88vw; z-index: 61;
@@ -2046,20 +2057,14 @@ html { scroll-behavior: smooth; }
   box-shadow: 20px 0 80px rgba(0,0,0,.24);
   animation: spSlideIn .42s cubic-bezier(.16,1,.3,1) both;
 }
-
 .sp-panel-head {
-  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #4B0082 100%);
+  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #1B2A6B 100%);
   padding: 36px 28px 28px; position: relative; overflow: hidden; flex-shrink: 0;
 }
 .sp-panel-head::after {
   content: ''; position: absolute; top: -60px; right: -60px;
   width: 200px; height: 200px; border-radius: 50%;
   border: 1px solid rgba(212,175,55,.15); pointer-events: none;
-}
-.sp-panel-head::before {
-  content: ''; position: absolute; top: -100px; right: -100px;
-  width: 320px; height: 320px; border-radius: 50%;
-  border: 1px solid rgba(212,175,55,.08); pointer-events: none;
 }
 .sp-panel-shine {
   position: absolute; inset: 0; overflow: hidden; pointer-events: none;
@@ -2082,15 +2087,15 @@ html { scroll-behavior: smooth; }
   display: flex; align-items: center; gap: 8px; margin-bottom: 10px; position: relative; z-index: 1;
 }
 .sp-panel-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 28px; font-weight: 400; color: white; position: relative; z-index: 1;
   margin-bottom: 6px;
+  letter-spacing: 0.04em;
 }
 .sp-panel-subtitle {
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .18em;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .18em;
   text-transform: uppercase; color: rgba(255,255,255,.45); position: relative; z-index: 1;
 }
-
 .sp-panel-stats {
   display: flex; background: rgba(255,249,240,.98);
   border-bottom: 1px solid rgba(196,152,10,.18); flex-shrink: 0;
@@ -2101,14 +2106,14 @@ html { scroll-behavior: smooth; }
 }
 .sp-panel-stat:last-child { border-right: none; }
 .sp-panel-stat-n {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 21px; font-weight: 500; color: #800020; line-height: 1;
+  letter-spacing: 0.02em;
 }
 .sp-panel-stat-l {
-  font-family: 'Jost'; font-size: 10px; letter-spacing: .1em;
+  font-family: 'Josefin Sans'; font-size: 10px; letter-spacing: .1em;
   text-transform: uppercase; color: #9a8070; margin-top: 3px; font-weight: 500;
 }
-
 .sp-panel-body {
   flex: 1; overflow-y: auto;
   background: linear-gradient(180deg, #FFF9F0 0%, #F8EEE2 100%);
@@ -2125,15 +2130,16 @@ html { scroll-behavior: smooth; }
 }
 .sp-acc-head:hover .sp-acc-label { color: #800020; }
 .sp-acc-label {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 17px; font-weight: 500; color: #3a1818; transition: color .2s;
   display: flex; align-items: center; gap: 8px;
+  letter-spacing: 0.02em;
 }
 .sp-acc-cnt {
   display: inline-flex; align-items: center; justify-content: center;
   width: 19px; height: 19px; border-radius: 50%;
   background: #800020; color: white;
-  font-family: 'Jost'; font-size: 10px; font-weight: 700;
+  font-family: 'Josefin Sans'; font-size: 10px; font-weight: 700;
 }
 .sp-acc-chev {
   color: #C4980A; transition: transform .3s cubic-bezier(.4,0,.2,1);
@@ -2150,7 +2156,7 @@ html { scroll-behavior: smooth; }
 .sp-chip {
   padding: 7px 16px; border-radius: 100px;
   border: 1.5px solid rgba(196,152,10,.35);
-  font-family: 'Jost'; font-size: 12px; letter-spacing: .05em;
+  font-family: 'Josefin Sans'; font-size: 12px; letter-spacing: .05em;
   color: #4a3828; background: white; cursor: pointer;
   transition: all .25s cubic-bezier(.4,0,.2,1); font-weight: 400;
 }
@@ -2190,8 +2196,8 @@ html { scroll-behavior: smooth; }
 .sp-price-row {
   display: flex; justify-content: space-between; align-items: center; margin-top: 10px;
 }
-.sp-price-lbl { font-family: 'Jost'; font-size: 12px; color: #9a8070; }
-.sp-price-val { font-family: 'Cormorant Garamond',serif; font-size: 19px; font-weight: 600; color: #800020; }
+.sp-price-lbl { font-family: 'Josefin Sans'; font-size: 12px; color: #9a8070; }
+.sp-price-val { font-family: 'Cinzel', serif; font-size: 19px; font-weight: 600; color: #800020; }
 
 .sp-panel-footer {
   padding: 18px 24px 28px;
@@ -2203,7 +2209,7 @@ html { scroll-behavior: smooth; }
   width: 100%; padding: 15px; border: none; border-radius: 100px;
   background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
   color: #800020;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
+  font-family: 'Josefin Sans'; font-size: 13px; letter-spacing: .12em;
   font-weight: 600; text-transform: uppercase; cursor: pointer;
   transition: transform .3s, box-shadow .3s;
   box-shadow: 0 6px 24px rgba(212,175,55,.38);
@@ -2219,7 +2225,7 @@ html { scroll-behavior: smooth; }
   width: 100%; padding: 11px; margin-top: 10px;
   background: transparent; border: 1.5px solid rgba(196,152,10,.35);
   color: #4a3828; border-radius: 100px;
-  font-family: 'Jost'; font-size: 12px; letter-spacing: .1em;
+  font-family: 'Josefin Sans'; font-size: 12px; letter-spacing: .1em;
   text-transform: uppercase; cursor: pointer; font-weight: 500;
   transition: border-color .25s, color .25s;
 }
@@ -2229,7 +2235,7 @@ html { scroll-behavior: smooth; }
 .sp-loading, .sp-error {
   text-align: center;
   padding: 70px 0;
-  font-family: 'Jost';
+  font-family: 'Josefin Sans';
   color: #4a3828;
   font-size: 15px;
 }
@@ -2514,7 +2520,7 @@ export function ShopPage() {
             <div className="sp-fade sp-d0">
               <div className="sp-hero-badge">
                 <Sparkles size={13} color="#D4AF37" />
-                <span className="sp-ey" style={{ color: 'rgba(212,175,55,.95)' }}>
+                <span className="ey" style={{ color: 'rgba(212,175,55,.95)' }}>
                   Handcrafted Excellence
                 </span>
               </div>
@@ -2558,7 +2564,7 @@ export function ShopPage() {
           <div className="sp-scroll-ind">
             <span
               style={{
-                fontFamily: "'Jost'",
+                fontFamily: "'Josefin Sans'",
                 fontSize: 9,
                 letterSpacing: '.22em',
                 color: 'rgba(255,255,255,.35)',
@@ -2636,17 +2642,18 @@ export function ShopPage() {
               <div style={{ color: C.gold, fontSize: 32, marginBottom: 16 }}>✦</div>
               <p
                 style={{
-                  fontFamily: "'Cormorant Garamond',serif",
+                  fontFamily: "'Cinzel', serif",
                   fontSize: 26,
                   color: C.maroon,
                   marginBottom: 10,
+                  letterSpacing: '0.04em',
                 }}
               >
                 No sarees match your filters
               </p>
               <p
                 style={{
-                  fontFamily: "'Jost'",
+                  fontFamily: "'Josefin Sans'",
                   fontSize: 14,
                   color: C.warmGrey,
                   fontWeight: 300,
@@ -2680,7 +2687,7 @@ export function ShopPage() {
                   <Tag size={13} color="rgba(212,175,55,.75)" />
                   <span
                     style={{
-                      fontFamily: "'Jost'",
+                      fontFamily: "'Josefin Sans'",
                       fontSize: 10,
                       letterSpacing: '.2em',
                       textTransform: 'uppercase',

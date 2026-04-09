@@ -3,7 +3,7 @@ import { Minus, Plus, Trash2, ShoppingBag, Sparkles, ArrowRight } from 'lucide-r
 import { useCart } from '@/hooks/useCarts';
 import { formatCurrency } from '@/lib/utils';
 
-// ─── Brand palette ────────────────────────────────────────────────────────────
+// ─── Brand palette (matches VideoShoppingPage & HomePage) ────────────────────
 const C = {
   maroon:   '#800020',
   maroonDk: '#5a0016',
@@ -11,49 +11,55 @@ const C = {
   goldV:    '#D4AF37',
   cream:    '#F5E6D3',
   creamLt:  '#FFF9F0',
+  creamMid: '#F8EEE2',
+  creamDk:  '#EDD8C4',
   warmGrey: '#4a3828',
-  indigo:   '#4B0082',
+  navy:     '#1B2A6B',
+  forest:   '#14402A',
 };
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
+// ─── CSS – using same brand classes as home page and video shopping ──────────
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 .cart-root {
-  font-family: 'Jost', sans-serif;
-  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
+  font-family: 'Josefin Sans', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
   min-height: 100vh;
   color: #1a1010;
   line-height: 1;
 }
 
-/* ── Wrap ── */
+/* ── Wrap (same as home page .wrap) ── */
 .cart-wrap {
-  max-width: 1280px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 0 56px;
+  padding: 0 64px;
 }
 @media(max-width: 900px) { .cart-wrap { padding: 0 24px; } }
 @media(max-width: 480px) { .cart-wrap { padding: 0 16px; } }
 
-/* ── Eyebrow ── */
-.cart-ey {
-  font-family: 'Jost'; font-size: 11px;
-  letter-spacing: .25em; text-transform: uppercase;
-  color: #C4980A; font-weight: 600;
+/* ── Eyebrow label (brand gold) ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #C4980A;
+  font-weight: 600;
 }
 
-/* ── Gd ── */
-.cart-gd { width: 48px; height: 1px; background: #C4980A; display: block; }
+/* ── Gold divider ── */
+.gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 /* ─────────────────────────────
-   ANIMATIONS
+   ANIMATIONS (matching home page)
 ───────────────────────────── */
 @keyframes cartFadeUp  { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
 @keyframes cartFadeIn  { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
-@keyframes cartShimmer { 0%{left:-80%} 100%{left:120%} }
+@keyframes shimmer     { 0%{left:-80%} 100%{left:120%} }
 @keyframes cartPop     { from{opacity:0;transform:translateY(28px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
 
 .cart-fadein { animation: cartFadeIn  .8s cubic-bezier(.4,0,.2,1) both; }
@@ -83,12 +89,15 @@ const CSS = `
   display: flex; align-items: center; justify-content: center;
 }
 .cart-empty-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(28px, 5vw, 44px); font-weight: 400;
-  color: #800020; margin-bottom: 12px;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 400;
+  color: #800020;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
 }
 .cart-empty-sub {
-  font-family: 'Jost'; font-size: 14px; font-weight: 300;
+  font-family: 'Josefin Sans'; font-size: 14px; font-weight: 300;
   color: #4a3828; line-height: 1.75; margin-bottom: 32px;
 }
 
@@ -102,12 +111,13 @@ const CSS = `
   padding: 7px 18px; border-radius: 100px; margin-bottom: 16px;
 }
 .cart-header-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(36px, 6vw, 60px);
   font-weight: 400; color: #800020; line-height: 1.06; margin-bottom: 6px;
+  letter-spacing: 0.04em;
 }
 .cart-header-count {
-  font-family: 'Jost'; font-size: 13px; color: #9a8070; font-weight: 300;
+  font-family: 'Josefin Sans'; font-size: 13px; color: #9a8070; font-weight: 300;
 }
 
 /* ─────────────────────────────
@@ -122,12 +132,13 @@ const CSS = `
 @media(max-width: 1024px) { .cart-layout { grid-template-columns: 1fr; } }
 
 /* ─────────────────────────────
-   CART ITEM CARD
+   CART ITEM CARD (matches brand card style)
 ───────────────────────────── */
 .cart-item {
   background: rgba(255,249,240,.95); backdrop-filter: blur(10px);
   border: 1px solid rgba(196,152,10,.22);
-  border-radius: 22px; padding: 22px 24px;
+  border-radius: 24px;
+  padding: 22px 24px;
   margin-bottom: 16px;
   transition: box-shadow .35s, border-color .3s;
   box-shadow: 0 6px 28px rgba(0,0,0,.06);
@@ -163,10 +174,11 @@ const CSS = `
 .cart-item-body { flex: 1; min-width: 0; }
 
 .cart-item-name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 20px; font-weight: 500; color: #800020;
   text-decoration: none; display: block; margin-bottom: 8px;
   transition: color .2s; line-height: 1.2;
+  letter-spacing: 0.02em;
 }
 .cart-item-name:hover { color: #C4980A; }
 
@@ -176,7 +188,7 @@ const CSS = `
 .cart-item-tag {
   padding: 4px 12px; border-radius: 100px;
   background: rgba(196,152,10,.08); border: 1px solid rgba(196,152,10,.25);
-  font-family: 'Jost'; font-size: 11px; color: #4a3828; font-weight: 400;
+  font-family: 'Josefin Sans'; font-size: 11px; color: #4a3828; font-weight: 400;
 }
 
 /* Qty + remove row */
@@ -202,7 +214,7 @@ const CSS = `
 .cart-qty-btn:hover svg { color: white !important; }
 .cart-qty-val {
   min-width: 32px; text-align: center;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 18px; font-weight: 500; color: #800020;
 }
 
@@ -211,7 +223,7 @@ const CSS = `
   padding: 7px 16px; border-radius: 100px;
   border: 1.5px solid rgba(200,50,50,.3);
   background: transparent; color: #c0392b;
-  font-family: 'Jost'; font-size: 12px; font-weight: 500;
+  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 500;
   cursor: pointer; transition: background .25s, color .25s, transform .2s;
 }
 .cart-remove-btn:hover {
@@ -224,16 +236,17 @@ const CSS = `
 }
 @media(max-width: 560px) { .cart-item-price { text-align: left; } }
 .cart-item-price-main {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 24px; font-weight: 600; color: #800020; display: block;
+  letter-spacing: 0.02em;
 }
 .cart-item-price-orig {
-  font-family: 'Jost'; font-size: 12px; color: #9a8070;
+  font-family: 'Josefin Sans'; font-size: 12px; color: #9a8070;
   text-decoration: line-through; font-weight: 300; margin-top: 3px;
 }
 
 /* ─────────────────────────────
-   ORDER SUMMARY
+   ORDER SUMMARY (matches brand panel style)
 ───────────────────────────── */
 .cart-summary {
   background: rgba(255,249,240,.97); backdrop-filter: blur(12px);
@@ -244,10 +257,11 @@ const CSS = `
   position: sticky; top: 110px;
 }
 
-/* Summary maroon top bar */
+/* Summary maroon top bar (same as VideoShopping panel bar) */
 .cart-summary-bar {
-  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #4B0082 100%);
-  padding: 22px 28px; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #1B2A6B 100%);
+  padding: 22px 28px;
+  position: relative; overflow: hidden;
 }
 .cart-summary-bar::after {
   content: ''; position: absolute; top: -50px; right: -50px;
@@ -255,8 +269,10 @@ const CSS = `
   border: 1px solid rgba(212,175,55,.15); pointer-events: none;
 }
 .cart-summary-bar-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 22px; font-weight: 400; color: white; position: relative; z-index: 1;
+  font-family: 'Cinzel', serif;
+  font-size: 22px; font-weight: 400; color: white;
+  letter-spacing: 0.04em;
+  position: relative; z-index: 1;
 }
 
 /* Summary body */
@@ -270,14 +286,14 @@ const CSS = `
 }
 .cart-sum-row:last-of-type { border-bottom: none; }
 .cart-sum-key {
-  font-family: 'Jost'; font-size: 13px; color: #4a3828; font-weight: 400;
+  font-family: 'Josefin Sans'; font-size: 13px; color: #4a3828; font-weight: 400;
 }
 .cart-sum-val {
-  font-family: 'Jost'; font-size: 13px; color: #800020; font-weight: 600;
+  font-family: 'Josefin Sans'; font-size: 13px; color: #800020; font-weight: 600;
 }
 .cart-sum-free {
   display: flex; align-items: center; gap: 5px;
-  font-family: 'Jost'; font-size: 13px; color: #059669; font-weight: 600;
+  font-family: 'Josefin Sans'; font-size: 13px; color: #059669; font-weight: 600;
 }
 
 /* Free shipping nudge */
@@ -286,45 +302,66 @@ const CSS = `
   border-radius: 12px; padding: 11px 14px; margin: 8px 0;
 }
 .cart-ship-nudge-text {
-  font-family: 'Jost'; font-size: 12px; color: #4a3828; font-weight: 300; line-height: 1.5;
+  font-family: 'Josefin Sans'; font-size: 12px; color: #4a3828; font-weight: 300; line-height: 1.5;
 }
 
-/* Total strip */
+/* Total strip (maroon + gold) */
 .cart-total-strip {
   display: flex; justify-content: space-between; align-items: center;
-  background: linear-gradient(135deg, #800020 0%, #4B0082 100%);
+  background: linear-gradient(135deg, #800020 0%, #1B2A6B 100%);
   border-radius: 16px; padding: 16px 20px; margin: 18px 0;
 }
 .cart-total-label {
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .1em;
+  font-family: 'Josefin Sans'; font-size: 13px; letter-spacing: .1em;
   text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
 }
 .cart-total-val {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 28px; font-weight: 600; color: #D4AF37;
+  letter-spacing: 0.02em;
 }
 
-/* Checkout button */
-.cart-checkout-btn {
+/* ─────────────────────────────
+   BUTTONS (matching VideoShopping & HomePage)
+───────────────────────────── */
+.btn-gold {
   display: block; width: 100%; padding: 16px;
   background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
-  color: #800020; border: none; border-radius: 100px; text-align: center;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
-  font-weight: 600; text-transform: uppercase; text-decoration: none;
-  cursor: pointer; transition: transform .35s, box-shadow .35s;
+  color: #800020;
+  border: none; border-radius: 100px;
+  font-family: 'Josefin Sans'; font-size: 13px; letter-spacing: .12em;
+  font-weight: 600; text-transform: uppercase;
+  text-decoration: none; text-align: center;
+  cursor: pointer;
+  transition: transform .35s, box-shadow .35s;
   box-shadow: 0 6px 24px rgba(212,175,55,.38);
-  position: relative; overflow: hidden; margin-bottom: 12px;
+  position: relative; overflow: hidden;
+  margin-bottom: 12px;
 }
-.cart-checkout-btn::after {
+.btn-gold::after {
   content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
-  animation: cartShimmer 3s ease infinite;
+  animation: shimmer 3s ease infinite;
 }
-.cart-checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
+.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
+
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 24px;
+  border: 1.5px solid rgba(196,152,10,.5);
+  background: transparent;
+  color: #4a3828;
+  font-family: 'Josefin Sans'; font-size: 10px; letter-spacing: .22em;
+  font-weight: 500; text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .35s, background .3s, border-color .3s;
+}
+.btn-outline:hover { transform: translateY(-2px); background: rgba(196,152,10,.08); border-color: #C4980A; }
 
 .cart-continue-link {
   display: block; text-align: center;
-  font-family: 'Jost'; font-size: 12px; letter-spacing: .1em;
+  font-family: 'Josefin Sans'; font-size: 12px; letter-spacing: .1em;
   text-transform: uppercase; color: #4a3828; font-weight: 500;
   text-decoration: none; transition: color .2s; padding: 6px 0;
 }
@@ -341,29 +378,8 @@ const CSS = `
   display: flex; align-items: center; justify-content: center;
 }
 .cart-trust-text {
-  font-family: 'Jost'; font-size: 12px; color: #4a3828; font-weight: 400;
+  font-family: 'Josefin Sans'; font-size: 12px; color: #4a3828; font-weight: 400;
 }
-
-/* ─────────────────────────────
-   BUTTONS SHARED
-───────────────────────────── */
-.cart-btn-shop {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 16px 44px;
-  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
-  color: #800020; border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
-  font-weight: 600; text-transform: uppercase; text-decoration: none;
-  transition: transform .35s, box-shadow .35s;
-  box-shadow: 0 6px 24px rgba(212,175,55,.38);
-  position: relative; overflow: hidden;
-}
-.cart-btn-shop::after {
-  content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
-  animation: cartShimmer 3s ease infinite;
-}
-.cart-btn-shop:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
 
 /* ─────────────────────────────
    RESPONSIVE
@@ -379,17 +395,18 @@ const CSS = `
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 export function CartPage() {
   const { cart, updateQuantity, removeFromCart, getCartTotal } = useCart();
+  const navigate = useNavigate();
 
   const subtotal = getCartTotal();
-  const shipping  = subtotal > 2999 ? 0 : 150;
-  const total     = subtotal + shipping;
-const navigate = useNavigate();
+  const shipping = subtotal > 2999 ? 0 : 150;
+  const total = subtotal + shipping;
 
-const handleCheckout = () => {
-  console.log('Proceeding to checkout');
-  console.log('Current cart:', cart);
-  navigate('/checkout');
-};
+  const handleCheckout = () => {
+    console.log('Proceeding to checkout');
+    console.log('Current cart:', cart);
+    navigate('/checkout');
+  };
+
   // ── Empty state ──
   if (cart.length === 0) {
     return (
@@ -401,13 +418,13 @@ const handleCheckout = () => {
               <ShoppingBag size={48} color={C.gold} />
             </div>
             <div style={{ marginBottom: 8 }}>
-              <span className="cart-ey">Your Selection</span>
+              <span className="ey">Your Selection</span>
             </div>
             <h2 className="cart-empty-title">Your Cart is Empty</h2>
             <p className="cart-empty-sub">
               Discover our beautiful collection<br />of handcrafted sarees
             </p>
-            <Link to="/shop" className="cart-btn-shop">
+            <Link to="/shop" className="btn-gold" style={{ display: 'inline-flex', width: 'auto', padding: '16px 44px' }}>
               Continue Shopping <ArrowRight size={15} />
             </Link>
           </div>
@@ -426,10 +443,11 @@ const handleCheckout = () => {
           <div className="cart-header cart-fadein">
             <div className="cart-header-badge">
               <Sparkles size={13} color={C.gold} />
-              <span className="cart-ey">Your Selection</span>
+              <span className="ey">Your Selection</span>
             </div>
             <h1 className="cart-header-title">Shopping Cart</h1>
             <p className="cart-header-count">{cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart</p>
+            <div className="gd" style={{ marginTop: 16 }} />
           </div>
 
           {/* ── Layout ── */}
@@ -512,7 +530,7 @@ const handleCheckout = () => {
               <div className="cart-summary-bar">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, position: 'relative', zIndex: 1 }}>
                   <Sparkles size={14} color="rgba(212,175,55,.8)" />
-                  <span style={{ fontFamily: "'Jost'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)' }}>
+                  <span style={{ fontFamily: "'Josefin Sans'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)' }}>
                     Neyge Couture
                   </span>
                 </div>
@@ -554,13 +572,13 @@ const handleCheckout = () => {
                 </div>
 
                 {/* Checkout */}
-                <button
-  type="button"
-  className="cart-checkout-btn"
-  onClick={handleCheckout}
->
-  Proceed to Checkout
-</button>
+                <button type="button" className="btn-gold" onClick={handleCheckout}>
+                  Proceed to Checkout
+                </button>
+
+                <Link to="/shop" className="cart-continue-link">
+                  ← Continue Shopping
+                </Link>
 
                 {/* Trust */}
                 <div className="cart-trust">

@@ -215,35 +215,59 @@ import { toast } from 'sonner';
 import { useWishlist } from '@/hooks/useWishlist';
 import { formatCurrency } from '@/lib/utils';
 
+// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
 const C = {
   maroon: '#800020',
+  maroonDk: '#5a0016',
   gold: '#C4980A',
+  goldV: '#D4AF37',
+  cream: '#F5E6D3',
+  creamLt: '#FFF9F0',
+  creamMid: '#F8EEE2',
+  creamDk: '#EDD8C4',
+  warmGrey: '#4a3828',
+  navy: '#1B2A6B',
+  forest: '#14402A',
 };
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
 .wl-root {
-  font-family:'Jost',sans-serif;
-  background:linear-gradient(170deg,#FFF9F0 0%,#F8EEE2 50%,#F5E6D3 100%);
-  min-height:100vh;
-  color:#1a1010;
-  line-height:1;
+  font-family: 'Josefin Sans', sans-serif;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
+  min-height: 100vh;
+  color: #1a1010;
+  line-height: 1;
 }
 .wl-wrap {
-  max-width:1280px;
-  margin:0 auto;
-  padding:0 56px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 64px;
 }
-@media(max-width:900px){.wl-wrap{padding:0 24px;}}
-@media(max-width:480px){.wl-wrap{padding:0 16px;}}
+@media(max-width:900px){ .wl-wrap { padding: 0 24px; } }
+@media(max-width:480px){ .wl-wrap { padding: 0 16px; } }
 
 .wl-page-top {
-  padding-top:140px;
-  padding-bottom:80px;
+  padding-top: 140px;
+  padding-bottom: 80px;
 }
-@media(max-width:640px){.wl-page-top{padding-top:110px;padding-bottom:60px;}}
+@media(max-width:640px){ .wl-page-top { padding-top: 110px; padding-bottom: 60px; } }
+
+/* ── Eyebrow ── */
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #C4980A;
+  font-weight: 600;
+}
+
+/* ── Gold divider ── */
+.gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 @keyframes wlFadeUp {
   from { opacity:0; transform:translateY(22px) }
@@ -258,236 +282,283 @@ const CSS = `
   50% { transform:scale(1.06); opacity:.8 }
 }
 
-.wl-fadein { animation:wlFadeIn .8s cubic-bezier(.4,0,.2,1) both; }
-.wl-fadeup { animation:wlFadeUp .8s cubic-bezier(.4,0,.2,1) both; }
+.wl-fadein { animation: wlFadeIn .8s cubic-bezier(.4,0,.2,1) both; }
+.wl-fadeup { animation: wlFadeUp .8s cubic-bezier(.4,0,.2,1) both; }
 
+/* Empty state */
 .wl-empty {
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(170deg,#FFF9F0 0%,#F5E6D3 100%);
-  padding:140px 24px 60px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(170deg, #FFF9F0 0%, #F5E6D3 100%);
+  padding: 140px 24px 60px;
 }
 .wl-empty-inner {
-  text-align:center;
-  max-width:420px;
+  text-align: center;
+  max-width: 420px;
 }
 .wl-empty-icon {
-  width:110px;
-  height:110px;
-  border-radius:50%;
-  margin:0 auto 28px;
-  background:rgba(196,152,10,.1);
-  border:1.5px solid rgba(196,152,10,.3);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  animation:wlPulse 3s ease infinite;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  margin: 0 auto 28px;
+  background: rgba(196,152,10,.1);
+  border: 1.5px solid rgba(196,152,10,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: wlPulse 3s ease infinite;
 }
 .wl-empty-title {
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(28px,5vw,44px);
-  font-weight:400;
-  color:#800020;
-  margin-bottom:12px;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 400;
+  color: #800020;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
 }
 .wl-empty-sub {
-  font-family:'Jost';
-  font-size:14px;
-  font-weight:300;
-  color:#4a3828;
-  line-height:1.75;
-  margin-bottom:32px;
+  font-family: 'Josefin Sans';
+  font-size: 14px;
+  font-weight: 300;
+  color: #4a3828;
+  line-height: 1.75;
+  margin-bottom: 32px;
+}
+/* Button matching btn-gold */
+.wl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 38px;
+  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
+  color: #800020;
+  font-family: 'Josefin Sans';
+  font-size: 10px;
+  letter-spacing: .22em;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 100px;
+  transition: transform .35s, box-shadow .35s;
+  box-shadow: 0 5px 24px rgba(196,152,10,.32);
+}
+.wl-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(196,152,10,.48);
 }
 
+/* Header */
 .wl-header {
-  margin-bottom:44px;
+  margin-bottom: 44px;
 }
 .wl-header-badge {
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  background:rgba(196,152,10,.12);
-  border:1px solid rgba(196,152,10,.35);
-  padding:7px 18px;
-  border-radius:100px;
-  margin-bottom:16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(196,152,10,.12);
+  border: 1px solid rgba(196,152,10,.35);
+  padding: 7px 18px;
+  border-radius: 100px;
+  margin-bottom: 16px;
 }
 .wl-header-title {
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(36px,6vw,60px);
-  font-weight:400;
-  color:#800020;
-  line-height:1.06;
-  margin-bottom:10px;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(36px, 6vw, 60px);
+  font-weight: 400;
+  color: #800020;
+  line-height: 1.06;
+  margin-bottom: 10px;
+  letter-spacing: 0.04em;
 }
 .wl-header-count {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-family:'Jost';
-  font-size:13px;
-  color:#9a8070;
-  font-weight:300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #9a8070;
+  font-weight: 300;
 }
 
+/* Grid & Card (matches home page product cards) */
 .wl-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
 }
+@media(max-width:1100px){ .wl-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width:820px){ .wl-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width:520px){ .wl-grid { grid-template-columns: 1fr; } }
 
 .wl-card {
-  background:#120909;
-  border-radius:22px;
-  overflow:hidden;
-  box-shadow:0 10px 30px rgba(0,0,0,.14);
-  display:flex;
-  flex-direction:column;
+  background: rgba(255,249,240,.96);
+  border: 1px solid rgba(196,152,10,.18);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(0,0,0,.05);
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+  display: flex;
+  flex-direction: column;
+}
+.wl-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 44px rgba(0,0,0,.12);
+  border-color: rgba(196,152,10,.4);
 }
 .wl-card-img-wrap {
-  width:100%;
-  aspect-ratio:3/4;
-  background:linear-gradient(135deg,#2a1616 0%,#120909 100%);
+  aspect-ratio: 3/4;
+  background: #f1e4d2;
+  overflow: hidden;
+  position: relative;
 }
 .wl-card-img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .6s ease;
 }
+.wl-card:hover .wl-card-img { transform: scale(1.06); }
 .wl-card-fallback {
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:rgba(212,175,55,.9);
-  font-family:'Cormorant Garamond',serif;
-  font-size:24px;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1e4d2;
+  color: #C4980A;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
 }
 .wl-card-body {
-  padding:18px 18px 16px;
-  background:linear-gradient(to top, rgba(10,2,2,.95) 0%, rgba(10,2,2,.9) 100%);
+  padding: 18px 18px 20px;
+  background: white;
 }
 .wl-fabric {
-  font-family:'Jost';
-  font-size:10px;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  color:rgba(196,152,10,.8);
-  font-weight:500;
-  margin-bottom:6px;
+  font-family: 'Josefin Sans';
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(128,0,32,.7);
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 .wl-name {
-  font-family:'Cormorant Garamond',serif;
-  font-size:22px;
-  font-weight:500;
-  color:white;
-  line-height:1.15;
-  margin-bottom:12px;
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: #800020;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
 }
 .wl-price-row {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 .wl-price {
-  font-family:'Cormorant Garamond',serif;
-  font-size:24px;
-  font-weight:600;
-  color:#D4AF37;
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #800020;
 }
 .wl-stock {
-  font-family:'Jost';
-  font-size:11px;
-  color:rgba(255,255,255,.55);
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  color: #059669;
+  font-weight: 500;
 }
 .wl-actions {
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.wl-view-btn,
-.wl-remove-btn,
-.wl-btn {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  border:none;
-  border-radius:100px;
-  padding:12px 18px;
-  font-family:'Jost',sans-serif;
-  font-size:12px;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  font-weight:600;
-  cursor:pointer;
-  text-decoration:none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .wl-view-btn {
-  background:linear-gradient(135deg,#D4AF37 0%,#b8960f 100%);
-  color:#800020;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 100px;
+  padding: 12px 18px;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-decoration: none;
+  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
+  color: #800020;
+  transition: transform .3s, box-shadow .3s;
 }
+.wl-view-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(212,175,55,.4); }
 .wl-remove-btn {
-  background:linear-gradient(135deg,#800020 0%,#5a0016 100%);
-  color:white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px solid rgba(200,50,50,.4);
+  border-radius: 100px;
+  padding: 11px 18px;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  background: transparent;
+  color: #c0392b;
+  cursor: pointer;
+  transition: background .25s, color .25s, transform .2s;
 }
-.wl-remove-btn:disabled {
-  opacity:.6;
-  cursor:not-allowed;
-}
+.wl-remove-btn:hover { background: #c0392b; color: white; transform: scale(1.02); }
+.wl-remove-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
+/* CTA section */
 .wl-cta {
-  margin-top:64px;
-  text-align:center;
+  margin-top: 64px;
+  text-align: center;
 }
 .wl-cta-card {
-  display:inline-block;
-  background:rgba(255,249,240,.95);
-  backdrop-filter:blur(10px);
-  border:1px solid rgba(196,152,10,.25);
-  border-radius:24px;
-  padding:32px 48px;
-  box-shadow:0 8px 36px rgba(0,0,0,.06);
+  display: inline-block;
+  background: rgba(255,249,240,.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(196,152,10,.25);
+  border-radius: 24px;
+  padding: 32px 48px;
+  box-shadow: 0 8px 36px rgba(0,0,0,.06);
 }
 .wl-cta-text {
-  font-family:'Jost';
-  font-size:13px;
-  color:#4a3828;
-  font-weight:300;
-  margin-bottom:14px;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #4a3828;
+  font-weight: 300;
+  margin-bottom: 14px;
 }
 .wl-cta-divider {
-  width:48px;
-  height:1px;
-  background:#C4980A;
-  margin:0 auto 14px;
+  width: 48px;
+  height: 1px;
+  background: #C4980A;
+  margin: 0 auto 14px;
 }
 .wl-link {
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  font-family:'Jost';
-  font-size:12px;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:#800020;
-  font-weight:500;
-  text-decoration:none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #800020;
+  font-weight: 500;
+  text-decoration: none;
+  transition: gap .25s;
 }
-.wl-ey {
-  font-family:'Jost';
-  font-size:11px;
-  letter-spacing:.25em;
-  text-transform:uppercase;
-  color:#C4980A;
-  font-weight:600;
-}
+.wl-link:hover { gap: 12px; color: #C4980A; }
 `;
 
 export function WishlistPage() {
@@ -534,7 +605,7 @@ export function WishlistPage() {
               <Heart size={44} color={C.gold} />
             </div>
             <div style={{ marginBottom: 8 }}>
-              <span className="wl-ey">Your Favorites</span>
+              <span className="ey">Your Favorites</span>
             </div>
             <h2 className="wl-empty-title">Your Wishlist is Empty</h2>
             <p className="wl-empty-sub">
@@ -559,10 +630,11 @@ export function WishlistPage() {
           <div className="wl-header wl-fadein">
             <div className="wl-header-badge">
               <Sparkles size={13} color={C.gold} />
-              <span className="wl-ey">Your Favorites</span>
+              <span className="ey">Your Favorites</span>
             </div>
 
             <h1 className="wl-header-title">My Wishlist</h1>
+            <div className="gd" style={{ marginTop: 8, marginBottom: 12 }} />
 
             <div className="wl-header-count">
               <Heart size={14} color={C.gold} fill={C.gold} />
@@ -597,7 +669,6 @@ export function WishlistPage() {
                         }}
                       />
                     ) : null}
-
                     <div
                       className="wl-card-fallback"
                       style={{ display: cardImage ? 'none' : 'flex' }}
@@ -637,7 +708,7 @@ export function WishlistPage() {
             })}
           </div>
 
-          <div className="wl-cta wl-fadeup wl-d2">
+          <div className="wl-cta wl-fadeup">
             <div className="wl-cta-card">
               <p className="wl-cta-text">Found everything you love?</p>
               <div className="wl-cta-divider" />
