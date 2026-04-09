@@ -177,7 +177,6 @@
 // }
 
 
-
 import { useMemo, useState } from "react";
 import {
   CalendarDays,
@@ -193,6 +192,19 @@ import {
 import { toast } from "sonner";
 import AdminLayout from "../components/AdminLayout";
 import { useAdminVideoBookings } from "../../hooks/useAdminVideoBookings";
+
+// ─── Brand palette (matches all other pages) ─────────────────────────────────
+const C = {
+  maroon: '#800020',
+  maroonDk: '#5a0016',
+  gold: '#C4980A',
+  goldV: '#D4AF37',
+  cream: '#F5E6D3',
+  creamLt: '#FFF9F0',
+  creamMid: '#F8EEE2',
+  warmGrey: '#4a3828',
+  navy: '#1B2A6B',
+};
 
 const STATUS_OPTIONS = ["all", "pending", "confirmed", "completed", "cancelled"] as const;
 type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
@@ -242,7 +254,7 @@ const STAT_CARDS = [
 function formatDate(dateString?: string) {
   if (!dateString) return "—";
   const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (isNaN(d.getTime())) return "—";
   return d.toLocaleString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -262,8 +274,9 @@ function StatusBadge({ status }: { status: BookingStatus }) {
         gap: 6,
         padding: "4px 12px",
         borderRadius: 100,
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 600,
+        fontFamily: "'Josefin Sans', sans-serif",
         letterSpacing: "0.04em",
         background: cfg.bg,
         color: cfg.text,
@@ -272,15 +285,7 @@ function StatusBadge({ status }: { status: BookingStatus }) {
         whiteSpace: "nowrap",
       }}
     >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: cfg.dot,
-          flexShrink: 0,
-        }}
-      />
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
       {cfg.label}
     </span>
   );
@@ -314,79 +319,87 @@ export default function AdminVideoBookingsPage() {
 
   return (
     <AdminLayout title="Video Bookings">
-      <div style={{ minHeight: "100vh", background: "#F8F9FB", fontFamily: "'Inter', sans-serif" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 60px" }}>
-
-          {/* ── Header ── */}
+      <style>{`
+        .vb-brand {
+          font-family: 'Josefin Sans', sans-serif;
+        }
+        .vb-title {
+          font-family: 'Cinzel', serif;
+          font-weight: 400;
+          letter-spacing: 0.04em;
+          color: #800020;
+        }
+        @media (max-width: 640px) {
+          .vb-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .vb-action-col {
+            width: 100% !important;
+          }
+          .vb-booking-card {
+            flex-direction: column !important;
+          }
+        }
+      `}</style>
+      <div className="vb-brand" style={{ minHeight: "100vh" }}>
+        <div style={{ maxWidth: 1320, margin: "0 auto", padding: "0 20px 60px" }}>
+          {/* Header */}
           <div
             style={{
               display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
               flexWrap: "wrap",
+              justifyContent: "space-between",
+              alignItems: "center",
               gap: 16,
               marginBottom: 32,
+              paddingTop: 8,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "linear-gradient(135deg, #6366F1, #4F46E5)",
+                  width: 48,
+                  height: 48,
+                  borderRadius: 16,
+                  background: `linear-gradient(135deg, ${C.maroon}, ${C.navy})`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 4px 14px rgba(99,102,241,0.35)",
-                  flexShrink: 0,
+                  boxShadow: "0 6px 18px rgba(128,0,32,0.25)",
                 }}
               >
-                <Video size={20} color="white" />
+                <Video size={22} color="white" />
               </div>
               <div>
-                <h1
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: "#0F172A",
-                    margin: 0,
-                    letterSpacing: "-0.3px",
-                  }}
-                >
-                  Video Booking Management
+                <h1 className="vb-title" style={{ fontSize: "clamp(24px, 5vw, 28px)", margin: 0 }}>
+                  Video Bookings
                 </h1>
-                <p style={{ fontSize: 13, color: "#64748B", margin: "3px 0 0", fontWeight: 400 }}>
-                  Review consultations, update statuses &amp; manage appointments
+                <p style={{ fontSize: 13, color: C.warmGrey, margin: "4px 0 0", fontWeight: 300 }}>
+                  Manage consultations and update statuses
                 </p>
               </div>
             </div>
 
-            {/* Filter */}
-            <div style={{ position: "relative" }}>
-              <SlidersHorizontal
-                size={14}
-                color="#94A3B8"
-                style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-              />
+            {/* Filter dropdown */}
+            <div style={{ position: "relative", minWidth: 140 }}>
+              <SlidersHorizontal size={14} color={C.gold} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
               <select
                 value={filter}
-                onChange={(e) => setFilter(e.target.value as (typeof STATUS_OPTIONS)[number])}
+                onChange={(e) => setFilter(e.target.value as any)}
                 style={{
                   appearance: "none",
-                  paddingLeft: 34,
-                  paddingRight: 36,
-                  paddingTop: 9,
-                  paddingBottom: 9,
+                  padding: "9px 36px 9px 34px",
                   fontSize: 13,
                   fontWeight: 500,
-                  color: "#334155",
-                  background: "white",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: 10,
+                  fontFamily: "'Josefin Sans', sans-serif",
+                  color: C.maroon,
+                  background: "rgba(255,249,240,.97)",
+                  border: `1px solid rgba(196,152,10,.35)`,
+                  borderRadius: 100,
                   cursor: "pointer",
                   outline: "none",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                  backdropFilter: "blur(8px)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                 }}
               >
                 {STATUS_OPTIONS.map((s) => (
@@ -395,36 +408,34 @@ export default function AdminVideoBookingsPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown
-                size={13}
-                color="#94A3B8"
-                style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-              />
+              <ChevronDown size={14} color={C.gold} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
             </div>
           </div>
 
-          {/* ── Stat Cards ── */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              gap: 14,
-              marginBottom: 28,
-            }}
-          >
+          {/* Stats Cards */}
+          <div className="vb-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
             {STAT_CARDS.map(({ key, filterKey, label, color, bg, border }) => (
               <div
                 key={key}
-                style={{
-                  background: "white",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: 14,
-                  padding: "16px 20px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                  cursor: "pointer",
-                  transition: "box-shadow 0.2s",
-                }}
                 onClick={() => setFilter(filterKey as any)}
+                style={{
+                  background: "rgba(255,249,240,.97)",
+                  backdropFilter: "blur(8px)",
+                  border: `1px solid rgba(196,152,10,.22)`,
+                  borderRadius: 20,
+                  padding: "16px 20px",
+                  cursor: "pointer",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(128,0,32,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)";
+                }}
               >
                 <div
                   style={{
@@ -433,78 +444,50 @@ export default function AdminVideoBookingsPage() {
                     justifyContent: "center",
                     width: 32,
                     height: 32,
-                    borderRadius: 8,
+                    borderRadius: 10,
                     background: bg,
                     border: `1px solid ${border}`,
-                    marginBottom: 10,
+                    marginBottom: 12,
                   }}
                 >
                   <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, display: "block" }} />
                 </div>
-                <p style={{ fontSize: 12, color: "#94A3B8", fontWeight: 500, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {label}
-                </p>
-                <p style={{ fontSize: 28, fontWeight: 700, color: "#0F172A", margin: 0, lineHeight: 1 }}>
-                  {stats[key]}
-                </p>
+                <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9a8070", fontWeight: 600, margin: "0 0 6px" }}>{label}</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: 28, fontWeight: 500, color: C.maroon, margin: 0, lineHeight: 1 }}>{stats[key]}</p>
               </div>
             ))}
           </div>
 
-          {/* ── Divider ── */}
-          <div style={{ height: 1, background: "#E2E8F0", marginBottom: 24 }} />
+          <div style={{ height: 1, background: "rgba(196,152,10,.2)", marginBottom: 24 }} />
 
-          {/* ── Content ── */}
+          {/* Bookings List */}
           {loading ? (
-            <div
-              style={{
-                background: "white",
-                border: "1px solid #E2E8F0",
-                borderRadius: 16,
-                padding: "48px 24px",
-                textAlign: "center",
-                color: "#94A3B8",
-                fontSize: 14,
-              }}
-            >
-              Loading video bookings…
-            </div>
+            <div style={{ background: "rgba(255,249,240,.97)", border: "1px solid rgba(196,152,10,.22)", borderRadius: 24, padding: "48px 24px", textAlign: "center", color: "#9a8070", fontSize: 14 }}>Loading video bookings…</div>
           ) : filteredBookings.length === 0 ? (
-            <div
-              style={{
-                background: "white",
-                border: "1.5px dashed #CBD5E1",
-                borderRadius: 16,
-                padding: "64px 24px",
-                textAlign: "center",
-              }}
-            >
-              <Video size={36} color="#CBD5E1" style={{ margin: "0 auto 14px" }} />
-              <p style={{ fontSize: 15, fontWeight: 600, color: "#334155", margin: "0 0 6px" }}>
-                No bookings found
-              </p>
-              <p style={{ fontSize: 13, color: "#94A3B8", margin: 0 }}>
-                No entries match the current filter.
-              </p>
+            <div style={{ background: "rgba(255,249,240,.97)", border: "1.5px dashed rgba(196,152,10,.4)", borderRadius: 24, padding: "64px 24px", textAlign: "center" }}>
+              <Video size={36} color={C.gold} style={{ margin: "0 auto 16px", opacity: 0.5 }} />
+              <p style={{ fontFamily: "'Cinzel', serif", fontSize: 20, color: C.maroon, margin: "0 0 8px" }}>No bookings found</p>
+              <p style={{ fontSize: 13, color: "#9a8070", margin: 0 }}>No entries match the current filter.</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {filteredBookings.map((booking) => (
                 <div
                   key={booking.id}
                   style={{
-                    background: "white",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 18,
+                    background: "rgba(255,249,240,.97)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(196,152,10,.22)",
+                    borderRadius: 24,
                     overflow: "hidden",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
                     transition: "box-shadow 0.2s",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
                   }}
                 >
-                  {/* Card top stripe */}
+                  {/* Top accent stripe */}
                   <div
                     style={{
-                      height: 3,
+                      height: 4,
                       background:
                         booking.status === "completed"
                           ? "linear-gradient(90deg, #10B981, #34D399)"
@@ -516,287 +499,110 @@ export default function AdminVideoBookingsPage() {
                     }}
                   />
 
-                  <div
-                    style={{
-                      padding: "20px 24px",
-                      display: "flex",
-                      gap: 24,
-                      flexWrap: "wrap",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    {/* Left: main info */}
+                  <div className="vb-booking-card" style={{ display: "flex", gap: 24, padding: "24px", flexWrap: "wrap" }}>
+                    {/* Left: Main Info */}
                     <div style={{ flex: 1, minWidth: 260 }}>
-                      {/* Name + status */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          marginBottom: 16,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {/* Avatar */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
                         <div
                           style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 10,
-                            background: "#EEF2FF",
+                            width: 44,
+                            height: 44,
+                            borderRadius: 14,
+                            background: `linear-gradient(135deg, rgba(196,152,10,.2), rgba(128,0,32,.1))`,
+                            border: `1px solid rgba(196,152,10,.35)`,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             fontWeight: 700,
-                            fontSize: 14,
-                            color: "#4F46E5",
-                            flexShrink: 0,
+                            fontSize: 16,
+                            color: C.maroon,
+                            fontFamily: "'Cinzel', serif",
                           }}
                         >
                           {booking.name?.slice(0, 2).toUpperCase() || "?"}
                         </div>
                         <div>
-                          <p style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", margin: 0 }}>
-                            {booking.name}
-                          </p>
-                          <p style={{ fontSize: 11, color: "#94A3B8", margin: 0, fontFamily: "'SF Mono', monospace" }}>
-                            #{booking.id.slice(0, 8).toUpperCase()}
-                          </p>
+                          <p style={{ fontFamily: "'Cinzel', serif", fontSize: 18, fontWeight: 500, color: C.maroon, margin: 0 }}>{booking.name}</p>
+                          <p style={{ fontSize: 11, color: "#9a8070", margin: "2px 0 0", fontFamily: "monospace" }}>#{booking.id.slice(0, 8).toUpperCase()}</p>
                         </div>
                         <div style={{ marginLeft: "auto" }}>
                           <StatusBadge status={booking.status as BookingStatus} />
                         </div>
                       </div>
 
-                      {/* Detail grid */}
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-                          gap: 10,
-                        }}
-                      >
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
                         {[
                           { icon: <Mail size={13} />, label: "Email", value: booking.email },
                           { icon: <Phone size={13} />, label: "Phone", value: booking.phone },
-                          {
-                            icon: <CalendarDays size={13} />,
-                            label: "Preferred date",
-                            value: formatDate(booking.preferred_date),
-                          },
-                          {
-                            icon: <Clock3 size={13} />,
-                            label: "Occasion",
-                            value: booking.occasion || "—",
-                          },
+                          { icon: <CalendarDays size={13} />, label: "Preferred date", value: formatDate(booking.preferred_date) },
+                          { icon: <Clock3 size={13} />, label: "Occasion", value: booking.occasion || "—" },
                           { icon: null, label: "Budget", value: booking.budget_range || "—" },
                         ].map(({ icon, label, value }) => (
                           <div
                             key={label}
                             style={{
-                              background: "#F8F9FB",
-                              border: "1px solid #F1F5F9",
-                              borderRadius: 10,
-                              padding: "10px 12px",
+                              background: "rgba(255,249,240,.8)",
+                              border: "1px solid rgba(196,152,10,.18)",
+                              borderRadius: 16,
+                              padding: "10px 14px",
                             }}
                           >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 5,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: "#94A3B8",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.06em",
-                                marginBottom: 5,
-                              }}
-                            >
-                              {icon && <span style={{ color: "#64748B" }}>{icon}</span>}
+                            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 600, color: "#9a8070", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                              {icon && <span style={{ color: C.gold }}>{icon}</span>}
                               {label}
                             </div>
-                            <p
-                              style={{
-                                fontSize: 13,
-                                color: "#334155",
-                                margin: 0,
-                                fontWeight: 500,
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {value}
-                            </p>
+                            <p style={{ fontSize: 13, color: C.warmGrey, margin: 0, fontWeight: 500, wordBreak: "break-word" }}>{value || "—"}</p>
                           </div>
                         ))}
                       </div>
 
-                      {/* Notes */}
                       {booking.notes && (
-                        <div
-                          style={{
-                            marginTop: 12,
-                            background: "#FFFBEB",
-                            border: "1px solid #FDE68A",
-                            borderRadius: 10,
-                            padding: "10px 14px",
-                          }}
-                        >
-                          <p
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              color: "#92400E",
-                              margin: "0 0 4px",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.06em",
-                            }}
-                          >
-                            Notes
-                          </p>
-                          <p style={{ fontSize: 13, color: "#78350F", margin: 0, lineHeight: 1.6 }}>
-                            {booking.notes}
-                          </p>
+                        <div style={{ marginTop: 14, background: "rgba(196,152,10,.08)", border: "1px solid rgba(196,152,10,.25)", borderRadius: 16, padding: "12px 16px" }}>
+                          <p style={{ fontSize: 10, fontWeight: 600, color: C.gold, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.08em" }}>Notes</p>
+                          <p style={{ fontSize: 13, color: C.warmGrey, margin: 0, lineHeight: 1.6 }}>{booking.notes}</p>
                         </div>
                       )}
                     </div>
 
                     {/* Right: Actions */}
-                    <div
-                      style={{
-                        width: 200,
-                        flexShrink: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                      }}
-                    >
-                      <p
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: "#94A3B8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.08em",
-                          margin: "0 0 4px",
-                        }}
-                      >
-                        Actions
-                      </p>
-
-                      {/* Pending → Confirm, Complete, Cancel */}
-                      {booking.status === "pending" && (
-                        <>
-                          <ActionButton
-                            label="Confirm Booking"
-                            color="#2563EB"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "confirmed")}
-                          />
-                          <ActionButton
-                            label="Mark Completed"
-                            color="#059669"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "completed")}
-                            outline
-                          />
-                          <ActionButton
-                            label="Cancel Booking"
-                            color="#DC2626"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "cancelled")}
-                            outline
-                          />
-                        </>
-                      )}
-
-                      {/* Confirmed → Complete, Reopen Pending, Cancel */}
-                      {booking.status === "confirmed" && (
-                        <>
-                          <ActionButton
-                            label="Mark Completed"
-                            color="#059669"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "completed")}
-                          />
-                          <ActionButton
-                            label="Reopen as Pending"
-                            color="#D97706"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "pending")}
-                            outline
-                          />
-                          <ActionButton
-                            label="Cancel Booking"
-                            color="#DC2626"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "cancelled")}
-                            outline
-                          />
-                        </>
-                      )}
-
-                      {/* Completed → status badge + Reopen Confirmed, Reopen Pending, Cancel */}
-                      {booking.status === "completed" && (
-                        <>
-                          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 14px", borderRadius: 10, background: "#ECFDF5", border: "1px solid #A7F3D0", fontSize: 13, fontWeight: 600, color: "#065F46" }}>
-                            <CheckCircle2 size={15} />
-                            Completed
-                          </div>
-                          <ActionButton
-                            label="Reopen as Confirmed"
-                            color="#2563EB"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "confirmed")}
-                            outline
-                          />
-                          <ActionButton
-                            label="Reopen as Pending"
-                            color="#D97706"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "pending")}
-                            outline
-                          />
-                          <ActionButton
-                            label="Cancel Booking"
-                            color="#DC2626"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "cancelled")}
-                            outline
-                          />
-                        </>
-                      )}
-
-                      {/* Cancelled → status badge + Reopen Pending, Confirm, Mark Completed */}
-                      {booking.status === "cancelled" && (
-                        <>
-                          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 14px", borderRadius: 10, background: "#FEF2F2", border: "1px solid #FECACA", fontSize: 13, fontWeight: 600, color: "#991B1B" }}>
-                            <XCircle size={15} />
-                            Cancelled
-                          </div>
-                          <ActionButton
-                            label="Reopen as Pending"
-                            color="#D97706"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "pending")}
-                            outline
-                          />
-                          <ActionButton
-                            label="Confirm Booking"
-                            color="#2563EB"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "confirmed")}
-                            outline
-                          />
-                          <ActionButton
-                            label="Mark Completed"
-                            color="#059669"
-                            disabled={updatingId === booking.id}
-                            onClick={() => handleStatusChange(booking.id, "completed")}
-                            outline
-                          />
-                        </>
-                      )}
+                    <div className="vb-action-col" style={{ width: 220, flexShrink: 0 }}>
+                      <p style={{ fontSize: 11, fontWeight: 600, color: "#9a8070", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 10px" }}>Actions</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {booking.status === "pending" && (
+                          <>
+                            <ActionButton label="Confirm Booking" color="#2563EB" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "confirmed")} />
+                            <ActionButton label="Mark Completed" color="#059669" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "completed")} outline />
+                            <ActionButton label="Cancel Booking" color="#DC2626" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "cancelled")} outline />
+                          </>
+                        )}
+                        {booking.status === "confirmed" && (
+                          <>
+                            <ActionButton label="Mark Completed" color="#059669" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "completed")} />
+                            <ActionButton label="Reopen as Pending" color="#D97706" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "pending")} outline />
+                            <ActionButton label="Cancel Booking" color="#DC2626" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "cancelled")} outline />
+                          </>
+                        )}
+                        {booking.status === "completed" && (
+                          <>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 14, background: "#ECFDF5", border: "1px solid #A7F3D0", fontSize: 13, fontWeight: 600, color: "#065F46" }}>
+                              <CheckCircle2 size={15} /> Completed
+                            </div>
+                            <ActionButton label="Reopen as Confirmed" color="#2563EB" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "confirmed")} outline />
+                            <ActionButton label="Reopen as Pending" color="#D97706" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "pending")} outline />
+                            <ActionButton label="Cancel Booking" color="#DC2626" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "cancelled")} outline />
+                          </>
+                        )}
+                        {booking.status === "cancelled" && (
+                          <>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 14, background: "#FEF2F2", border: "1px solid #FECACA", fontSize: 13, fontWeight: 600, color: "#991B1B" }}>
+                              <XCircle size={15} /> Cancelled
+                            </div>
+                            <ActionButton label="Reopen as Pending" color="#D97706" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "pending")} outline />
+                            <ActionButton label="Confirm Booking" color="#2563EB" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "confirmed")} outline />
+                            <ActionButton label="Mark Completed" color="#059669" disabled={updatingId === booking.id} onClick={() => handleStatusChange(booking.id, "completed")} outline />
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -829,16 +635,18 @@ function ActionButton({
       style={{
         width: "100%",
         padding: "10px 14px",
-        borderRadius: 10,
-        fontSize: 13,
+        borderRadius: 100,
+        fontSize: 12,
         fontWeight: 600,
+        fontFamily: "'Josefin Sans', sans-serif",
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.55 : 1,
-        transition: "opacity 0.15s, background 0.15s",
+        transition: "all 0.2s",
         border: outline ? `1.5px solid ${color}` : "none",
         background: outline ? "transparent" : color,
         color: outline ? color : "white",
-        letterSpacing: "0.01em",
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
       }}
     >
       {disabled ? "Updating…" : label}
