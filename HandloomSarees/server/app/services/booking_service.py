@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from fastapi import HTTPException, status
 
 from app.repositories.booking_repository import BookingRepository
@@ -9,31 +7,36 @@ from app.schemas.booking import VideoBookingCreateRequest
 class BookingService:
     @staticmethod
     def create_booking(payload: VideoBookingCreateRequest) -> dict:
-        preferred_date = payload.preferred_date
+        # Convert to JSON-safe dict so datetime becomes ISO string
+        data = payload.model_dump(mode="json")
 
-        if preferred_date.tzinfo is None:
-            preferred_date = preferred_date.replace(tzinfo=timezone.utc)
+        if not data.get("status"):
+            data["status"] = "pending"
 
-        if preferred_date < datetime.now(timezone.utc):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Preferred date must be in the future",
-            )
-
-        booking = BookingRepository.create(
-            {
-                "name": payload.name.strip(),
-                "phone": payload.phone.strip(),
-                "email": payload.email.lower().strip(),
-                "occasion": payload.occasion.strip() if payload.occasion else None,
-                "budget_range": payload.budget_range.strip() if payload.budget_range else None,
-                "preferred_date": preferred_date.isoformat(),
-                "notes": payload.notes.strip() if payload.notes else None,
-                "status": "pending",
-            }
-        )
-        return booking
+        return BookingRepository.create(data)
 
     @staticmethod
-    def list_bookings() -> list[dict]:
+    def list_all() -> list[dict]:
         return BookingRepository.list_all()
+
+    @staticmethod
+    def list_bookings_by_email(email: str) -> list[dict]:
+        return BookingRepository.list_by_email(email)
+
+    @staticmethod
+    def update_booking_status(booking_id: str, new_status: str) -> dict:
+        existing = BookingRepository.get_by_id(booking_id)
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Video booking not found",
+            )
+
+        updated = BookingRepository.update_status(booking_id, new_status)
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update booking status",
+            )
+
+        return updated

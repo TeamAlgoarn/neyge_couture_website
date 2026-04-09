@@ -105,6 +105,7 @@ import AdminCollections from "@/admin/pages/AdminCollections";
 import CollectionForm from "@/admin/pages/CollectionForm";
 import AdminOrders from "@/admin/pages/AdminOrders";
 import AdminOrderDetail from "@/admin/pages/AdminOrderDetail";
+import AdminVideoBookingsPage from './admin/pages/AdminVideoBookingsPage';
 import './styles/luxury-styles.css';
 
 function AppContent() {
@@ -147,6 +148,7 @@ function AppContent() {
 <Route path="/admin/collections/:id/edit" element={<CollectionForm />} />
 <Route path="/admin/orders" element={<AdminOrders />} />
 <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
+<Route path="/admin/video-bookings" element={<AdminVideoBookingsPage />} />
           </Route>
         </Routes>
       </main>

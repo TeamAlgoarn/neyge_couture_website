@@ -1003,9 +1003,8 @@ import api from '@/api/client';
 import { authService } from '@/lib/auth';
 import { User, MapPin, Package, LogOut, Video, Sparkles, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { FASHION_ADVISORS } from '@/constants/advisors';
+import { useVideoBooking } from "@/hooks/useVideoBooking";
 
-// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
 const C = {
   maroon: '#800020',
   maroonDk: '#5a0016',
@@ -1041,7 +1040,6 @@ const CSS = `
 @media(max-width:900px){ .pf-wrap { padding: 0 24px; } }
 @media(max-width:480px){ .pf-wrap { padding: 0 16px; } }
 
-/* ── Eyebrow ── */
 .ey {
   font-family: 'Josefin Sans', sans-serif;
   font-size: 10px;
@@ -1051,7 +1049,6 @@ const CSS = `
   font-weight: 600;
 }
 
-/* ── Gold divider ── */
 .gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 .pf-page-top { padding-top: 140px; padding-bottom: 80px; }
@@ -1065,7 +1062,6 @@ const CSS = `
 .pf-fadeup { animation: pfFadeUp  .8s cubic-bezier(.4,0,.2,1) both; }
 .pf-d1{animation-delay:.1s} .pf-d2{animation-delay:.2s} .pf-d3{animation-delay:.3s}
 
-/* Hero card */
 .pf-hero {
   background: rgba(255,249,240,.97); backdrop-filter: blur(12px);
   border: 1px solid rgba(196,152,10,.25); border-radius: 28px;
@@ -1140,7 +1136,6 @@ const CSS = `
 }
 .pf-logout:hover { background: #c0392b; color: white; transform: scale(1.03); }
 
-/* Cards */
 .pf-card {
   background: rgba(255,249,240,.95); backdrop-filter: blur(10px);
   border: 1px solid rgba(196,152,10,.22); border-radius: 24px;
@@ -1219,7 +1214,6 @@ const CSS = `
 
 .pf-consult-section { margin-bottom: 24px; }
 
-/* Buttons (brand gold) */
 .pf-add-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 18px; border: none; border-radius: 100px;
@@ -1367,6 +1361,7 @@ export function ProfilePage() {
   const [ordersError, setOrdersError] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressForm, setAddressForm] = useState<AddressFormState>(initialForm);
+  const { bookings, loading: bookingsLoading } = useVideoBooking();
 
   useEffect(() => {
     const refreshedUser = authService.getCurrentUser();
@@ -1427,17 +1422,6 @@ export function ProfilePage() {
     toast.success('Logged out successfully');
     navigate('/login', { replace: true });
   };
-
-  const consultations = JSON.parse(localStorage.getItem('handloom_consultations') || '[]')
-    .filter((c: any) => c.userId === user.id);
-
-  const formatDate = (dateStr: string, time: string) => {
-    const d = new Date(dateStr);
-    return `${d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} at ${time}`;
-  };
-
-  const getAdvisorName = (id: string) =>
-    FASHION_ADVISORS.find(a => a.id === id)?.name || 'Advisor';
 
   const handleInputChange = (field: keyof AddressFormState, value: string) => {
     setAddressForm((prev) => ({
@@ -1521,7 +1505,7 @@ export function ProfilePage() {
                 <div className="pf-stats-row">
                   {[
                     [String(orders.length), 'Orders'],
-                    [String(consultations.length), 'Sessions'],
+                    [String(bookings.length), 'Sessions'],
                     [String(user.addresses?.length || 0), 'Addresses'],
                   ].map(([n, l]) => (
                     <div key={l} className="pf-stat-cell">
@@ -1537,30 +1521,47 @@ export function ProfilePage() {
             </div>
           </div>
 
-          {consultations.length > 0 && (
-            <div className="pf-consult-section pf-fadeup pf-d1">
-              <div className="pf-card">
-                <div className="pf-card-head">
-                  <div className="pf-card-head-left">
-                    <div className="pf-card-icon"><Video size={16} color={C.gold} /></div>
-                    <h2 className="pf-card-title">Video Consultations</h2>
-                  </div>
+          <div className="pf-consult-section pf-fadeup pf-d1">
+            <div className="pf-card">
+              <div className="pf-card-head">
+                <div className="pf-card-head-left">
+                  <div className="pf-card-icon"><Video size={16} color={C.gold} /></div>
+                  <h2 className="pf-card-title">Video Consultations</h2>
                 </div>
+              </div>
 
-                {consultations.slice(0, 3).map((c: any) => (
-                  <div key={c.id} className="pf-row">
+              {bookingsLoading ? (
+                <p className="pf-empty">Loading consultations...</p>
+              ) : bookings.length > 0 ? (
+                bookings.slice(0, 3).map((booking) => (
+                  <div key={booking.id} className="pf-row">
                     <div className="pf-row-head">
                       <div>
-                        <div className="pf-row-name">{getAdvisorName(c.advisorId)}</div>
-                        <div className="pf-row-sub">{formatDate(c.date, c.time)}</div>
+                        <div className="pf-row-name">{booking.occasion || 'General Consultation'}</div>
+                        <div className="pf-row-sub">
+                          {new Date(booking.preferred_date).toLocaleString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                        {booking.notes && (
+                          <div className="pf-row-sub" style={{ marginTop: 6 }}>
+                            {booking.notes}
+                          </div>
+                        )}
                       </div>
-                      <span className="pf-tag">{c.status}</span>
+                      <span className="pf-tag">{booking.status || 'pending'}</span>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <p className="pf-empty">No consultations yet</p>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="pf-grid pf-fadeup pf-d2">
             <div className="pf-card">

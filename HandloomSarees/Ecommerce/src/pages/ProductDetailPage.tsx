@@ -708,6 +708,7 @@
 
 
 //below is the code for the product detail page of the saree ecommerce website. It includes the main product image, details, price, description, and related products. The code also handles adding to cart and wishlist functionality, as well as displaying trust badges and care instructions.
+import { ReviewSection } from "@/components/features/ReviewSection";
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -1508,6 +1509,7 @@ export function ProductDetailPage() {
             </div>
           </div>
 
+          {/*  */}
           <div className="pd-details-panel pd-fadeup pd-d2">
             <div className="pd-panel-head">
               <Sparkles size={18} color={C.gold} />
@@ -1560,6 +1562,8 @@ export function ProductDetailPage() {
               </div>
             </div>
           </div>
+
+          {saree?.id && <ReviewSection productId={saree.id} />}
 
           {relatedSarees.length > 0 && (
             <div className="pd-fadeup pd-d3">

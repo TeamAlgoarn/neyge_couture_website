@@ -1,6 +1,10 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
+
+
+BookingStatus = Literal["pending", "confirmed", "completed", "cancelled"]
 
 
 class VideoBookingCreateRequest(BaseModel):
@@ -13,6 +17,10 @@ class VideoBookingCreateRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=3000)
 
 
+class VideoBookingStatusUpdateRequest(BaseModel):
+    status: BookingStatus
+
+
 class VideoBookingResponse(BaseModel):
     id: str
     name: str
@@ -22,5 +30,5 @@ class VideoBookingResponse(BaseModel):
     budget_range: str | None = None
     preferred_date: datetime
     notes: str | None = None
-    status: str
+    status: BookingStatus
     created_at: datetime
