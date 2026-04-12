@@ -362,9 +362,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
-import { Package, Sparkles, Save, X, Layers } from "lucide-react";
+import { Package, Sparkles, Save, X, Layers, Plus, Trash2 } from "lucide-react";
 
-// ─── Brand palette (matches all other pages) ─────────────────────────────────
 const C = {
   maroon: '#800020',
   maroonDk: '#5a0016',
@@ -451,6 +450,13 @@ const CSS = `
   border: 1px solid rgba(196,152,10,.3);
   margin-top: 12px;
 }
+.preview-img-small {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(196,152,10,.3);
+}
 .btn-save {
   display: inline-flex;
   align-items: center;
@@ -499,22 +505,59 @@ const CSS = `
   background: rgba(128,0,32,.05);
   transform: translateY(-2px);
 }
+.btn-add-image {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: rgba(196,152,10,.1);
+  border: 1.5px dashed rgba(196,152,10,.5);
+  border-radius: 100px;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #C4980A;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.btn-add-image:hover {
+  background: rgba(196,152,10,.18);
+  border-color: #C4980A;
+}
+.btn-remove-image {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(192,57,43,.1);
+  border: 1px solid rgba(192,57,43,.3);
+  border-radius: 50%;
+  color: #c0392b;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.btn-remove-image:hover {
+  background: #c0392b;
+  color: white;
+}
+.image-url-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .slug-hint {
   font-size: 11px;
   color: #9a8070;
   margin-top: 4px;
 }
 @media (max-width: 768px) {
-  .form-card {
-    padding: 20px;
-  }
-  .form-title {
-    font-size: 18px;
-  }
-  .btn-save, .btn-cancel {
-    flex: 1;
-    justify-content: center;
-  }
+  .form-card { padding: 20px; }
+  .form-title { font-size: 18px; }
+  .btn-save, .btn-cancel { flex: 1; justify-content: center; }
 }
 `;
 
@@ -524,6 +567,7 @@ type ProductPayload = {
   price: number;
   discount_price: number | null;
   thumbnail: string;
+  images: string[];
   short_description: string;
   color: string;
   fabric: string;
@@ -538,19 +582,11 @@ type ProductPayload = {
 type ProductResponse = {
   data?: (ProductPayload & {
     id: string;
-    collection?: {
-      id?: string;
-      slug?: string;
-      name?: string;
-    };
+    collection?: { id?: string; slug?: string; name?: string };
   }) | any;
   product?: (ProductPayload & {
     id: string;
-    collection?: {
-      id?: string;
-      slug?: string;
-      name?: string;
-    };
+    collection?: { id?: string; slug?: string; name?: string };
   }) | any;
 };
 
@@ -566,6 +602,7 @@ const initialForm: ProductPayload = {
   price: 0,
   discount_price: null,
   thumbnail: "",
+  images: [],
   short_description: "",
   color: "",
   fabric: "",
@@ -588,11 +625,28 @@ export default function ProductForm() {
   const [pageLoading, setPageLoading] = useState(isEdit);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
 
-  const updateField = <K extends keyof ProductPayload>(
-    key: K,
-    value: ProductPayload[K]
-  ) => {
+  const updateField = <K extends keyof ProductPayload>(key: K, value: ProductPayload[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // ── Image URL list helpers ────────────────────────────────────────────────
+  const addImageUrl = () => {
+    setForm((prev) => ({ ...prev, images: [...prev.images, ""] }));
+  };
+
+  const updateImageUrl = (index: number, value: string) => {
+    setForm((prev) => {
+      const updated = [...prev.images];
+      updated[index] = value;
+      return { ...prev, images: updated };
+    });
+  };
+
+  const removeImageUrl = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   useEffect(() => {
@@ -601,19 +655,11 @@ export default function ProductForm() {
         setCollectionsLoading(true);
         const res = await adminApi.get("/collections");
         let items: Collection[] = [];
-
-        if (Array.isArray(res.data)) {
-          items = res.data;
-        } else if (Array.isArray(res.data?.data)) {
-          items = res.data.data;
-        } else if (Array.isArray(res.data?.data?.items)) {
-          items = res.data.data.items;
-        } else if (Array.isArray(res.data?.collections)) {
-          items = res.data.collections;
-        } else if (Array.isArray(res.data?.items)) {
-          items = res.data.items;
-        }
-
+        if (Array.isArray(res.data)) items = res.data;
+        else if (Array.isArray(res.data?.data)) items = res.data.data;
+        else if (Array.isArray(res.data?.data?.items)) items = res.data.data.items;
+        else if (Array.isArray(res.data?.collections)) items = res.data.collections;
+        else if (Array.isArray(res.data?.items)) items = res.data.items;
         setCollections(items);
       } catch (error) {
         console.error("Failed to fetch collections", error);
@@ -622,31 +668,25 @@ export default function ProductForm() {
         setCollectionsLoading(false);
       }
     };
-
     fetchCollections();
   }, []);
 
   useEffect(() => {
-    if (!isEdit || !id) {
-      setPageLoading(false);
-      return;
-    }
+    if (!isEdit || !id) { setPageLoading(false); return; }
 
     const fetchProduct = async () => {
       try {
         const res = await adminApi.get<ProductResponse>(`/products/${id}`);
         const product = res.data?.data || res.data?.product || res.data;
-
         if (product) {
           setForm({
             name: product.name || "",
             slug: product.slug || "",
             price: Number(product.price || 0),
             discount_price:
-              product.discount_price !== null && product.discount_price !== undefined
-                ? Number(product.discount_price)
-                : null,
+              product.discount_price != null ? Number(product.discount_price) : null,
             thumbnail: product.thumbnail || "",
+            images: Array.isArray(product.images) ? product.images : [],
             short_description: product.short_description || "",
             color: product.color || "",
             fabric: product.fabric || "",
@@ -664,37 +704,32 @@ export default function ProductForm() {
         setPageLoading(false);
       }
     };
-
     fetchProduct();
   }, [id, isEdit]);
 
   const handleCollectionChange = (collectionId: string) => {
-    const selectedCollection = collections.find(
-      (collection) => collection.id === collectionId
-    );
-
+    const selected = collections.find((c) => c.id === collectionId);
     setForm((prev) => ({
       ...prev,
       collection_id: collectionId,
-      collection_slug: selectedCollection?.slug || "",
+      collection_slug: selected?.slug || "",
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = {
         ...form,
-        discount_price:
-          form.discount_price === null || form.discount_price === 0
-            ? null
-            : Number(form.discount_price),
+        discount_price: form.discount_price === null || form.discount_price === 0
+          ? null : Number(form.discount_price),
         price: Number(form.price),
         stock: Number(form.stock),
         collection_id: form.collection_id || null,
         collection_slug: form.collection_slug || null,
+        // filter out any empty image URLs before sending
+        images: form.images.filter((url) => url.trim() !== ""),
       };
 
       if (isEdit && id) {
@@ -702,7 +737,6 @@ export default function ProductForm() {
       } else {
         await adminApi.post("/products", payload);
       }
-
       navigate("/admin/products");
     } catch (error) {
       console.error("Failed to save product", error);
@@ -715,7 +749,7 @@ export default function ProductForm() {
   if (pageLoading) {
     return (
       <AdminLayout title={isEdit ? "Edit Product" : "New Product"}>
-        <div className="product-form" style={{ fontFamily: "'Josefin Sans', sans-serif", textAlign: "center", padding: "60px 20px" }}>
+        <div className="product-form" style={{ textAlign: "center", padding: "60px 20px" }}>
           Loading product data...
         </div>
       </AdminLayout>
@@ -729,7 +763,8 @@ export default function ProductForm() {
         <div className="product-form">
           <form onSubmit={handleSubmit}>
             <div style={{ display: "grid", gap: 28, gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-              {/* Basic Details Card */}
+
+              {/* ── Basic Details Card ── */}
               <div className="form-card">
                 <div className="form-title">
                   <Package size={20} color={C.gold} />
@@ -768,10 +803,8 @@ export default function ProductForm() {
                       <option value="">
                         {collectionsLoading ? "Loading collections..." : "Select Collection"}
                       </option>
-                      {collections.map((collection) => (
-                        <option key={collection.id} value={collection.id}>
-                          {collection.name}
-                        </option>
+                      {collections.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
                     </select>
                     {form.collection_slug && (
@@ -790,6 +823,8 @@ export default function ProductForm() {
                       onChange={(e) => updateField("short_description", e.target.value)}
                     />
                   </div>
+
+                  {/* ── Thumbnail URL ── */}
                   <div>
                     <label className="form-label">Thumbnail URL</label>
                     <input
@@ -801,19 +836,63 @@ export default function ProductForm() {
                   </div>
                   {form.thumbnail && (
                     <div>
-                      <p className="form-label">Preview</p>
+                      <p className="form-label">Thumbnail Preview</p>
                       <img
                         src={form.thumbnail}
-                        alt="Product preview"
+                        alt="Thumbnail preview"
                         className="preview-img"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                       />
                     </div>
                   )}
+
+                  {/* ── Image URLs ── */}
+                  <div>
+                    <label className="form-label">Image URLs</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {form.images.map((url, index) => (
+                        <div key={index} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <div className="image-url-row">
+                            <input
+                              className="form-input"
+                              placeholder={`https://example.com/image-${index + 1}.jpg`}
+                              value={url}
+                              onChange={(e) => updateImageUrl(index, e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="btn-remove-image"
+                              onClick={() => removeImageUrl(index)}
+                              title="Remove image"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                          {url && (
+                            <img
+                              src={url}
+                              alt={`Image ${index + 1} preview`}
+                              className="preview-img-small"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="btn-add-image"
+                        onClick={addImageUrl}
+                      >
+                        <Plus size={13} />
+                        Add Image URL
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
-              {/* Pricing & Stock Card */}
+              {/* ── Pricing & Stock Card ── */}
               <div className="form-card">
                 <div className="form-title">
                   <Sparkles size={20} color={C.gold} />
@@ -839,10 +918,7 @@ export default function ProductForm() {
                       placeholder="Optional"
                       value={form.discount_price ?? ""}
                       onChange={(e) =>
-                        updateField(
-                          "discount_price",
-                          e.target.value ? Number(e.target.value) : null
-                        )
+                        updateField("discount_price", e.target.value ? Number(e.target.value) : null)
                       }
                     />
                   </div>
@@ -887,7 +963,7 @@ export default function ProductForm() {
               </div>
             </div>
 
-            {/* Settings Card */}
+            {/* ── Settings Card ── */}
             <div className="form-card" style={{ marginTop: 28 }}>
               <div className="form-title">
                 <Layers size={20} color={C.gold} />
@@ -915,11 +991,11 @@ export default function ProductForm() {
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* ── Action Buttons ── */}
             <div style={{ display: "flex", gap: 16, marginTop: 32, flexWrap: "wrap" }}>
               <button type="submit" disabled={loading} className="btn-save">
                 <Save size={16} />
-                {loading ? "Saving..." : (isEdit ? "Update Product" : "Create Product")}
+                {loading ? "Saving..." : isEdit ? "Update Product" : "Create Product"}
               </button>
               <button type="button" onClick={() => navigate("/admin/products")} className="btn-cancel">
                 <X size={16} />
