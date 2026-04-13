@@ -1,12 +1,9 @@
-import os
 from pathlib import Path
+import uuid
 
-import cloudinary
-import cloudinary.uploader
-import cloudinary.utils
 from fastapi import HTTPException, UploadFile, status
 
-from app.core.config import settings
+from app.core.database import get_supabase_admin
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.product_repository import ProductRepository
 
@@ -20,14 +17,8 @@ class UploadService:
     }
     MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
-    @staticmethod
-    def configure_cloudinary() -> None:
-        cloudinary.config(
-            cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-            api_key=settings.CLOUDINARY_API_KEY,
-            api_secret=settings.CLOUDINARY_API_SECRET,
-            secure=True,
-        )
+    PRODUCT_BUCKET = "product-images"
+    COLLECTION_BUCKET = "collection-images"
 
     @staticmethod
     async def _validate_image(file: UploadFile) -> bytes:
@@ -60,26 +51,43 @@ class UploadService:
         return content
 
     @staticmethod
-    def _build_optimized_url(public_id: str) -> str:
-        optimized_url, _ = cloudinary.utils.cloudinary_url(
-            public_id,
-            secure=True,
-            fetch_format="auto",
-            quality="auto",
+    def _upload_to_supabase(bucket: str, path: str, content: bytes, content_type: str) -> str:
+        supabase = get_supabase_admin()
+
+        result = supabase.storage.from_(bucket).upload(
+            path,
+            content,
+            {"content-type": content_type},
         )
-        return optimized_url
+
+        if getattr(result, "error", None):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload image to Supabase Storage",
+            )
+
+        public_url = supabase.storage.from_(bucket).get_public_url(path)
+        return public_url
 
     @staticmethod
-    def _build_thumbnail_url(public_id: str) -> str:
-        thumb_url, _ = cloudinary.utils.cloudinary_url(
-            public_id,
-            secure=True,
-            width=500,
-            crop="scale",
-            fetch_format="auto",
-            quality="auto",
+    async def upload_temp_product_image(file: UploadFile) -> dict:
+        content = await UploadService._validate_image(file)
+
+        extension = Path(file.filename or "product-image").suffix or ".jpg"
+        path = f"products/temp/{uuid.uuid4().hex}{extension}"
+
+        image_url = UploadService._upload_to_supabase(
+            UploadService.PRODUCT_BUCKET,
+            path,
+            content,
+            file.content_type or "image/jpeg",
         )
-        return thumb_url
+
+        return {
+            "path": path,
+            "url": image_url,
+            "filename": file.filename,
+        }
 
     @staticmethod
     async def upload_product_image(product_id: str, file: UploadFile) -> dict:
@@ -90,31 +98,17 @@ class UploadService:
                 detail="Product not found",
             )
 
-        UploadService.configure_cloudinary()
         content = await UploadService._validate_image(file)
 
-        filename = Path(file.filename or "product-image").stem
-        public_id = f"neyge-couture/products/{product_id}/{filename}"
+        extension = Path(file.filename or "product-image").suffix or ".jpg"
+        path = f"products/{product_id}/{uuid.uuid4().hex}{extension}"
 
-        try:
-            uploaded = cloudinary.uploader.upload(
-                content,
-                public_id=public_id,
-                overwrite=True,
-                resource_type="image",
-                folder=None,
-            )
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Failed to upload image to Cloudinary",
-            ) from exc
-
-        image_url = uploaded.get("secure_url")
-        public_id = uploaded.get("public_id")
-
-        optimized_url = UploadService._build_optimized_url(public_id)
-        thumbnail_url = UploadService._build_thumbnail_url(public_id)
+        image_url = UploadService._upload_to_supabase(
+            UploadService.PRODUCT_BUCKET,
+            path,
+            content,
+            file.content_type or "image/jpeg",
+        )
 
         existing_images = product.get("images") or []
         if image_url not in existing_images:
@@ -125,15 +119,14 @@ class UploadService:
         }
 
         if not product.get("thumbnail"):
-            update_payload["thumbnail"] = thumbnail_url
+            update_payload["thumbnail"] = image_url
 
         updated = ProductRepository.update(product_id, update_payload)
 
         return {
             "product_id": product_id,
             "image_url": image_url,
-            "optimized_url": optimized_url,
-            "thumbnail_url": thumbnail_url,
+            "thumbnail": updated.get("thumbnail") if updated else image_url,
             "images": updated.get("images") if updated else existing_images,
         }
 
@@ -146,29 +139,17 @@ class UploadService:
                 detail="Collection not found",
             )
 
-        UploadService.configure_cloudinary()
         content = await UploadService._validate_image(file)
 
-        filename = Path(file.filename or "collection-banner").stem
-        public_id = f"neyge-couture/collections/{collection_id}/{filename}"
+        extension = Path(file.filename or "collection-banner").suffix or ".jpg"
+        path = f"collections/{collection_id}/{uuid.uuid4().hex}{extension}"
 
-        try:
-            uploaded = cloudinary.uploader.upload(
-                content,
-                public_id=public_id,
-                overwrite=True,
-                resource_type="image",
-                folder=None,
-            )
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Failed to upload banner to Cloudinary",
-            ) from exc
-
-        image_url = uploaded.get("secure_url")
-        public_id = uploaded.get("public_id")
-        optimized_url = UploadService._build_optimized_url(public_id)
+        image_url = UploadService._upload_to_supabase(
+            UploadService.COLLECTION_BUCKET,
+            path,
+            content,
+            file.content_type or "image/jpeg",
+        )
 
         updated = CollectionRepository.update(
             collection_id,
@@ -178,5 +159,4 @@ class UploadService:
         return {
             "collection_id": collection_id,
             "banner_image": updated.get("banner_image") if updated else image_url,
-            "optimized_url": optimized_url,
         }

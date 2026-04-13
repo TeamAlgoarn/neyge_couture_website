@@ -732,7 +732,6 @@ import { SareeCard } from '@/components/features/SareeCard';
 import { getProductBySlug, getProducts } from '@/api/products';
 import type { Saree } from '@/types';
 
-// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
 const C = {
   maroon: '#800020',
   maroonDk: '#5a0016',
@@ -769,7 +768,6 @@ const CSS = `
 @media(max-width: 900px) { .pd-wrap { padding: 0 24px; } }
 @media(max-width: 480px) { .pd-wrap { padding: 0 16px; } }
 
-/* ── Eyebrow ── */
 .ey {
   font-family: 'Josefin Sans', sans-serif;
   font-size: 10px;
@@ -779,7 +777,6 @@ const CSS = `
   font-weight: 600;
 }
 
-/* ── Gold divider ── */
 .gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 @keyframes pdFadeUp   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
@@ -820,7 +817,6 @@ const CSS = `
   .pd-main-grid { grid-template-columns: 1fr; gap: 40px; }
 }
 
-/* Image gallery */
 .pd-img-main {
   position: relative;
   border-radius: 24px; overflow: hidden;
@@ -876,6 +872,7 @@ const CSS = `
   aspect-ratio: 1; border-radius: 14px; overflow: hidden;
   border: 2px solid transparent; cursor: pointer;
   transition: border-color .25s, transform .25s, box-shadow .25s;
+  background: white;
 }
 .pd-thumb:hover { transform: scale(1.04); }
 .pd-thumb.active {
@@ -884,7 +881,6 @@ const CSS = `
 }
 .pd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* Details */
 .pd-details { display: flex; flex-direction: column; gap: 22px; }
 
 .pd-badge-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -958,7 +954,7 @@ const CSS = `
 }
 .pd-info-val {
   font-family: 'Josefin Sans';
-  font-size: 13px; font-weight: 600; color: #800020;
+  font-size: 13px; color: #800020; font-weight: 600;
 }
 .pd-stock-dot {
   display: inline-block; width: 7px; height: 7px;
@@ -1018,7 +1014,6 @@ const CSS = `
   color: #4a3828; font-weight: 500;
 }
 
-/* Details panel */
 .pd-details-panel {
   background: rgba(255,249,240,.95); backdrop-filter: blur(10px);
   border: 1px solid rgba(196,152,10,.22);
@@ -1098,7 +1093,6 @@ const CSS = `
   color: #4a3828; line-height: 1.88;
 }
 
-/* Related products */
 .pd-related-head { text-align: center; margin-bottom: 48px; }
 .pd-related-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -1182,13 +1176,14 @@ type ProductsApiResponse = {
 };
 
 function mapProductToSaree(product: BackendProduct): Saree {
-  const primaryImage = product.thumbnail || product.images?.[0] || '';
-  const allImages =
-    product.images && product.images.length > 0
-      ? product.images.filter(Boolean)
-      : primaryImage
-      ? [primaryImage]
-      : [];
+  const imageSet = new Set<string>();
+  if (product.thumbnail) imageSet.add(product.thumbnail);
+  if (Array.isArray(product.images)) {
+    product.images.filter(Boolean).forEach((img) => imageSet.add(img));
+  }
+
+  const allImages = Array.from(imageSet);
+  const primaryImage = product.thumbnail || allImages[0] || "";
 
   return {
     id: product.id,
@@ -1207,7 +1202,7 @@ function mapProductToSaree(product: BackendProduct): Saree {
       ? `${product.artisan.name}${product.artisan.region ? ` - ${product.artisan.region}` : ''}${product.artisan.experience ? ` · ${product.artisan.experience}` : ''}`
       : '',
     careInstructions: product.care_instructions || 'Handle with care.',
-    stock: product.stock || 0,
+    stock: Math.max(0, product.stock || 0),
     rating: 4.8,
     reviews: 24,
     featured: product.is_featured || false,
@@ -1326,7 +1321,11 @@ export function ProductDetailPage() {
     );
   }
 
-  const safeImages = saree.images && saree.images.length > 0 ? saree.images : [saree.image].filter(Boolean);
+  const safeImages = saree.images && saree.images.length > 0
+    ? saree.images.filter(Boolean)
+    : [saree.image].filter(Boolean);
+
+  const activeImage = safeImages[selectedImage] || safeImages[0] || saree.image;
 
   const handleAddToCart = async () => {
     try {
@@ -1346,8 +1345,15 @@ export function ProductDetailPage() {
     }
   };
 
-  const nextImage = () => setSelectedImage((p) => (p + 1) % safeImages.length);
-  const prevImage = () => setSelectedImage((p) => (p - 1 + safeImages.length) % safeImages.length);
+  const nextImage = () => {
+    if (safeImages.length <= 1) return;
+    setSelectedImage((p) => (p + 1) % safeImages.length);
+  };
+
+  const prevImage = () => {
+    if (safeImages.length <= 1) return;
+    setSelectedImage((p) => (p - 1 + safeImages.length) % safeImages.length);
+  };
 
   const careItems = (saree.careInstructions || 'Handle with care.')
     .split('.')
@@ -1373,7 +1379,7 @@ export function ProductDetailPage() {
             <div className="pd-fadein">
               <div className="pd-img-main">
                 <div className="pd-img-main-inner">
-                  <img src={safeImages[selectedImage]} alt={saree.name} />
+                  <img src={activeImage} alt={saree.name} />
                 </div>
                 <div className="pd-img-overlay" />
 
@@ -1399,6 +1405,7 @@ export function ProductDetailPage() {
                       key={i}
                       className={`pd-thumb ${selectedImage === i ? 'active' : ''}`}
                       onClick={() => setSelectedImage(i)}
+                      type="button"
                     >
                       <img src={img} alt={`${saree.name} ${i + 1}`} />
                     </button>
@@ -1487,6 +1494,7 @@ export function ProductDetailPage() {
                 <button
                   className={`pd-btn-wish ${inWishlist ? 'active' : ''}`}
                   onClick={handleToggleWishlist}
+                  type="button"
                 >
                   <Heart
                     size={20}
@@ -1509,7 +1517,6 @@ export function ProductDetailPage() {
             </div>
           </div>
 
-          {/*  */}
           <div className="pd-details-panel pd-fadeup pd-d2">
             <div className="pd-panel-head">
               <Sparkles size={18} color={C.gold} />

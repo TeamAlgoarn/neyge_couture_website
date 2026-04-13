@@ -358,22 +358,25 @@
 
 
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
-import { Package, Sparkles, Save, X, Layers, Plus, Trash2 } from "lucide-react";
+import { uploadProductImage } from "../lib/uploadProductImage";
+import {
+  Package,
+  Sparkles,
+  Save,
+  X,
+  Layers,
+  Trash2,
+  Image as ImageIcon,
+  Star,
+} from "lucide-react";
 
 const C = {
-  maroon: '#800020',
-  maroonDk: '#5a0016',
-  gold: '#C4980A',
-  goldV: '#D4AF37',
-  cream: '#F5E6D3',
-  creamLt: '#FFF9F0',
-  creamMid: '#F8EEE2',
-  warmGrey: '#4a3828',
-  navy: '#1B2A6B',
+  maroon: "#800020",
+  gold: "#C4980A",
 };
 
 const CSS = `
@@ -419,7 +422,6 @@ const CSS = `
 }
 .form-label {
   display: block;
-  font-family: 'Josefin Sans';
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -434,7 +436,6 @@ const CSS = `
   margin-right: 10px;
 }
 .form-checkbox-label {
-  font-family: 'Josefin Sans';
   font-size: 14px;
   font-weight: 500;
   color: #4a3828;
@@ -444,18 +445,121 @@ const CSS = `
 }
 .preview-img {
   width: 100%;
-  max-height: 200px;
+  max-height: 240px;
   border-radius: 18px;
   object-fit: cover;
   border: 1px solid rgba(196,152,10,.3);
   margin-top: 12px;
 }
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.preview-box {
+  position: relative;
+}
 .preview-img-small {
-  width: 80px;
-  height: 80px;
-  border-radius: 12px;
+  width: 100%;
+  height: 110px;
+  border-radius: 14px;
   object-fit: cover;
   border: 1px solid rgba(196,152,10,.3);
+  background: #fff;
+}
+.upload-box {
+  border: 1.5px dashed rgba(196,152,10,.45);
+  background: rgba(255,255,255,.8);
+  border-radius: 18px;
+  padding: 18px;
+}
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(196,152,10,.35);
+  background: rgba(196,152,10,.08);
+  color: #800020;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: .25s;
+}
+.upload-btn:hover {
+  transform: translateY(-1px);
+  border-color: #C4980A;
+  background: rgba(196,152,10,.14);
+}
+.upload-hint {
+  font-size: 12px;
+  color: #8b735f;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+.upload-warning {
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 8px;
+  font-weight: 600;
+}
+.cover-box {
+  margin-top: 16px;
+}
+.cover-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(196,152,10,.12);
+  color: #800020;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(196,152,10,.28);
+  margin-bottom: 10px;
+}
+.btn-remove-image {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(192,57,43,.95);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+}
+.img-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(212,175,55,.95);
+  color: #800020;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
 .btn-save {
   display: inline-flex;
@@ -466,7 +570,6 @@ const CSS = `
   color: #800020;
   border: none;
   border-radius: 100px;
-  font-family: 'Josefin Sans';
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -491,7 +594,6 @@ const CSS = `
   background: transparent;
   border: 1.5px solid rgba(196,152,10,.4);
   border-radius: 100px;
-  font-family: 'Josefin Sans';
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -504,50 +606,6 @@ const CSS = `
   border-color: #800020;
   background: rgba(128,0,32,.05);
   transform: translateY(-2px);
-}
-.btn-add-image {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  background: rgba(196,152,10,.1);
-  border: 1.5px dashed rgba(196,152,10,.5);
-  border-radius: 100px;
-  font-family: 'Josefin Sans';
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #C4980A;
-  cursor: pointer;
-  transition: all 0.25s;
-}
-.btn-add-image:hover {
-  background: rgba(196,152,10,.18);
-  border-color: #C4980A;
-}
-.btn-remove-image {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: rgba(192,57,43,.1);
-  border: 1px solid rgba(192,57,43,.3);
-  border-radius: 50%;
-  color: #c0392b;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-.btn-remove-image:hover {
-  background: #c0392b;
-  color: white;
-}
-.image-url-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 .slug-hint {
   font-size: 11px;
@@ -624,29 +682,12 @@ export default function ProductForm() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(isEdit);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [uploadingImages, setUploadingImages] = useState(false);
+
+  const imagesInputRef = useRef<HTMLInputElement | null>(null);
 
   const updateField = <K extends keyof ProductPayload>(key: K, value: ProductPayload[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  // ── Image URL list helpers ────────────────────────────────────────────────
-  const addImageUrl = () => {
-    setForm((prev) => ({ ...prev, images: [...prev.images, ""] }));
-  };
-
-  const updateImageUrl = (index: number, value: string) => {
-    setForm((prev) => {
-      const updated = [...prev.images];
-      updated[index] = value;
-      return { ...prev, images: updated };
-    });
-  };
-
-  const removeImageUrl = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
   };
 
   useEffect(() => {
@@ -654,12 +695,14 @@ export default function ProductForm() {
       try {
         setCollectionsLoading(true);
         const res = await adminApi.get("/collections");
+
         let items: Collection[] = [];
         if (Array.isArray(res.data)) items = res.data;
         else if (Array.isArray(res.data?.data)) items = res.data.data;
         else if (Array.isArray(res.data?.data?.items)) items = res.data.data.items;
         else if (Array.isArray(res.data?.collections)) items = res.data.collections;
         else if (Array.isArray(res.data?.items)) items = res.data.items;
+
         setCollections(items);
       } catch (error) {
         console.error("Failed to fetch collections", error);
@@ -668,30 +711,34 @@ export default function ProductForm() {
         setCollectionsLoading(false);
       }
     };
+
     fetchCollections();
   }, []);
 
   useEffect(() => {
-    if (!isEdit || !id) { setPageLoading(false); return; }
+    if (!isEdit || !id) {
+      setPageLoading(false);
+      return;
+    }
 
     const fetchProduct = async () => {
       try {
         const res = await adminApi.get<ProductResponse>(`/products/${id}`);
         const product = res.data?.data || res.data?.product || res.data;
+
         if (product) {
           setForm({
             name: product.name || "",
             slug: product.slug || "",
             price: Number(product.price || 0),
-            discount_price:
-              product.discount_price != null ? Number(product.discount_price) : null,
+            discount_price: product.discount_price != null ? Number(product.discount_price) : null,
             thumbnail: product.thumbnail || "",
             images: Array.isArray(product.images) ? product.images : [],
             short_description: product.short_description || "",
             color: product.color || "",
             fabric: product.fabric || "",
             technique: product.technique || "",
-            stock: Number(product.stock || 0),
+            stock: Math.max(0, Number(product.stock || 0)),
             collection_id: product.collection_id || product.collection?.id || "",
             collection_slug: product.collection_slug || product.collection?.slug || "",
             is_featured: !!product.is_featured,
@@ -704,6 +751,7 @@ export default function ProductForm() {
         setPageLoading(false);
       }
     };
+
     fetchProduct();
   }, [id, isEdit]);
 
@@ -716,20 +764,74 @@ export default function ProductForm() {
     }));
   };
 
+  const handleImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    try {
+      setUploadingImages(true);
+      const uploadedUrls: string[] = [];
+
+      for (const file of files) {
+        const url = await uploadProductImage(file);
+        uploadedUrls.push(url);
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        thumbnail: prev.thumbnail || uploadedUrls[0] || "",
+        images: [...prev.images, ...uploadedUrls],
+      }));
+    } catch (error) {
+      console.error("Images upload failed", error);
+      alert("Images upload failed");
+    } finally {
+      setUploadingImages(false);
+      if (imagesInputRef.current) imagesInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setForm((prev) => {
+      const imageToRemove = prev.images[index];
+      const updatedImages = prev.images.filter((_, i) => i !== index);
+
+      return {
+        ...prev,
+        images: updatedImages,
+        thumbnail:
+          prev.thumbnail === imageToRemove
+            ? updatedImages[0] || ""
+            : prev.thumbnail,
+      };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
+      const cleanedImages = form.images.filter((url) => url.trim() !== "");
+
+      if (cleanedImages.length < 6) {
+        alert("Please upload at least 6 product images.");
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         ...form,
-        discount_price: form.discount_price === null || form.discount_price === 0
-          ? null : Number(form.discount_price),
-        price: Number(form.price),
-        stock: Number(form.stock),
+        discount_price:
+          form.discount_price === null || form.discount_price === 0
+            ? null
+            : Math.max(0, Number(form.discount_price)),
+        price: Math.max(0, Number(form.price)),
+        stock: Math.max(0, Number(form.stock)),
         collection_id: form.collection_id || null,
         collection_slug: form.collection_slug || null,
-        // filter out any empty image URLs before sending
-        images: form.images.filter((url) => url.trim() !== ""),
+        thumbnail: form.thumbnail || cleanedImages[0] || "",
+        images: cleanedImages,
       };
 
       if (isEdit && id) {
@@ -737,10 +839,21 @@ export default function ProductForm() {
       } else {
         await adminApi.post("/products", payload);
       }
+
       navigate("/admin/products");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save product", error);
-      alert("Save failed");
+
+      const validationErrors = error?.response?.data?.data;
+      if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+        alert(validationErrors.map((err: any) => err.msg).join("\n"));
+      } else {
+        alert(
+          error?.response?.data?.message ||
+          error?.response?.data?.detail ||
+          "Save failed"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -762,14 +875,19 @@ export default function ProductForm() {
       <AdminLayout title={isEdit ? "Edit Product" : "New Product"}>
         <div className="product-form">
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gap: 28, gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-
-              {/* ── Basic Details Card ── */}
+            <div
+              style={{
+                display: "grid",
+                gap: 28,
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              }}
+            >
               <div className="form-card">
                 <div className="form-title">
                   <Package size={20} color={C.gold} />
                   Basic Details
                 </div>
+
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <div>
                     <label className="form-label">Product Name</label>
@@ -781,6 +899,7 @@ export default function ProductForm() {
                       required
                     />
                   </div>
+
                   <div>
                     <label className="form-label">Slug</label>
                     <input
@@ -792,6 +911,7 @@ export default function ProductForm() {
                     />
                     <p className="slug-hint">URL-friendly identifier (lowercase, hyphens)</p>
                   </div>
+
                   <div>
                     <label className="form-label">Collection</label>
                     <select
@@ -804,15 +924,19 @@ export default function ProductForm() {
                         {collectionsLoading ? "Loading collections..." : "Select Collection"}
                       </option>
                       {collections.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
                       ))}
                     </select>
+
                     {form.collection_slug && (
                       <p className="slug-hint" style={{ marginTop: 6 }}>
                         Collection slug: {form.collection_slug}
                       </p>
                     )}
                   </div>
+
                   <div>
                     <label className="form-label">Short Description</label>
                     <textarea
@@ -824,114 +948,138 @@ export default function ProductForm() {
                     />
                   </div>
 
-                  {/* ── Thumbnail URL ── */}
                   <div>
-                    <label className="form-label">Thumbnail URL</label>
-                    <input
-                      className="form-input"
-                      placeholder="https://example.com/image.jpg"
-                      value={form.thumbnail}
-                      onChange={(e) => updateField("thumbnail", e.target.value)}
-                    />
-                  </div>
-                  {form.thumbnail && (
-                    <div>
-                      <p className="form-label">Thumbnail Preview</p>
-                      <img
-                        src={form.thumbnail}
-                        alt="Thumbnail preview"
-                        className="preview-img"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    <label className="form-label">Product Images</label>
+                    <div className="upload-box">
+                      <div className="upload-actions">
+                        <button
+                          type="button"
+                          className="upload-btn"
+                          onClick={() => imagesInputRef.current?.click()}
+                        >
+                          <ImageIcon size={15} />
+                          {uploadingImages ? "Uploading..." : "Upload Product Images"}
+                        </button>
+                      </div>
+
+                      <input
+                        ref={imagesInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImagesUpload}
+                        style={{ display: "none" }}
                       />
-                    </div>
-                  )}
 
-                  {/* ── Image URLs ── */}
-                  <div>
-                    <label className="form-label">Image URLs</label>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      {form.images.map((url, index) => (
-                        <div key={index} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          <div className="image-url-row">
-                            <input
-                              className="form-input"
-                              placeholder={`https://example.com/image-${index + 1}.jpg`}
-                              value={url}
-                              onChange={(e) => updateImageUrl(index, e.target.value)}
-                            />
-                            <button
-                              type="button"
-                              className="btn-remove-image"
-                              onClick={() => removeImageUrl(index)}
-                              title="Remove image"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                      <p className="upload-hint">
+                        Upload product images from your local folder. The first image is automatically saved as the cover thumbnail.
+                      </p>
+                      <p className="upload-hint">
+                        Uploaded images: <strong>{form.images.length}</strong> / minimum <strong>6</strong> required
+                      </p>
+
+                      {form.images.length > 0 && form.images.length < 6 && (
+                        <p className="upload-warning">
+                          Please upload at least 6 images for this product.
+                        </p>
+                      )}
+
+                      {form.thumbnail ? (
+                        <div className="cover-box">
+                          <div className="cover-label">
+                            <Star size={13} />
+                            Cover Image
                           </div>
-                          {url && (
-                            <img
-                              src={url}
-                              alt={`Image ${index + 1} preview`}
-                              className="preview-img-small"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                            />
-                          )}
+                          <img
+                            src={form.thumbnail}
+                            alt="Cover preview"
+                            className="preview-img"
+                          />
                         </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="btn-add-image"
-                        onClick={addImageUrl}
-                      >
-                        <Plus size={13} />
-                        Add Image URL
-                      </button>
+                      ) : null}
+
+                      {form.images.length > 0 ? (
+                        <div className="preview-grid">
+                          {form.images.map((url, index) => (
+                            <div key={index} className="preview-box">
+                              <img
+                                src={url}
+                                alt={`Product ${index + 1}`}
+                                className="preview-img-small"
+                              />
+
+                              {form.thumbnail === url && (
+                                <div className="img-badge">
+                                  <Star size={10} />
+                                  Cover
+                                </div>
+                              )}
+
+                              <button
+                                type="button"
+                                className="btn-remove-image"
+                                onClick={() => removeImage(index)}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-
                 </div>
               </div>
 
-              {/* ── Pricing & Stock Card ── */}
               <div className="form-card">
                 <div className="form-title">
                   <Sparkles size={20} color={C.gold} />
-                  Pricing &amp; Stock
+                  Pricing & Stock
                 </div>
+
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <div>
                     <label className="form-label">Price (₹)</label>
                     <input
                       type="number"
+                      min={0}
                       className="form-input"
                       placeholder="e.g., 4999"
                       value={form.price}
-                      onChange={(e) => updateField("price", Number(e.target.value))}
+                      onChange={(e) => updateField("price", Math.max(0, Number(e.target.value)))}
                       required
                     />
                   </div>
+
                   <div>
                     <label className="form-label">Discount Price (₹)</label>
                     <input
                       type="number"
+                      min={0}
                       className="form-input"
                       placeholder="Optional"
                       value={form.discount_price ?? ""}
                       onChange={(e) =>
-                        updateField("discount_price", e.target.value ? Number(e.target.value) : null)
+                        updateField(
+                          "discount_price",
+                          e.target.value ? Math.max(0, Number(e.target.value)) : null
+                        )
                       }
                     />
                   </div>
+
                   <div>
                     <label className="form-label">Stock Quantity</label>
                     <input
                       type="number"
+                      min={0}
                       className="form-input"
                       placeholder="e.g., 10"
                       value={form.stock}
-                      onChange={(e) => updateField("stock", Number(e.target.value))}
+                      onChange={(e) => updateField("stock", Math.max(0, Number(e.target.value)))}
                     />
                   </div>
+
                   <div>
                     <label className="form-label">Color</label>
                     <input
@@ -941,6 +1089,7 @@ export default function ProductForm() {
                       onChange={(e) => updateField("color", e.target.value)}
                     />
                   </div>
+
                   <div>
                     <label className="form-label">Fabric</label>
                     <input
@@ -950,6 +1099,7 @@ export default function ProductForm() {
                       onChange={(e) => updateField("fabric", e.target.value)}
                     />
                   </div>
+
                   <div>
                     <label className="form-label">Weaving Technique</label>
                     <input
@@ -963,12 +1113,12 @@ export default function ProductForm() {
               </div>
             </div>
 
-            {/* ── Settings Card ── */}
             <div className="form-card" style={{ marginTop: 28 }}>
               <div className="form-title">
                 <Layers size={20} color={C.gold} />
                 Settings
               </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <label className="form-checkbox-label">
                   <input
@@ -979,6 +1129,7 @@ export default function ProductForm() {
                   />
                   Featured Product
                 </label>
+
                 <label className="form-checkbox-label">
                   <input
                     type="checkbox"
@@ -991,13 +1142,21 @@ export default function ProductForm() {
               </div>
             </div>
 
-            {/* ── Action Buttons ── */}
             <div style={{ display: "flex", gap: 16, marginTop: 32, flexWrap: "wrap" }}>
-              <button type="submit" disabled={loading} className="btn-save">
+              <button
+                type="submit"
+                disabled={loading || uploadingImages}
+                className="btn-save"
+              >
                 <Save size={16} />
                 {loading ? "Saving..." : isEdit ? "Update Product" : "Create Product"}
               </button>
-              <button type="button" onClick={() => navigate("/admin/products")} className="btn-cancel">
+
+              <button
+                type="button"
+                onClick={() => navigate("/admin/products")}
+                className="btn-cancel"
+              >
                 <X size={16} />
                 Cancel
               </button>

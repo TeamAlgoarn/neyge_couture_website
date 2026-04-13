@@ -7,6 +7,15 @@ from app.utils.response import success_response
 router = APIRouter(prefix="/uploads", tags=["Uploads"])
 
 
+@router.post("/product-image", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def upload_product_image_temp(
+    file: UploadFile = File(...),
+    _: dict = Depends(require_admin),
+):
+    data = await UploadService.upload_temp_product_image(file)
+    return success_response("Product image uploaded successfully", data)
+
+
 @router.post("/products/{product_id}/image", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def upload_product_image(
     product_id: str,
