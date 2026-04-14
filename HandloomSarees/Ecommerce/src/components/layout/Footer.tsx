@@ -3,17 +3,9 @@ import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'luci
 import logo from '@/assets/Client_NC_Logo-03.png';
 import patternBg from '@/assets/Client_NC_Pattern-01.png';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BRAND PALETTE — exact match to HomePage
-// ─────────────────────────────────────────────────────────────────────────────
-
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
-/* ─────────────────────────────────────────
-   ROOT — NEW GRADIENT: Maroon deep → Maroon → Navy
-   Perfectly matches the dark brand sections (CorePillars navy + FinalCTA maroon)
-───────────────────────────────────────── */
 .ft-root {
   position: relative;
   background: linear-gradient(160deg, #5a0016 0%, #800020 45%, #1B2A6B 100%);
@@ -22,19 +14,17 @@ const CSS = `
   font-family: 'Josefin Sans', sans-serif;
 }
 
-/* ── Background pattern image ── */
 .ft-butta {
   position: absolute;
   inset: 0;
   background-repeat: repeat;
   background-size: 180px 180px;
   background-position: top left;
-  opacity: 0.13;
+  opacity: 0.10;
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── Ambient orbs — forest green + blush (accents) ── */
 .ft-orb-a {
   position: absolute; top: -100px; right: -80px;
   width: 500px; height: 500px; border-radius: 50%;
@@ -50,7 +40,6 @@ const CSS = `
   z-index: 0;
 }
 
-/* ── Top border — maroon → gold → maroon ── */
 .ft-top-border {
   position: absolute; top: 0; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg,
@@ -63,16 +52,17 @@ const CSS = `
   z-index: 1;
 }
 
-/* ── Logo image ── */
+/* ── Logo — increased size ── */
 .ft-logo { display:inline-block; text-decoration:none; margin-bottom:20px; }
 .ft-logo-img {
-  display:block; height:90px; width:auto; object-fit:contain;
-  filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgba(196,152,10,.20));
+  display:block;
+  height: 120px;        /* ⬆ was 90px */
+  width:auto; object-fit:contain;
+  filter: brightness(0) invert(1) drop-shadow(0 2px 12px rgba(196,152,10,.30));
   transition: opacity .3s;
 }
 .ft-logo:hover .ft-logo-img { opacity: .8; }
 
-/* ── WRAP ── */
 .ft-wrap {
   max-width: 1340px; margin: 0 auto;
   padding: 72px 64px 0;
@@ -81,40 +71,41 @@ const CSS = `
 @media(max-width:900px){ .ft-wrap { padding: 56px 24px 0; } }
 @media(max-width:480px){ .ft-wrap { padding: 44px 16px 0; } }
 
-/* ── GRID ── */
 .ft-grid {
   display: grid;
   grid-template-columns: 1.7fr 1fr 1fr 1.3fr;
   gap: 52px;
   padding-bottom: 58px;
-  border-bottom: 1px solid rgba(255,255,255,.07);
+  border-bottom: 1px solid rgba(255,255,255,.10);
 }
 @media(max-width:1024px){ .ft-grid { grid-template-columns:1fr 1fr; gap:36px; } }
 @media(max-width:560px)  { .ft-grid { grid-template-columns:1fr; gap:30px; } }
 
-/* ── Brand tagline ── */
+/* ── Brand tagline — brighter ── */
 .ft-tagline {
-  font-family: 'Cinzel', serif; font-size: 10px;
-  letter-spacing: .22em; color: rgba(196,152,10,.60); text-transform: uppercase;
+  font-family: 'Cinzel', serif; font-size: 11px;
+  letter-spacing: .22em; color: rgba(196,152,10,.85);   /* ⬆ was .60 */
+  text-transform: uppercase;
   margin-bottom: 16px; font-weight: 400;
 }
 
-/* ── Brand description ── */
+/* ── Brand description — much more visible ── */
 .ft-brand-desc {
-  font-family: 'Josefin Sans'; font-size: 13px; font-weight: 300;
-  color: rgba(255,255,255,.46); line-height: 1.90; margin-bottom: 26px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.18);
-  letter-spacing: .025em;
+  font-family: 'Josefin Sans'; font-size: 14px;         /* ⬆ was 13px */
+  font-weight: 400;                                      /* ⬆ was 300 */
+  color: rgba(255,255,255,.72);                          /* ⬆ was .46 */
+  line-height: 1.90; margin-bottom: 26px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.30);
+  letter-spacing: .030em;
 }
 
-/* ── Gold divider ── */
-.ft-gd { width: 44px; height: 1px; background: rgba(196,152,10,.44); margin-bottom: 22px; }
+.ft-gd { width: 44px; height: 1px; background: rgba(196,152,10,.55); margin-bottom: 22px; }
 
-/* ── Socials — maroon hover ── */
+/* ── Socials ── */
 .ft-socials { display:flex; gap:10px; }
 .ft-social-btn {
   width: 36px; height: 36px;
-  background: rgba(255,249,240,.06); border: 1px solid rgba(255,249,240,.12);
+  background: rgba(255,249,240,.08); border: 1px solid rgba(255,249,240,.18);
   display: flex; align-items: center; justify-content: center;
   text-decoration: none; transition: background .3s, border-color .3s, transform .3s;
 }
@@ -123,42 +114,48 @@ const CSS = `
   transform: scale(1.12) translateY(-2px);
 }
 
-/* ── Column heading ── */
+/* ── Column heading — same gold, a touch brighter ── */
 .ft-col-head {
   display: flex; align-items: center; gap: 8px;
-  font-family: 'Josefin Sans'; font-size: 10px; letter-spacing: .28em;
-  text-transform: uppercase; color: #C4980A; font-weight: 600;
+  font-family: 'Josefin Sans'; font-size: 11px;         /* ⬆ was 10px */
+  letter-spacing: .28em;
+  text-transform: uppercase; color: #D4A80E;             /* ⬆ slightly brighter gold */
+  font-weight: 600;
   margin-bottom: 22px;
 }
-.ft-col-line { width: 20px; height: 1px; background: rgba(196,152,10,.38); }
+.ft-col-line { width: 20px; height: 1px; background: rgba(196,152,10,.50); }
 
-/* ── Nav links ── */
+/* ── Nav links — more visible ── */
 .ft-links { list-style:none; padding:0; margin:0; }
-.ft-links li { margin-bottom: 12px; }
+.ft-links li { margin-bottom: 13px; }
 .ft-link {
-  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 300;
-  color: rgba(255,255,255,.44); text-decoration: none;
+  font-family: 'Josefin Sans'; font-size: 13.5px;       /* ⬆ was 12px */
+  font-weight: 400;                                      /* ⬆ was 300 */
+  color: rgba(255,255,255,.68);                          /* ⬆ was .44 */
+  text-decoration: none;
   letter-spacing: .08em;
   transition: color .25s, padding-left .25s; display: inline-block;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.14);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.20);
 }
-.ft-link:hover { color: #C4980A; padding-left: 6px; }
+.ft-link:hover { color: #D4A80E; padding-left: 6px; }
 
-/* ── Contact list ── */
+/* ── Contact list — more visible ── */
 .ft-contact { list-style:none; padding:0; margin:0; }
 .ft-contact li { display:flex; align-items:flex-start; gap:11px; margin-bottom:15px; }
 .ft-contact-icon { flex-shrink:0; margin-top:1px; }
 .ft-contact-text {
-  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 300;
-  color: rgba(255,255,255,.44); line-height: 1.6; letter-spacing: .04em;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.14);
+  font-family: 'Josefin Sans'; font-size: 13px;         /* ⬆ was 12px */
+  font-weight: 400;                                      /* ⬆ was 300 */
+  color: rgba(255,255,255,.68);                          /* ⬆ was .44 */
+  line-height: 1.6; letter-spacing: .04em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.20);
 }
 
-/* ── Newsletter strip (maroon tint) ── */
+/* ── Newsletter strip ── */
 .ft-newsletter {
   margin: 0 -64px; padding: 32px 64px;
-  background: rgba(128,0,32,.18); border-top: 1px solid rgba(128,0,32,.32);
-  border-bottom: 1px solid rgba(128,0,32,.18);
+  background: rgba(128,0,32,.22); border-top: 1px solid rgba(128,0,32,.38);
+  border-bottom: 1px solid rgba(128,0,32,.22);
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
   flex-wrap: wrap; position: relative; z-index: 2;
 }
@@ -166,22 +163,25 @@ const CSS = `
 @media(max-width:480px){ .ft-newsletter { margin:0 -16px; padding:20px 16px; flex-direction:column; } }
 
 .ft-newsletter-text h4 {
-  font-family: 'Cinzel', serif; font-size: 16px; font-weight: 500;
-  color: #F5E6D3; letter-spacing: .06em; margin-bottom: 4px;
+  font-family: 'Cinzel', serif; font-size: 17px;        /* ⬆ was 16px */
+  font-weight: 500;
+  color: #F5E6D3; letter-spacing: .06em; margin-bottom: 5px;
 }
 .ft-newsletter-text p {
-  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 300;
-  color: rgba(255,255,255,.44); letter-spacing: .06em;
+  font-family: 'Josefin Sans'; font-size: 13px;         /* ⬆ was 12px */
+  font-weight: 400;                                      /* ⬆ was 300 */
+  color: rgba(255,255,255,.62);                          /* ⬆ was .44 */
+  letter-spacing: .06em;
 }
 .ft-newsletter-form { display: flex; gap: 0; flex-shrink: 0; }
 .ft-newsletter-input {
   padding: 12px 18px;
-  background: rgba(255,249,240,.08);
-  border: 1px solid rgba(255,249,240,.18); border-right: none;
-  color: #F5E6D3; font-family: 'Josefin Sans'; font-size: 12px;
+  background: rgba(255,249,240,.10);
+  border: 1px solid rgba(255,249,240,.22); border-right: none;
+  color: #F5E6D3; font-family: 'Josefin Sans'; font-size: 13px;
   letter-spacing: .08em; outline: none; width: 240px;
 }
-.ft-newsletter-input::placeholder { color: rgba(245,230,211,.34); }
+.ft-newsletter-input::placeholder { color: rgba(245,230,211,.50); }
 .ft-newsletter-btn {
   padding: 12px 22px;
   background: #800020; color: #FFF9F0;
@@ -203,32 +203,38 @@ const CSS = `
 @media(max-width:480px){ .ft-bottom { padding:16px 16px 22px; flex-direction:column; text-align:center; } }
 
 .ft-copy {
-  font-family: 'Josefin Sans'; font-size: 10px; letter-spacing: .10em;
-  color: rgba(255,255,255,.26); font-weight: 300;
+  font-family: 'Josefin Sans'; font-size: 11px;         /* ⬆ was 10px */
+  letter-spacing: .10em;
+  color: rgba(255,255,255,.48);                          /* ⬆ was .26 */
+  font-weight: 300;
 }
-.ft-copy em { color: rgba(196,152,10,.55); font-style: normal; }
+.ft-copy em { color: rgba(196,152,10,.80); font-style: normal; } /* ⬆ was .55 */
 
 .ft-bottom-links { display:flex; gap:20px; }
 .ft-bottom-link {
-  font-family: 'Josefin Sans'; font-size: 10px; letter-spacing: .12em;
-  color: rgba(255,255,255,.26); text-decoration:none; transition:color .2s;
+  font-family: 'Josefin Sans'; font-size: 11px;         /* ⬆ was 10px */
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.48);                          /* ⬆ was .26 */
+  text-decoration:none; transition:color .2s;
 }
-.ft-bottom-link:hover { color: rgba(196,152,10,.65); }
+.ft-bottom-link:hover { color: rgba(196,152,10,.85); }
 
 /* ── GI / Artisan integrity badge ── */
 .ft-integrity {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 14px;
-  border: 1px solid rgba(196,152,10,.22);
-  background: rgba(196,152,10,.07); margin-top: 18px; width: fit-content;
+  border: 1px solid rgba(196,152,10,.30);
+  background: rgba(196,152,10,.10); margin-top: 18px; width: fit-content;
 }
-.ft-integrity-dot { width: 6px; height: 6px; border-radius: 50%; background: #C4980A; flex-shrink: 0; }
+.ft-integrity-dot { width: 6px; height: 6px; border-radius: 50%; background: #D4A80E; flex-shrink: 0; }
 .ft-integrity-text {
-  font-family: 'Josefin Sans'; font-size: 9px; letter-spacing: .20em;
-  color: rgba(196,152,10,.70); text-transform: uppercase; font-weight: 600;
+  font-family: 'Josefin Sans'; font-size: 9.5px;        /* ⬆ was 9px */
+  letter-spacing: .20em;
+  color: rgba(196,152,10,.90);                           /* ⬆ was .70 */
+  text-transform: uppercase; font-weight: 600;
 }
 
-/* ── Palette accent bar — Navy | Maroon | Blush | Forest ── */
+/* ── Palette accent bar ── */
 .ft-palette-bar {
   height: 3px;
   display: flex;
@@ -252,11 +258,11 @@ const EXPLORE = [
   { label: 'Track Order',     to: '/track'            },
 ];
 const SUPPORT = [
-  { label: 'Contact Us',    to: '/contact'  },
-  { label: 'Shipping Info', to: '/shipping' },
-  { label: 'Returns Policy',to: '/returns'  },
-  { label: 'FAQ',           to: '/faq'      },
-  { label: 'Privacy Policy',to: '/privacy'  },
+  { label: 'Contact Us',     to: '/contact'  },
+  { label: 'Shipping Info',  to: '/shipping' },
+  { label: 'Returns Policy', to: '/returns'  },
+  { label: 'FAQ',            to: '/faq'      },
+  { label: 'Privacy Policy', to: '/privacy'  },
 ];
 const CONTACT = [
   { Icon: MapPin, text: 'Gadag, Karnataka, India — 582103' },
@@ -309,7 +315,7 @@ export function Footer() {
               <div className="ft-socials" style={{ marginTop: 20 }}>
                 {SOCIAL_ICONS.map((Icon, i) => (
                   <a key={i} href="#" className="ft-social-btn" aria-label="Social link">
-                    <Icon size={15} color="rgba(255,249,240,.60)" strokeWidth={1.5} />
+                    <Icon size={15} color="rgba(255,249,240,.75)" strokeWidth={1.5} />
                   </a>
                 ))}
               </div>
@@ -350,7 +356,7 @@ export function Footer() {
               <ul className="ft-contact">
                 {CONTACT.map(({ Icon, text }) => (
                   <li key={text}>
-                    <Icon size={14} color="#C4980A" className="ft-contact-icon" strokeWidth={1.5} />
+                    <Icon size={14} color="#D4A80E" className="ft-contact-icon" strokeWidth={1.5} />
                     <span className="ft-contact-text">{text}</span>
                   </li>
                 ))}
@@ -360,7 +366,7 @@ export function Footer() {
                 <a
                   href="https://www.neygecouture.com"
                   className="ft-link"
-                  style={{ color: 'rgba(196,152,10,.55)', letterSpacing: '.10em' }}
+                  style={{ color: 'rgba(196,152,10,.80)', letterSpacing: '.10em' }}
                 >
                   www.neygecouture.com
                 </a>

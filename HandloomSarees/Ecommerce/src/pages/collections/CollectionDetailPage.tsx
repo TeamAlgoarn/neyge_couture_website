@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '@/api/client';
-import { ArrowRight, Sparkles, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Sparkles, ShoppingBag, ChevronRight } from 'lucide-react';
 
-// ─── Brand palette (matches HomePage, CartPage, etc.) ────────────────────────
+// ─── Brand palette ────────────────────────────────────────────────────────────
 const C = {
   maroon:   '#800020',
   maroonDk: '#5a0016',
@@ -80,6 +80,63 @@ const CSS = `
   transition: gap 0.25s, color 0.25s;
 }
 .cd-back:hover { gap: 12px; color: #C4980A; }
+
+/* ── Collection filter strip ── */
+.cd-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+  padding: 18px 22px;
+  background: rgba(255,249,240,.97);
+  border: 1px solid rgba(196,152,10,.2);
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.04);
+}
+.cd-filter-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #9a8070;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+.cd-filter-scroll {
+  display: flex; gap: 8px; flex-wrap: wrap; flex: 1;
+}
+.cd-filter-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(196,152,10,.25);
+  background: transparent;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a3828;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .22s ease;
+  white-space: nowrap;
+}
+.cd-filter-chip:hover {
+  border-color: rgba(196,152,10,.5);
+  background: rgba(196,152,10,.08);
+  color: #800020;
+  transform: translateY(-1px);
+}
+.cd-filter-chip.active {
+  background: #800020;
+  border-color: #800020;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(128,0,32,.22);
+}
+.cd-filter-chip.active:hover {
+  background: #5a0016;
+  transform: translateY(-1px);
+}
 
 /* ── Hero section ── */
 .cd-hero {
@@ -171,7 +228,7 @@ const CSS = `
 .cd-error { color: #b42318; }
 .cd-loading { color: #6b5848; }
 
-/* ── Product grid (matches home page featured products) ── */
+/* ── Product grid ── */
 .cd-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -277,7 +334,10 @@ const FALLBACK_PRODUCT_IMAGE =
 
 export function CollectionDetailPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+
   const [collection, setCollection] = useState<Collection | null>(null);
+  const [allCollections, setAllCollections] = useState<Collection[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -285,45 +345,46 @@ export function CollectionDetailPage() {
   useEffect(() => {
     const fetchCollectionPage = async () => {
       if (!slug) return;
-
       try {
         setLoading(true);
         setError('');
 
-        const [collectionRes, productsRes] = await Promise.all([
+        const [collectionRes, productsRes, allCollectionsRes] = await Promise.all([
           api.get(`/collections/${slug}`),
           api.get('/products'),
+          api.get('/collections'),
         ]);
 
+        // ── Current collection ──
         let collectionData: Collection | null =
           collectionRes.data?.data ||
           collectionRes.data?.collection ||
           collectionRes.data ||
           null;
 
+        // ── All collections (for filter strip) ──
+        const rawAll = allCollectionsRes.data;
+        let allItems: Collection[] = [];
+        if (Array.isArray(rawAll)) allItems = rawAll;
+        else if (Array.isArray(rawAll?.data)) allItems = rawAll.data;
+        else if (Array.isArray(rawAll?.collections)) allItems = rawAll.collections;
+        else if (Array.isArray(rawAll?.items)) allItems = rawAll.items;
+
+        setAllCollections(allItems.filter((c) => c.is_active !== false));
+
+        // ── Products ──
         let productItems: Product[] = [];
-
         const rawProducts = productsRes.data;
-
-        if (Array.isArray(rawProducts)) {
-          productItems = rawProducts;
-        } else if (Array.isArray(rawProducts?.data)) {
-          productItems = rawProducts.data;
-        } else if (Array.isArray(rawProducts?.data?.items)) {
-          productItems = rawProducts.data.items;
-        } else if (Array.isArray(rawProducts?.products)) {
-          productItems = rawProducts.products;
-        } else if (Array.isArray(rawProducts?.items)) {
-          productItems = rawProducts.items;
-        }
+        if (Array.isArray(rawProducts)) productItems = rawProducts;
+        else if (Array.isArray(rawProducts?.data)) productItems = rawProducts.data;
+        else if (Array.isArray(rawProducts?.data?.items)) productItems = rawProducts.data.items;
+        else if (Array.isArray(rawProducts?.products)) productItems = rawProducts.products;
+        else if (Array.isArray(rawProducts?.items)) productItems = rawProducts.items;
 
         const filteredProducts = productItems.filter((product) => {
           if (product.is_active === false) return false;
-
           const byCollectionSlug = product.collection?.slug === slug;
-          const byCollectionId =
-            collectionData?.id && product.collection_id === collectionData.id;
-
+          const byCollectionId = collectionData?.id && product.collection_id === collectionData.id;
           return byCollectionSlug || byCollectionId;
         });
 
@@ -386,36 +447,60 @@ export function CollectionDetailPage() {
       <style>{CSS}</style>
       <div className="cd-root">
         <div className="cd-wrap">
+
+          {/* ── Breadcrumb ── */}
           <div className="cd-breadcrumb">
             <Link to="/">Home</Link>
-            <span>/</span>
-            <Link to="/shop">Shop</Link>
-            <span>/</span>
+            <ChevronRight size={12} />
+            <Link to="/collections">Collections</Link>
+            <ChevronRight size={12} />
             <span>{collection.name}</span>
           </div>
 
-          <Link to="/shop" className="cd-back">
-            ← Back to Shop
+          <Link to="/collections" className="cd-back">
+            ← Back to Collections
           </Link>
 
+          {/* ── Collection Filter Strip ── */}
+          {allCollections.length > 1 && (
+            <div className="cd-filter-strip">
+              <span className="cd-filter-label">Browse:</span>
+              <div className="cd-filter-scroll">
+                {/* "All" chip */}
+                <Link
+                  to="/collections"
+                  className="cd-filter-chip"
+                >
+                  All Collections
+                </Link>
+
+                {/* Individual collection chips */}
+                {allCollections.map((col) => (
+                  <button
+                    key={col.id}
+                    className={`cd-filter-chip ${col.slug === slug ? 'active' : ''}`}
+                    onClick={() => navigate(`/collections/${col.slug}`)}
+                  >
+                    {col.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Hero ── */}
           <section className="cd-hero">
-            <img
-              src={bannerImage}
-              alt={collection.name}
-              className="cd-hero-img"
-            />
+            <img src={bannerImage} alt={collection.name} className="cd-hero-img" />
             <div className="cd-hero-overlay" />
             <div className="cd-hero-content">
               <div className="cd-badge">
                 <Sparkles size={13} color="#D4AF37" />
                 <span className="ey">Collection</span>
               </div>
-
               <h1 className="cd-title">{collection.name}</h1>
               <p className="cd-desc">
                 {collection.description || 'Discover handcrafted pieces from this curated collection.'}
               </p>
-
               <div className="cd-meta">
                 <span className="cd-pill">{products.length} Products</span>
                 <span className="cd-pill">Handloom Heritage</span>
@@ -424,6 +509,7 @@ export function CollectionDetailPage() {
             </div>
           </section>
 
+          {/* ── Products Section ── */}
           <div className="cd-section-head">
             <div>
               <h2 className="cd-section-title">Explore the Collection</h2>
@@ -449,7 +535,10 @@ export function CollectionDetailPage() {
                   FALLBACK_PRODUCT_IMAGE;
 
                 const price = product.discount_price ?? product.price ?? 0;
-                const desc = product.short_description || product.description || 'Handwoven elegance crafted for timeless style.';
+                const desc =
+                  product.short_description ||
+                  product.description ||
+                  'Handwoven elegance crafted for timeless style.';
 
                 return (
                   <Link
@@ -458,22 +547,13 @@ export function CollectionDetailPage() {
                     className="cd-card"
                   >
                     <div className="cd-card-img-wrap">
-                      <img
-                        src={productImage}
-                        alt={product.name}
-                        className="cd-card-img"
-                      />
+                      <img src={productImage} alt={product.name} className="cd-card-img" />
                     </div>
-
                     <div className="cd-card-body">
                       <h3 className="cd-card-title">{product.name}</h3>
                       <p className="cd-card-desc">{desc}</p>
-
                       <div className="cd-card-bottom">
-                        <div className="cd-price">
-                          ₹{Number(price).toLocaleString('en-IN')}
-                        </div>
-
+                        <div className="cd-price">₹{Number(price).toLocaleString('en-IN')}</div>
                         <div className="cd-link">
                           <span>View</span>
                           <ArrowRight size={14} />

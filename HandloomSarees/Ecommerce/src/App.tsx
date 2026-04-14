@@ -39,7 +39,7 @@
 //             <Route path="/wishlist" element={<WishlistPage />} />
 //             <Route path="/checkout" element={<CheckoutPage />} />
 //             <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
-          
+
 
 
 //             <Route path="/login" element={<LoginPage />} />
@@ -91,11 +91,13 @@ import { CheckoutPage } from '@/pages/CheckoutPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { VideoShoppingPage } from '@/pages/VideoShoppingPage';
-import { ArtisanPage } from '@/pages/OurArtician';
+import AboutPage from '@/pages/AboutPage';
 import { Chatbot } from '@/components/features/Chatbot';
 import { SareeBackdropSection } from '@/pages/SareeBackdropSection';
 import { OrderConfirmationPage } from '@/pages/OrderConfirmationPage';
-import { CollectionDetailPage } from '@/pages/CollectionDetailPage';
+import { CollectionDetailPage } from '@/pages/collections/CollectionDetailPage';
+import { CollectionsPage } from '@/pages/collections/CollectionsPage';
+
 import AdminRoute from '@/admin/components/AdminRoute';
 import AdminLogin from '@/admin/pages/AdminLogin';
 import AdminDashboard from '@/admin/pages/AdminDashboard';
@@ -131,8 +133,9 @@ function AppContent() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/video-shopping" element={<VideoShoppingPage />} />
-          <Route path="/about" element={<ArtisanPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/backdrop" element={<SareeBackdropSection />} />
+          <Route path="/collections" element={<CollectionsPage />} />
 
           {/* Admin public route */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -144,11 +147,11 @@ function AppContent() {
             <Route path="/admin/products/new" element={<ProductForm />} />
             <Route path="/admin/products/:id/edit" element={<ProductForm />} />
             <Route path="/admin/collections" element={<AdminCollections />} />
-<Route path="/admin/collections/new" element={<CollectionForm />} />
-<Route path="/admin/collections/:id/edit" element={<CollectionForm />} />
-<Route path="/admin/orders" element={<AdminOrders />} />
-<Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
-<Route path="/admin/video-bookings" element={<AdminVideoBookingsPage />} />
+            <Route path="/admin/collections/new" element={<CollectionForm />} />
+            <Route path="/admin/collections/:id/edit" element={<CollectionForm />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
+            <Route path="/admin/video-bookings" element={<AdminVideoBookingsPage />} />
           </Route>
         </Routes>
       </main>

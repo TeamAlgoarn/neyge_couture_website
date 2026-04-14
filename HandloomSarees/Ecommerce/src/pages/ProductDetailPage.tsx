@@ -817,6 +817,7 @@ const CSS = `
   .pd-main-grid { grid-template-columns: 1fr; gap: 40px; }
 }
 
+/* ── FIX 1: constrain image column so it never overflows the viewport ── */
 .pd-img-main {
   position: relative;
   border-radius: 24px; overflow: hidden;
@@ -824,9 +825,12 @@ const CSS = `
   border: 1px solid rgba(196,152,10,.25);
   box-shadow: 0 24px 80px rgba(0,0,0,.12);
   margin-bottom: 16px;
+  max-height: calc(100vh - 180px);   /* never taller than viewport */
 }
 .pd-img-main-inner {
-  width: 100%; padding-bottom: 125%; position: relative;
+  width: 100%;
+  padding-bottom: 85%;               /* was 125% — reduced to fit screen */
+  position: relative;
 }
 .pd-img-main img {
   position: absolute; inset: 0; width: 100%; height: 100%;
@@ -1112,8 +1116,8 @@ const CSS = `
   gap: 24px;
 }
 @media(max-width: 1100px) { .pd-related-grid { grid-template-columns: repeat(3, 1fr); } }
-@media(max-width: 820px) { .pd-related-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
-@media(max-width: 560px) { .pd-related-grid { grid-template-columns: 1fr; gap: 16px; } }
+@media(max-width: 820px)  { .pd-related-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
+@media(max-width: 560px)  { .pd-related-grid { grid-template-columns: 1fr; gap: 16px; } }
 
 .pd-notfound {
   min-height: 100vh; display: flex;
@@ -1131,10 +1135,10 @@ const CSS = `
 `;
 
 const TRUST = [
-  { Icon: Truck, label: 'Free Shipping', bg: 'rgba(251,146,60,.12)', border: 'rgba(251,146,60,.3)', color: '#ea6d10' },
-  { Icon: Shield, label: '100% Authentic', bg: 'rgba(59,130,246,.10)', border: 'rgba(59,130,246,.3)', color: '#2563eb' },
-  { Icon: RefreshCw, label: '7-Day Returns', bg: 'rgba(16,185,129,.10)', border: 'rgba(16,185,129,.3)', color: '#059669' },
-  { Icon: Award, label: 'Quality Certified', bg: 'rgba(196,152,10,.12)', border: 'rgba(196,152,10,.35)', color: '#C4980A' },
+  { Icon: Truck,    label: 'Free Shipping',    bg: 'rgba(251,146,60,.12)',  border: 'rgba(251,146,60,.3)',  color: '#ea6d10' },
+  { Icon: Shield,   label: '100% Authentic',   bg: 'rgba(59,130,246,.10)',  border: 'rgba(59,130,246,.3)',  color: '#2563eb' },
+  { Icon: RefreshCw,label: '7-Day Returns',    bg: 'rgba(16,185,129,.10)',  border: 'rgba(16,185,129,.3)',  color: '#059669' },
+  { Icon: Award,    label: 'Quality Certified', bg: 'rgba(196,152,10,.12)', border: 'rgba(196,152,10,.35)', color: '#C4980A' },
 ];
 
 type BackendProduct = {
@@ -1183,7 +1187,7 @@ function mapProductToSaree(product: BackendProduct): Saree {
   }
 
   const allImages = Array.from(imageSet);
-  const primaryImage = product.thumbnail || allImages[0] || "";
+  const primaryImage = product.thumbnail || allImages[0] || '';
 
   return {
     id: product.id,
@@ -1238,6 +1242,9 @@ export function ProductDetailPage() {
 
   useEffect(() => {
     const loadProduct = async () => {
+      // ── FIX 2: always scroll to top before loading a new product ──
+      window.scrollTo({ top: 0, behavior: 'instant' });
+
       if (!slug) {
         setLoading(false);
         return;
@@ -1321,9 +1328,10 @@ export function ProductDetailPage() {
     );
   }
 
-  const safeImages = saree.images && saree.images.length > 0
-    ? saree.images.filter(Boolean)
-    : [saree.image].filter(Boolean);
+  const safeImages =
+    saree.images && saree.images.length > 0
+      ? saree.images.filter(Boolean)
+      : [saree.image].filter(Boolean);
 
   const activeImage = safeImages[selectedImage] || safeImages[0] || saree.image;
 
@@ -1360,13 +1368,16 @@ export function ProductDetailPage() {
     .map((item) => item.trim())
     .filter(Boolean);
 
-  const occasionText = Array.isArray(saree.occasion) ? saree.occasion.join(', ') : saree.occasion;
+  const occasionText = Array.isArray(saree.occasion)
+    ? saree.occasion.join(', ')
+    : saree.occasion;
 
   return (
     <>
       <style>{CSS}</style>
       <div className="pd-root">
         <div className="pd-wrap pd-page-top">
+          {/* ── Breadcrumb ── */}
           <nav className="pd-breadcrumb pd-fadein">
             <Link to="/">Home</Link>
             <span className="pd-breadcrumb-sep">/</span>
@@ -1375,7 +1386,9 @@ export function ProductDetailPage() {
             <span className="pd-breadcrumb-current">{saree.name}</span>
           </nav>
 
+          {/* ── Main grid: image + details ── */}
           <div className="pd-main-grid">
+            {/* Image column */}
             <div className="pd-fadein">
               <div className="pd-img-main">
                 <div className="pd-img-main-inner">
@@ -1414,6 +1427,7 @@ export function ProductDetailPage() {
               )}
             </div>
 
+            {/* Details column */}
             <div className="pd-details pd-fadeup pd-d1">
               <div className="pd-badge-row">
                 {saree.newArrival && (
@@ -1452,19 +1466,24 @@ export function ProductDetailPage() {
                   <>
                     <span className="pd-price-orig">{formatCurrency(saree.originalPrice)}</span>
                     <span className="pd-price-off">
-                      {Math.round(((saree.originalPrice - saree.price) / saree.originalPrice) * 100)}% OFF
+                      {Math.round(
+                        ((saree.originalPrice - saree.price) / saree.originalPrice) * 100
+                      )}
+                      % OFF
                     </span>
                   </>
                 )}
               </div>
 
-              <p className="pd-desc">{saree.description || 'A handcrafted saree with timeless elegance.'}</p>
+              <p className="pd-desc">
+                {saree.description || 'A handcrafted saree with timeless elegance.'}
+              </p>
 
               <div className="pd-info-grid">
                 {[
-                  ['Fabric', saree.fabric || '—'],
-                  ['Occasion', occasionText || '—'],
-                  ['Colour', saree.color || '—'],
+                  ['Fabric',       saree.fabric || '—'],
+                  ['Occasion',     occasionText  || '—'],
+                  ['Colour',       saree.color   || '—'],
                   ['Availability', saree.stock > 0 ? `In Stock (${saree.stock})` : 'Out of Stock'],
                 ].map(([k, v]) => (
                   <div key={k} className="pd-info-cell">
@@ -1472,7 +1491,12 @@ export function ProductDetailPage() {
                     <div
                       className="pd-info-val"
                       style={{
-                        color: k === 'Availability' ? (saree.stock > 0 ? '#059669' : '#dc2626') : C.maroon,
+                        color:
+                          k === 'Availability'
+                            ? saree.stock > 0
+                              ? '#059669'
+                              : '#dc2626'
+                            : C.maroon,
                       }}
                     >
                       {k === 'Availability' && (
@@ -1488,7 +1512,11 @@ export function ProductDetailPage() {
               </div>
 
               <div className="pd-cta-row">
-                <button className="pd-btn-cart" onClick={handleAddToCart} disabled={saree.stock === 0}>
+                <button
+                  className="pd-btn-cart"
+                  onClick={handleAddToCart}
+                  disabled={saree.stock === 0}
+                >
                   <ShoppingCart size={16} /> Add to Cart
                 </button>
                 <button
@@ -1517,6 +1545,7 @@ export function ProductDetailPage() {
             </div>
           </div>
 
+          {/* ── Product Details Panel ── */}
           <div className="pd-details-panel pd-fadeup pd-d2">
             <div className="pd-panel-head">
               <Sparkles size={18} color={C.gold} />
@@ -1524,15 +1553,16 @@ export function ProductDetailPage() {
             </div>
 
             <div className="pd-inner-grid">
+              {/* Specifications */}
               <div>
                 <div className="pd-sub-title">
                   <div className="pd-sub-title-bar" />
                   Specifications
                 </div>
                 {[
-                  ['Length', saree.length || '5.5 meters'],
-                  ['Blouse Piece', saree.blousePiece ? 'Included' : 'Not Included'],
-                  ['Weaving Technique', saree.weavingTechnique || 'Traditional handloom'],
+                  ['Length',           saree.length           || '5.5 meters'],
+                  ['Blouse Piece',     saree.blousePiece ? 'Included' : 'Not Included'],
+                  ['Weaving Technique',saree.weavingTechnique || 'Traditional handloom'],
                 ].map(([k, v]) => (
                   <div key={k} className="pd-spec-row">
                     <span className="pd-spec-key">{k}</span>
@@ -1541,6 +1571,7 @@ export function ProductDetailPage() {
                 ))}
               </div>
 
+              {/* Care Instructions */}
               <div>
                 <div className="pd-sub-title">
                   <div className="pd-sub-title-bar" />
@@ -1556,6 +1587,7 @@ export function ProductDetailPage() {
                 ))}
               </div>
 
+              {/* Artisan Story */}
               <div className="pd-artisan">
                 <div className="pd-sub-title">
                   <div className="pd-sub-title-bar" />
@@ -1563,15 +1595,18 @@ export function ProductDetailPage() {
                 </div>
                 <div className="pd-artisan-box">
                   <p className="pd-artisan-text">
-                    {saree.artisanDetails || 'Crafted by skilled artisans preserving handloom traditions.'}
+                    {saree.artisanDetails ||
+                      'Crafted by skilled artisans preserving handloom traditions.'}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* ── Reviews ── */}
           {saree?.id && <ReviewSection productId={saree.id} />}
 
+          {/* ── Related Products ── */}
           {relatedSarees.length > 0 && (
             <div className="pd-fadeup pd-d3">
               <div className="pd-related-head">

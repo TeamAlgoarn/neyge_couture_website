@@ -4,64 +4,48 @@ import { ShoppingCart, Heart, User, Search, Menu, X } from 'lucide-react';
 import { useCart } from '@/hooks/useCarts';
 import { useWishlist } from '@/hooks/useWishlist';
 import { authService } from '@/lib/auth';
-import logo from '@/assets/Client_NC_Logo-03.png';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BRAND PALETTE — exact match to HomePage
-// Maroon #800020 (primary), Navy #1B2A6B, Forest #14402A, Gold #C4980A
-// Cream #FFF9F0 (creamLight) / #F5E6D3 (cream) / #F8EEE2 (creamMid)
-// ─────────────────────────────────────────────────────────────────────────────
+import logo from '@/assets/Client_NC_Logo-04.png';
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
-/* ─────────────────────────────────────────
-   ROOT — sticky bar
-   Brand cream #FFF9F0 / #F5E6D3 — matches homepage creamLight
-───────────────────────────────────────── */
 .hd-root {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   font-family: 'Josefin Sans', sans-serif;
   transition: background .45s, box-shadow .45s;
 }
-/* TOP: semi-transparent cream — matches homepage hero scroll-into loom section */
-.hd-root.top      {
+.hd-root.top {
   background: rgba(255,249,240,0.88);
   backdrop-filter: blur(14px);
 }
-/* SCROLLED: solid cream — matches #FFF9F0 creamLight */
 .hd-root.scrolled {
   background: rgba(255,249,240,0.98);
   backdrop-filter: blur(22px);
   box-shadow: 0 2px 18px rgba(128,0,32,.07);
 }
 
-/* ─────────────────────────────────────────
-   INNER ROW
-───────────────────────────────────────── */
+/* ── INNER ROW ── */
 .hd-inner {
   max-width: 1340px; margin: 0 auto;
   padding: 0 64px;
   display: flex; align-items: center; justify-content: space-between;
   transition: height .35s ease;
 }
-.hd-root.top      .hd-inner { height: 88px; }
-.hd-root.scrolled .hd-inner { height: 68px; }
+.hd-root.top      .hd-inner { height: 100px; }   /* ⬆ was 88px */
+.hd-root.scrolled .hd-inner { height: 76px;  }   /* ⬆ was 68px */
 
 @media(max-width:900px)  { .hd-inner { padding-left:24px !important; padding-right:24px !important; } }
 @media(max-width:480px)  { .hd-inner { padding-left:16px !important; padding-right:16px !important; } }
 @media(max-width:768px)  {
-  .hd-root.top      .hd-inner { height: 72px; }
-  .hd-root.scrolled .hd-inner { height: 56px; }
+  .hd-root.top      .hd-inner { height: 80px; }  /* ⬆ was 72px */
+  .hd-root.scrolled .hd-inner { height: 64px; }  /* ⬆ was 56px */
 }
 @media(max-width:480px)  {
-  .hd-root.top      .hd-inner { height: 60px; }
-  .hd-root.scrolled .hd-inner { height: 52px; }
+  .hd-root.top      .hd-inner { height: 68px; }  /* ⬆ was 60px */
+  .hd-root.scrolled .hd-inner { height: 58px; }  /* ⬆ was 52px */
 }
 
-/* ─────────────────────────────────────────
-   LOGO
-───────────────────────────────────────── */
+/* ── LOGO ── */
 .hd-logo {
   display: flex;
   align-items: center;
@@ -72,29 +56,32 @@ const CSS = `
 }
 .hd-logo-img {
   display: block;
-  height: 64px;
   width: auto;
-  max-width: 180px;
   object-fit: contain;
   object-position: center;
   transition: height .35s ease, opacity .3s;
 }
-.hd-root.top      .hd-logo-img { height: 64px; }
-.hd-root.scrolled .hd-logo-img { height: 52px; }
+
+/* Desktop — top state */
+.hd-root.top      .hd-logo-img { height: 86px;  } /* ⬆ was 64px */
+/* Desktop — scrolled state */
+.hd-root.scrolled .hd-logo-img { height: 68px;  } /* ⬆ was 52px */
+
+/* Tablet */
 @media(max-width:768px) {
-  .hd-root.top      .hd-logo-img { height: 48px; }
-  .hd-root.scrolled .hd-logo-img { height: 40px; }
+  .hd-root.top      .hd-logo-img { height: 64px; } /* ⬆ was 48px */
+  .hd-root.scrolled .hd-logo-img { height: 52px; } /* ⬆ was 40px */
 }
+
+/* Mobile */
 @media(max-width:480px) {
-  .hd-root.top      .hd-logo-img { height: 42px; }
-  .hd-root.scrolled .hd-logo-img { height: 36px; }
+  .hd-root.top      .hd-logo-img { height: 54px; } /* ⬆ was 42px */
+  .hd-root.scrolled .hd-logo-img { height: 46px; } /* ⬆ was 36px */
 }
+
 .hd-logo:hover .hd-logo-img { opacity: .8; }
 
-/* ─────────────────────────────────────────
-   DECORATIVE BOTTOM BORDER — butta motif strip
-   Brand maroon #800020 + gold #C4980A — matches homepage btn/link colours
-───────────────────────────────────────── */
+/* ── DECORATIVE BORDER ── */
 .hd-border {
   position: absolute; bottom: 0; left: 0; right: 0;
   height: 10px; pointer-events: none; z-index: 51; overflow: visible;
@@ -126,10 +113,7 @@ const CSS = `
   pointer-events: none;
 }
 
-/* ─────────────────────────────────────────
-   DESKTOP NAV — Josefin Sans, maroon hover
-   Matches homepage .link-gold / nav style
-───────────────────────────────────────── */
+/* ── DESKTOP NAV ── */
 .hd-nav { display:flex; align-items:center; gap:30px; }
 @media(max-width:1024px){ .hd-nav { display:none; } }
 
@@ -137,22 +121,18 @@ const CSS = `
   position: relative;
   font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .28em;
   text-transform: uppercase; font-weight: 500;
-  /* warmGrey #4a3828 — matches homepage body text */
   color: #4a3828; text-decoration: none;
   transition: color .25s; padding-bottom: 2px; white-space: nowrap;
 }
-/* Hover: maroon #800020 — homepage primary */
 .hd-nav-link:hover { color: #800020; }
 .hd-nav-link::after {
   content: ''; position: absolute; left: 0; bottom: -2px;
   width: 0; height: 1px;
-  /* Gold underline — matches homepage .link-gold */
   background: #C4980A;
   transition: width .35s cubic-bezier(.4,0,.2,1);
 }
 .hd-nav-link:hover::after { width: 100%; }
 
-/* "New" tag — maroon bg, cream text — matches btn-maroon */
 .hd-nav-badge {
   display: inline-block; margin-left: 5px;
   padding: 2px 5px;
@@ -161,10 +141,7 @@ const CSS = `
   vertical-align: middle;
 }
 
-/* ─────────────────────────────────────────
-   ICON BUTTONS — maroon badge
-   Matches homepage .btn-maroon / maroon #800020
-───────────────────────────────────────── */
+/* ── ICON BUTTONS ── */
 .hd-icons { display:flex; align-items:center; gap:2px; }
 
 .hd-icon-btn {
@@ -173,15 +150,12 @@ const CSS = `
   background: transparent; border: none; cursor: pointer;
   transition: background .25s, transform .2s;
   text-decoration: none;
-  /* warmGrey — matches homepage icon / text colour */
   color: #4a3828;
 }
-/* Hover bg: maroon tint — matches homepage maroon */
 .hd-icon-btn:hover { background: rgba(128,0,32,.08); transform: scale(1.08); }
 
 @media(max-width:768px){ .hd-search { display:none !important; } }
 
-/* Badge: maroon #800020 — matches homepage btn-maroon */
 .hd-badge {
   position: absolute; top: -2px; right: -2px;
   width: 17px; height: 17px;
@@ -196,10 +170,7 @@ const CSS = `
 .hd-ham { display:none !important; }
 @media(max-width:1024px){ .hd-ham { display:flex !important; } }
 
-/* ─────────────────────────────────────────
-   MOBILE MENU — cream bg, maroon accents
-   Matches homepage creamLight #FFF9F0
-───────────────────────────────────────── */
+/* ── MOBILE MENU ── */
 .hd-mobile {
   border-top: 1px solid rgba(128,0,32,.14);
   background: rgba(255,249,240,.99); backdrop-filter: blur(20px);
@@ -214,17 +185,14 @@ const CSS = `
   display: block; padding: 13px 0;
   font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .28em;
   text-transform: uppercase; font-weight: 500;
-  /* warmGrey */
   color: #4a3828; text-decoration: none;
   border-bottom: 1px solid rgba(128,0,32,.09);
   transition: color .2s, padding-left .2s;
 }
 .hd-mobile-link:last-child { border-bottom: none; }
-/* Hover: maroon */
 .hd-mobile-link:hover { color: #800020; padding-left: 10px; }
 `;
 
-/* ─── Butta-inspired tile — maroon #800020 + gold #C4980A — matches homepage ── */
 const TILE_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="8.5" viewBox="0 0 32 8.5">
   <rect width="32" height="8.5" fill="#5a0016" opacity="0.08"/>
@@ -251,14 +219,14 @@ const NAV_LINKS = [
   { to: '/',               label: 'Home'           },
   { to: '/shop',           label: 'Shop'           },
   { to: '/video-shopping', label: 'Video Shopping' },
-  { to: '/about',          label: 'Our Artisans'   },
+  { to: '/about',          label: 'About US'       },
 ];
 const MOBILE_LINKS = [
   { to: '/',                 label: 'Home'           },
   { to: '/shop',             label: 'Shop'           },
   { to: '/video-shopping',   label: 'Video Shopping' },
   { to: '/collections/silk', label: 'Silk'           },
-  { to: '/about',            label: 'Our Artisans'   },
+  { to: '/about',            label: 'About US'       },
 ];
 
 export function Header() {
