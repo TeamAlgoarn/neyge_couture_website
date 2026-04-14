@@ -21,6 +21,26 @@ class UploadService:
     COLLECTION_BUCKET = "collection-images"
 
     @staticmethod
+    async def upload_temp_collection_image(file: UploadFile) -> dict:
+        content = await UploadService._validate_image(file)
+
+        extension = Path(file.filename or "collection-image").suffix or ".jpg"
+        path = f"collections/temp/{uuid.uuid4().hex}{extension}"
+
+        image_url = UploadService._upload_to_supabase(
+            UploadService.COLLECTION_BUCKET,
+            path,
+            content,
+            file.content_type or "image/jpeg",
+        )
+
+        return {
+            "path": path,
+            "url": image_url,
+            "filename": file.filename,
+        }
+
+    @staticmethod
     async def _validate_image(file: UploadFile) -> bytes:
         if not file:
             raise HTTPException(

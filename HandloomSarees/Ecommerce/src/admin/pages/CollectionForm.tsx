@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
-import { Layers, Sparkles, Save, X } from "lucide-react";
+import { Layers, Sparkles, Save, X, Upload } from "lucide-react";
+import { uploadCollectionImage } from "../lib/uploadCollectionImage";
 
 // ─── Brand palette (matches all other pages) ─────────────────────────────────
 const C = {
@@ -136,6 +137,34 @@ const CSS = `
   background: rgba(128,0,32,.05);
   transform: translateY(-2px);
 }
+  .upload-box {
+  border: 1.5px dashed rgba(196,152,10,.45);
+  background: rgba(255,255,255,.8);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(196,152,10,.35);
+  background: rgba(196,152,10,.08);
+  color: #800020;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: #8b735f;
+  margin-top: 8px;
+}
 @media (max-width: 768px) {
   .form-card {
     padding: 20px;
@@ -154,7 +183,7 @@ type CollectionPayload = {
   name: string;
   slug: string;
   description: string;
-  image: string;
+  banner_image: string;
   is_active: boolean;
   featured: boolean;
 };
@@ -168,11 +197,10 @@ const initialForm: CollectionPayload = {
   name: "",
   slug: "",
   description: "",
-  image: "",
+  banner_image: "",
   is_active: true,
   featured: false,
 };
-
 export default function CollectionForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -181,7 +209,8 @@ export default function CollectionForm() {
   const [form, setForm] = useState<CollectionPayload>(initialForm);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(isEdit);
-
+const [uploadingImage, setUploadingImage] = useState(false);
+const imageInputRef = useRef<HTMLInputElement | null>(null);
   const updateField = <K extends keyof CollectionPayload>(
     key: K,
     value: CollectionPayload[K]
@@ -198,14 +227,14 @@ export default function CollectionForm() {
         const collection = res.data?.data || res.data?.collection || res.data;
 
         if (collection) {
-          setForm({
-            name: collection.name || "",
-            slug: collection.slug || "",
-            description: collection.description || "",
-            image: collection.image || collection.thumbnail || "",
-            is_active: collection.is_active ?? true,
-            featured: collection.featured ?? false,
-          });
+         setForm({
+  name: collection.name || "",
+  slug: collection.slug || "",
+  description: collection.description || "",
+  banner_image: collection.banner_image || collection.image || collection.thumbnail || "",
+  is_active: collection.is_active ?? true,
+  featured: collection.featured ?? false,
+});
         }
       } catch (error) {
         console.error("Failed to fetch collection", error);
@@ -216,7 +245,29 @@ export default function CollectionForm() {
 
     fetchCollection();
   }, [id, isEdit]);
+const handleCollectionImageUpload = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
+  try {
+    setUploadingImage(true);
+
+    const imageUrl = await uploadCollectionImage(file);
+
+    setForm((prev) => ({
+  ...prev,
+  banner_image: imageUrl,
+}));
+  } catch (error) {
+    console.error("Collection image upload failed", error);
+    alert("Image upload failed");
+  } finally {
+    setUploadingImage(false);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
+};
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -294,15 +345,40 @@ export default function CollectionForm() {
                       onChange={(e) => updateField("description", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label className="form-label">Image URL</label>
-                    <input
-                      className="form-input"
-                      placeholder="https://example.com/image.jpg"
-                      value={form.image}
-                      onChange={(e) => updateField("image", e.target.value)}
-                    />
-                  </div>
+                 <div>
+  <label className="form-label">Collection Image</label>
+
+  <div className="upload-box">
+    <button
+      type="button"
+      className="upload-btn"
+      onClick={() => imageInputRef.current?.click()}
+    >
+      <Upload size={14} />
+      {uploadingImage ? "Uploading..." : "Upload Image"}
+    </button>
+
+    <input
+      ref={imageInputRef}
+      type="file"
+      accept="image/*"
+      onChange={handleCollectionImageUpload}
+      style={{ display: "none" }}
+    />
+
+    <p className="upload-hint">
+      Select image from your device. It will be uploaded automatically.
+    </p>
+
+    {form.banner_image && (
+      <img
+        src={form.banner_image}
+        alt="Collection preview"
+        className="preview-img"
+      />
+    )}
+  </div>
+</div>
                 </div>
               </div>
 
@@ -332,11 +408,11 @@ export default function CollectionForm() {
                     Active Collection
                   </label>
 
-                  {form.image && (
+                  {form.banner_image && (
                     <div style={{ marginTop: 8 }}>
                       <p className="form-label">Preview</p>
                       <img
-                        src={form.image}
+                        src={form.banner_image}
                         alt="Collection preview"
                         className="preview-img"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
