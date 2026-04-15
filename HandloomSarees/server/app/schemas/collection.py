@@ -61,6 +61,14 @@ class CollectionCreateRequest(BaseModel):
     description: Optional[str] = None
     story: Optional[str] = None
     is_active: bool = True
+    featured: bool = False
+    # ── NEW: category lets admin tag the collection type ──────────────────────
+    # This drives the filter sidebar in CollectionsPage without name-guessing
+    category: Optional[str] = Field(
+        default=None,
+        max_length=80,
+        description="e.g. Wedding, Party & Festive, Casual, Formal, Heritage"
+    )
 
 
 class CollectionUpdateRequest(BaseModel):
@@ -70,6 +78,9 @@ class CollectionUpdateRequest(BaseModel):
     description: Optional[str] = None
     story: Optional[str] = None
     is_active: Optional[bool] = None
+    featured: Optional[bool] = None
+    # ── NEW ──────────────────────────────────────────────────────────────────
+    category: Optional[str] = Field(default=None, max_length=80)
 
 
 class CollectionResponse(BaseModel):
@@ -80,5 +91,8 @@ class CollectionResponse(BaseModel):
     description: Optional[str] = None
     story: Optional[str] = None
     is_active: bool
+    featured: bool = False
+    # ── NEW ──────────────────────────────────────────────────────────────────
+    category: Optional[str] = None
     created_at: datetime
     updated_at: datetime

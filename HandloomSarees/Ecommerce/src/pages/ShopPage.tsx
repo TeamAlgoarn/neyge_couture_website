@@ -2358,10 +2358,22 @@ function sortProducts(items: Saree[], sortBy: string): Saree[] {
   return sorted;
 }
 
+// ─── Multi-select toggle helper ───────────────────────────────────────────────
+// Adds value if not present, removes it if already selected
+function toggleMulti(
+  value: string,
+  setter: React.Dispatch<React.SetStateAction<string[]>>
+) {
+  setter((prev) =>
+    prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+  );
+}
+
 export function ShopPage() {
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
 
+  // ── Multi-select state for fabrics, occasions, colors ──────────────────────
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>(() => {
     const f = searchParams.get('fabric');
     return f ? [f] : [];
@@ -2381,13 +2393,6 @@ export function ShopPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const toggleSingle = (
-    value: string,
-    setter: React.Dispatch<React.SetStateAction<string[]>>
-  ) => {
-    setter((prev) => (prev.includes(value) ? [] : [value]));
-  };
-
   const clearAll = () => {
     setSelectedFabrics([]);
     setSelectedOccasions([]);
@@ -2402,18 +2407,19 @@ export function ShopPage() {
     selectedColors.length +
     (priceRange[1] < 50000 ? 1 : 0);
 
+  // ── Active chips: one chip per selected value, removes only that value ──────
   const activeChips: { label: string; onRemove: () => void }[] = [
     ...selectedFabrics.map((v) => ({
       label: v,
-      onRemove: () => setSelectedFabrics([]),
+      onRemove: () => setSelectedFabrics((prev) => prev.filter((f) => f !== v)),
     })),
     ...selectedOccasions.map((v) => ({
       label: v,
-      onRemove: () => setSelectedOccasions([]),
+      onRemove: () => setSelectedOccasions((prev) => prev.filter((o) => o !== v)),
     })),
     ...selectedColors.map((v) => ({
       label: v,
-      onRemove: () => setSelectedColors([]),
+      onRemove: () => setSelectedColors((prev) => prev.filter((c) => c !== v)),
     })),
     ...(priceRange[1] < 50000
       ? [
@@ -2457,6 +2463,7 @@ export function ShopPage() {
   const filteredProducts = useMemo(() => {
     let result = [...allProducts];
 
+    // Multi-select: product must match ANY selected fabric
     if (selectedFabrics.length > 0) {
       result = result.filter((item) =>
         selectedFabrics.some(
@@ -2465,6 +2472,7 @@ export function ShopPage() {
       );
     }
 
+    // Multi-select: product must match ANY selected occasion
     if (selectedOccasions.length > 0) {
       result = result.filter((item) =>
         item.occasion?.some((occasion) =>
@@ -2475,6 +2483,7 @@ export function ShopPage() {
       );
     }
 
+    // Multi-select: product must match ANY selected color
     if (selectedColors.length > 0) {
       result = result.filter((item) =>
         selectedColors.some(
@@ -2716,25 +2725,30 @@ export function ShopPage() {
               </div>
 
               <div className="sp-panel-body">
+                {/* Multi-select Fabric accordion */}
                 <AccordionSection
                   title="Fabric"
                   items={FABRICS}
                   selected={selectedFabrics}
-                  toggle={(v) => toggleSingle(v, setSelectedFabrics)}
+                  toggle={(v) => toggleMulti(v, setSelectedFabrics)}
                   defaultOpen
                 />
+
+                {/* Multi-select Occasion accordion */}
                 <AccordionSection
                   title="Occasion"
                   items={OCCASIONS}
                   selected={selectedOccasions}
-                  toggle={(v) => toggleSingle(v, setSelectedOccasions)}
+                  toggle={(v) => toggleMulti(v, setSelectedOccasions)}
                   defaultOpen
                 />
+
+                {/* Multi-select Colour accordion */}
                 <AccordionSection
                   title="Colour"
                   items={COLORS}
                   selected={selectedColors}
-                  toggle={(v) => toggleSingle(v, setSelectedColors)}
+                  toggle={(v) => toggleMulti(v, setSelectedColors)}
                 />
 
                 <div className="sp-acc">

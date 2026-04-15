@@ -2,10 +2,10 @@ import { Link } from "react-router-dom";
 import { Sparkles, Crown, Wind, Heart, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 // Placeholder images – replace with your actual assets
-import heroBg from "@/assets/bd3.png";        // full‑screen hero background
-import royalImg from "@/assets/g3.png";       // opulent silk visual
-import minimalImg from "@/assets/g8.jpg";     // airy, minimal drape
-import artisanImg from "@/assets/g5.png";     // loom/artisan shot
+import heroBg from "@/assets/ab4.jpeg";        // full‑screen hero background
+import royalImg from "@/assets/ab3.png";       // opulent silk visual
+import minimalImg from "@/assets/ab2.jpeg";     // airy, minimal drape
+import artisanImg from "@/assets/ab5.png";     // loom/artisan shot
 
 const C = {
   maroon: '#800020',
@@ -52,18 +52,24 @@ const CSS = `
 }
 .gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
+/* Animations */
 @keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
 @keyframes fadeIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
 @keyframes subtleKenBurns {
   0% { transform: scale(1); }
   100% { transform: scale(1.05); }
 }
+@keyframes scrollPulse {
+  0%,100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(6px); }
+}
 .about-fadein { animation: fadeIn .8s cubic-bezier(.4,0,.2,1) both; }
 .about-fadeup { animation: fadeUp .8s cubic-bezier(.4,0,.2,1) both; }
-.about-d1 { animation-delay:.1s }
-.about-d2 { animation-delay:.2s }
-.about-d3 { animation-delay:.3s }
-.about-d4 { animation-delay:.4s }
+.about-d0 { animation-delay: 0s }
+.about-d1 { animation-delay: .12s }
+.about-d2 { animation-delay: .24s }
+.about-d3 { animation-delay: .36s }
+.about-d4 { animation-delay: .48s }
 
 /* Hero Section - Full Screen */
 .about-hero {
@@ -114,6 +120,7 @@ const CSS = `
   line-height: 1.8;
   max-width: 600px;
   margin: 0 auto;
+  color: rgba(255,255,255,.85);
   text-shadow: 0 1px 8px rgba(0,0,0,.2);
 }
 .scroll-indicator {
@@ -126,14 +133,21 @@ const CSS = `
   align-items: center;
   gap: 8px;
   z-index: 2;
-  opacity: 0.6;
-  transition: opacity 0.3s;
+  animation: fadeUp 1s ease 1.2s both;
 }
 .scroll-indicator:hover { opacity: 1; }
 .scroll-line {
   width: 1px;
   height: 50px;
   background: linear-gradient(to bottom, rgba(212,175,55,.8), transparent);
+  animation: scrollPulse 2.2s ease-in-out infinite;
+}
+.scroll-text {
+  font-size: 9px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(212,175,55,.7);
+  font-weight: 500;
 }
 
 /* Cards */
@@ -353,22 +367,24 @@ export default function AboutPage() {
     <>
       <style>{CSS}</style>
       <div className="about-root">
-        {/* Full‑screen Hero */}
+        {/* Full‑screen Hero with staggered animations */}
         <div className="about-hero">
           <img src={heroBg} alt="Neyge Couture" className="about-hero-bg" />
           <div className="about-hero-overlay" />
           <div className="about-hero-content">
-            <span className="ey" style={{ color: '#D4AF37', marginBottom: 16, display: 'block' }}>Our Identity</span>
-            <h1 className="about-hero-title">Neyge Couture</h1>
-            <div className="gd" style={{ background: '#D4AF37', margin: '20px auto' }} />
-            <p className="about-hero-sub">
+            <span className="ey about-fadeup about-d0" style={{ color: '#D4AF37', marginBottom: 16, display: 'block' }}>
+              Our Identity
+            </span>
+            <h1 className="about-hero-title about-fadeup about-d1">Neyge Couture</h1>
+            <div className="gd about-fadeup about-d2" style={{ background: '#D4AF37', margin: '20px auto' }} />
+            <p className="about-hero-sub about-fadeup about-d3">
               A luxury saree and Indian wear brand built to revive and celebrate authentic Indian textile heritage.<br />
               Rooted in handloom craftsmanship, working with real artisans and traditional weaving techniques —<br />
               making sarees feel modern, wearable, and emotionally meaningful.
             </p>
           </div>
           <div className="scroll-indicator">
-            <span style={{ fontSize: 9, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(212,175,55,.7)' }}>Scroll</span>
+            <span className="scroll-text">Scroll</span>
             <div className="scroll-line" />
           </div>
         </div>

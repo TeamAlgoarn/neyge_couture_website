@@ -372,6 +372,7 @@ import {
   Trash2,
   Image as ImageIcon,
   Star,
+  Plus,
 } from "lucide-react";
 
 const C = {
@@ -379,22 +380,30 @@ const C = {
   gold: "#C4980A",
 };
 
+// ── Preset suggestions shown as quick-add buttons ─────────────────────────────
+// Admin can click these instead of typing. These are the most common values.
+const COLOR_SUGGESTIONS = [
+  "Red", "Gold", "Blue", "Green", "Pink", "Yellow",
+  "White", "Black", "Orange", "Purple", "Maroon", "Beige",
+  "Silver", "Cream", "Multicolor",
+];
+
+const FABRIC_SUGGESTIONS = [
+  "Silk", "Cotton", "Georgette", "Chiffon", "Linen",
+  "Crepe", "Velvet", "Net", "Organza", "Satin", "Banarasi Silk",
+  "Kanjivaram Silk", "Chanderi", "Tussar Silk",
+];
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
-.product-form {
-  font-family: 'Josefin Sans', sans-serif;
-}
+.product-form { font-family: 'Josefin Sans', sans-serif; }
+
 .form-title {
   font-family: 'Cinzel', serif;
-  font-size: 20px;
-  font-weight: 500;
-  color: #800020;
-  margin-bottom: 20px;
-  letter-spacing: 0.02em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 20px; font-weight: 500; color: #800020;
+  margin-bottom: 20px; letter-spacing: 0.02em;
+  display: flex; align-items: center; gap: 8px;
 }
 .form-card {
   background: rgba(255,249,240,.97);
@@ -422,202 +431,269 @@ const CSS = `
 }
 .form-label {
   display: block;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #C4980A;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #C4980A; font-weight: 600; margin-bottom: 8px;
 }
-.form-checkbox {
-  width: 18px;
-  height: 18px;
-  accent-color: #800020;
-  margin-right: 10px;
-}
+.form-hint { font-size: 11px; color: #9a8070; margin-top: 4px; line-height: 1.5; }
+.form-checkbox { width: 18px; height: 18px; accent-color: #800020; margin-right: 10px; }
 .form-checkbox-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #4a3828;
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
+  font-size: 14px; font-weight: 500; color: #4a3828;
+  display: inline-flex; align-items: center; cursor: pointer;
 }
-.preview-img {
-  width: 100%;
-  max-height: 240px;
-  border-radius: 18px;
-  object-fit: cover;
+
+/* ── Tag chip input ── */
+.tag-input-wrap {
+  border: 1.5px solid rgba(196,152,10,.3);
+  border-radius: 16px;
+  background: white;
+  padding: 8px 12px;
+  min-height: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  cursor: text;
+  transition: all 0.25s;
+}
+.tag-input-wrap:focus-within {
+  border-color: #C4980A;
+  box-shadow: 0 0 0 3px rgba(196,152,10,.12);
+}
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: rgba(128,0,32,.07);
+  border: 1px solid rgba(128,0,32,.2);
+  font-size: 12px; font-weight: 600;
+  color: #800020;
+  white-space: nowrap;
+}
+.tag-chip-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: none; border: none; cursor: pointer;
+  color: #800020; padding: 0; line-height: 1;
+  transition: background 0.15s;
+}
+.tag-chip-remove:hover { background: rgba(128,0,32,.12); }
+.tag-text-input {
+  border: none; outline: none;
+  font-family: 'Josefin Sans'; font-size: 13px; color: #1a1010;
+  background: transparent;
+  min-width: 90px; flex: 1;
+  padding: 4px 4px;
+}
+.tag-text-input::placeholder { color: #b09880; }
+
+/* ── Suggestion pills ── */
+.sugg-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.sugg-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 100px;
   border: 1px solid rgba(196,152,10,.3);
-  margin-top: 12px;
+  background: rgba(196,152,10,.06);
+  font-size: 11px; color: #5a3e28; cursor: pointer;
+  transition: all 0.18s;
+}
+.sugg-pill:hover {
+  border-color: rgba(128,0,32,.35);
+  background: rgba(128,0,32,.06);
+  color: #800020;
+}
+.sugg-pill.used {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ── Images ── */
+.preview-img {
+  width: 100%; max-height: 240px; border-radius: 18px;
+  object-fit: cover; border: 1px solid rgba(196,152,10,.3); margin-top: 12px;
 }
 .preview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px; margin-top: 12px;
 }
-.preview-box {
-  position: relative;
-}
+.preview-box { position: relative; }
 .preview-img-small {
-  width: 100%;
-  height: 110px;
-  border-radius: 14px;
-  object-fit: cover;
-  border: 1px solid rgba(196,152,10,.3);
-  background: #fff;
+  width: 100%; height: 110px; border-radius: 14px; object-fit: cover;
+  border: 1px solid rgba(196,152,10,.3); background: #fff;
 }
 .upload-box {
   border: 1.5px dashed rgba(196,152,10,.45);
-  background: rgba(255,255,255,.8);
-  border-radius: 18px;
-  padding: 18px;
+  background: rgba(255,255,255,.8); border-radius: 18px; padding: 18px;
 }
-.upload-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
+.upload-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .upload-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 18px;
-  border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; border-radius: 999px;
   border: 1.5px solid rgba(196,152,10,.35);
-  background: rgba(196,152,10,.08);
-  color: #800020;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: .25s;
+  background: rgba(196,152,10,.08); color: #800020;
+  font-size: 12px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; cursor: pointer; transition: .25s;
 }
-.upload-btn:hover {
-  transform: translateY(-1px);
-  border-color: #C4980A;
-  background: rgba(196,152,10,.14);
-}
-.upload-hint {
-  font-size: 12px;
-  color: #8b735f;
-  margin-top: 10px;
-  line-height: 1.5;
-}
-.upload-warning {
-  font-size: 12px;
-  color: #dc2626;
-  margin-top: 8px;
-  font-weight: 600;
-}
-.cover-box {
-  margin-top: 16px;
-}
+.upload-btn:hover { transform: translateY(-1px); border-color: #C4980A; background: rgba(196,152,10,.14); }
+.upload-hint { font-size: 12px; color: #8b735f; margin-top: 10px; line-height: 1.5; }
+.upload-warning { font-size: 12px; color: #dc2626; margin-top: 8px; font-weight: 600; }
+.cover-box { margin-top: 16px; }
 .cover-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(196,152,10,.12);
-  color: #800020;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  border: 1px solid rgba(196,152,10,.28);
-  margin-bottom: 10px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(196,152,10,.12); color: #800020;
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  border: 1px solid rgba(196,152,10,.28); margin-bottom: 10px;
 }
 .btn-remove-image {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: rgba(192,57,43,.95);
-  border: none;
-  border-radius: 50%;
-  color: white;
-  cursor: pointer;
+  position: absolute; top: 8px; right: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; background: rgba(192,57,43,.95);
+  border: none; border-radius: 50%; color: white; cursor: pointer;
 }
 .img-badge {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(212,175,55,.95);
-  color: #800020;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  position: absolute; left: 8px; top: 8px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px; border-radius: 999px;
+  background: rgba(212,175,55,.95); color: #800020;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
 }
+
+/* ── Buttons ── */
 .btn-save {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display: inline-flex; align-items: center; gap: 8px;
   padding: 12px 28px;
   background: linear-gradient(135deg, #D4AF37, #b8960f);
-  color: #800020;
-  border: none;
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
+  color: #800020; border: none; border-radius: 100px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;
   box-shadow: 0 4px 14px rgba(212,175,55,.35);
 }
-.btn-save:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(212,175,55,.5);
-}
-.btn-save:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.btn-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212,175,55,.5); }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-cancel {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
-  background: transparent;
-  border: 1.5px solid rgba(196,152,10,.4);
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #800020;
-  cursor: pointer;
-  transition: all 0.25s;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; background: transparent;
+  border: 1.5px solid rgba(196,152,10,.4); border-radius: 100px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #800020; cursor: pointer; transition: all 0.25s;
 }
-.btn-cancel:hover {
-  border-color: #800020;
-  background: rgba(128,0,32,.05);
-  transform: translateY(-2px);
-}
-.slug-hint {
-  font-size: 11px;
-  color: #9a8070;
-  margin-top: 4px;
-}
+.btn-cancel:hover { border-color: #800020; background: rgba(128,0,32,.05); transform: translateY(-2px); }
+.slug-hint { font-size: 11px; color: #9a8070; margin-top: 4px; }
+
 @media (max-width: 768px) {
   .form-card { padding: 20px; }
   .form-title { font-size: 18px; }
   .btn-save, .btn-cancel { flex: 1; justify-content: center; }
 }
 `;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TagInput component
+// ─────────────────────────────────────────────────────────────────────────────
+// HOW IT WORKS:
+//   • Admin types a value and presses Enter / comma / Tab → chip is added
+//   • Each chip has an × button to remove it
+//   • Suggestions row shows preset values; clicking one adds it as a chip
+//   • Value is kept as string[] in state and sent to the backend as string[]
+//   • Backend validator (_join) converts ["Red","Gold"] → "Red,Gold" for DB
+// ─────────────────────────────────────────────────────────────────────────────
+function TagInput({
+  label,
+  values,
+  onChange,
+  suggestions,
+  placeholder,
+}: {
+  label: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+  suggestions: string[];
+  placeholder: string;
+}) {
+  const [inputVal, setInputVal] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const add = (raw: string) => {
+    const val = raw.trim();
+    if (!val || values.includes(val)) return;
+    onChange([...values, val]);
+  };
+
+  const remove = (val: string) => onChange(values.filter((v) => v !== val));
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (["Enter", ",", "Tab"].includes(e.key)) {
+      e.preventDefault();
+      add(inputVal);
+      setInputVal("");
+    } else if (e.key === "Backspace" && !inputVal && values.length > 0) {
+      // remove last chip on backspace when input is empty
+      remove(values[values.length - 1]);
+    }
+  };
+
+  return (
+    <div>
+      <label className="form-label">{label}</label>
+
+      {/* Chip input box */}
+      <div
+        className="tag-input-wrap"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {values.map((v) => (
+          <span key={v} className="tag-chip">
+            {v}
+            <button
+              type="button"
+              className="tag-chip-remove"
+              onClick={(e) => { e.stopPropagation(); remove(v); }}
+            >
+              <X size={11} />
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          className="tag-text-input"
+          value={inputVal}
+          placeholder={values.length === 0 ? placeholder : "Add more…"}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => { if (inputVal.trim()) { add(inputVal); setInputVal(""); } }}
+        />
+      </div>
+
+      <p className="form-hint">
+        Type a value and press <strong>Enter</strong> or <strong>comma</strong> to add.
+        Click × to remove.
+      </p>
+
+      {/* Quick-add suggestions */}
+      <div className="sugg-wrap">
+        {suggestions.map((s) => {
+          const used = values.includes(s);
+          return (
+            <button
+              key={s}
+              type="button"
+              className={`sugg-pill ${used ? "used" : ""}`}
+              onClick={() => add(s)}
+            >
+              <Plus size={9} />
+              {s}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 type ProductPayload = {
   name: string;
@@ -627,8 +703,10 @@ type ProductPayload = {
   thumbnail: string;
   images: string[];
   short_description: string;
-  color: string;
-  fabric: string;
+  // ── CHANGED: color & fabric are now arrays ────────────────────────────────
+  color: string[];
+  fabric: string[];
+  // ─────────────────────────────────────────────────────────────────────────
   technique: string;
   stock: number;
   collection_id: string;
@@ -638,14 +716,8 @@ type ProductPayload = {
 };
 
 type ProductResponse = {
-  data?: (ProductPayload & {
-    id: string;
-    collection?: { id?: string; slug?: string; name?: string };
-  }) | any;
-  product?: (ProductPayload & {
-    id: string;
-    collection?: { id?: string; slug?: string; name?: string };
-  }) | any;
+  data?: any;
+  product?: any;
 };
 
 type Collection = {
@@ -662,14 +734,21 @@ const initialForm: ProductPayload = {
   thumbnail: "",
   images: [],
   short_description: "",
-  color: "",
-  fabric: "",
+  color: [],
+  fabric: [],
   technique: "",
   stock: 0,
   collection_id: "",
   collection_slug: "",
   is_featured: false,
   is_active: true,
+};
+
+// Helper: parse "Red,Gold" string from API → ["Red","Gold"] array
+const toArray = (v: string | string[] | null | undefined): string[] => {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.filter(Boolean);
+  return v.split(",").map((x) => x.trim()).filter(Boolean);
 };
 
 export default function ProductForm() {
@@ -686,40 +765,36 @@ export default function ProductForm() {
 
   const imagesInputRef = useRef<HTMLInputElement | null>(null);
 
-  const updateField = <K extends keyof ProductPayload>(key: K, value: ProductPayload[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
+  const updateField = <K extends keyof ProductPayload>(
+    key: K,
+    value: ProductPayload[K]
+  ) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  // ── Fetch collections ──────────────────────────────────────────────────────
   useEffect(() => {
     const fetchCollections = async () => {
       try {
         setCollectionsLoading(true);
         const res = await adminApi.get("/collections");
-
         let items: Collection[] = [];
         if (Array.isArray(res.data)) items = res.data;
         else if (Array.isArray(res.data?.data)) items = res.data.data;
         else if (Array.isArray(res.data?.data?.items)) items = res.data.data.items;
         else if (Array.isArray(res.data?.collections)) items = res.data.collections;
         else if (Array.isArray(res.data?.items)) items = res.data.items;
-
         setCollections(items);
       } catch (error) {
         console.error("Failed to fetch collections", error);
-        setCollections([]);
       } finally {
         setCollectionsLoading(false);
       }
     };
-
     fetchCollections();
   }, []);
 
+  // ── Fetch product (edit mode) ──────────────────────────────────────────────
   useEffect(() => {
-    if (!isEdit || !id) {
-      setPageLoading(false);
-      return;
-    }
+    if (!isEdit || !id) { setPageLoading(false); return; }
 
     const fetchProduct = async () => {
       try {
@@ -731,16 +806,23 @@ export default function ProductForm() {
             name: product.name || "",
             slug: product.slug || "",
             price: Number(product.price || 0),
-            discount_price: product.discount_price != null ? Number(product.discount_price) : null,
+            discount_price:
+              product.discount_price != null
+                ? Number(product.discount_price)
+                : null,
             thumbnail: product.thumbnail || "",
             images: Array.isArray(product.images) ? product.images : [],
             short_description: product.short_description || "",
-            color: product.color || "",
-            fabric: product.fabric || "",
+            // ── Parse comma-string from DB back into array for the UI ─────────
+            color: toArray(product.color),
+            fabric: toArray(product.fabric),
+            // ─────────────────────────────────────────────────────────────────
             technique: product.technique || "",
             stock: Math.max(0, Number(product.stock || 0)),
-            collection_id: product.collection_id || product.collection?.id || "",
-            collection_slug: product.collection_slug || product.collection?.slug || "",
+            collection_id:
+              product.collection_id || product.collection?.id || "",
+            collection_slug:
+              product.collection_slug || product.collection?.slug || "",
             is_featured: !!product.is_featured,
             is_active: product.is_active ?? true,
           });
@@ -764,19 +846,19 @@ export default function ProductForm() {
     }));
   };
 
-  const handleImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ── Image upload ───────────────────────────────────────────────────────────
+  const handleImagesUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-
     try {
       setUploadingImages(true);
       const uploadedUrls: string[] = [];
-
       for (const file of files) {
         const url = await uploadProductImage(file);
         uploadedUrls.push(url);
       }
-
       setForm((prev) => ({
         ...prev,
         thumbnail: prev.thumbnail || uploadedUrls[0] || "",
@@ -795,7 +877,6 @@ export default function ProductForm() {
     setForm((prev) => {
       const imageToRemove = prev.images[index];
       const updatedImages = prev.images.filter((_, i) => i !== index);
-
       return {
         ...prev,
         images: updatedImages,
@@ -807,6 +888,7 @@ export default function ProductForm() {
     });
   };
 
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -822,6 +904,10 @@ export default function ProductForm() {
 
       const payload = {
         ...form,
+        // ── Send arrays; backend _join() converts to "A,B,C" string ──────────
+        color: form.color,      // string[]  →  backend → "Red,Gold"
+        fabric: form.fabric,    // string[]  →  backend → "Silk,Cotton"
+        // ─────────────────────────────────────────────────────────────────────
         discount_price:
           form.discount_price === null || form.discount_price === 0
             ? null
@@ -843,15 +929,14 @@ export default function ProductForm() {
       navigate("/admin/products");
     } catch (error: any) {
       console.error("Failed to save product", error);
-
       const validationErrors = error?.response?.data?.data;
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
         alert(validationErrors.map((err: any) => err.msg).join("\n"));
       } else {
         alert(
           error?.response?.data?.message ||
-          error?.response?.data?.detail ||
-          "Save failed"
+            error?.response?.data?.detail ||
+            "Save failed"
         );
       }
     } finally {
@@ -862,7 +947,10 @@ export default function ProductForm() {
   if (pageLoading) {
     return (
       <AdminLayout title={isEdit ? "Edit Product" : "New Product"}>
-        <div className="product-form" style={{ textAlign: "center", padding: "60px 20px" }}>
+        <div
+          className="product-form"
+          style={{ textAlign: "center", padding: "60px 20px" }}
+        >
           Loading product data...
         </div>
       </AdminLayout>
@@ -882,6 +970,7 @@ export default function ProductForm() {
                 gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
               }}
             >
+              {/* ── Basic Details ── */}
               <div className="form-card">
                 <div className="form-title">
                   <Package size={20} color={C.gold} />
@@ -909,7 +998,9 @@ export default function ProductForm() {
                       onChange={(e) => updateField("slug", e.target.value)}
                       required
                     />
-                    <p className="slug-hint">URL-friendly identifier (lowercase, hyphens)</p>
+                    <p className="slug-hint">
+                      URL-friendly identifier (lowercase, hyphens)
+                    </p>
                   </div>
 
                   <div>
@@ -921,7 +1012,9 @@ export default function ProductForm() {
                       disabled={collectionsLoading}
                     >
                       <option value="">
-                        {collectionsLoading ? "Loading collections..." : "Select Collection"}
+                        {collectionsLoading
+                          ? "Loading collections..."
+                          : "Select Collection"}
                       </option>
                       {collections.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -929,7 +1022,6 @@ export default function ProductForm() {
                         </option>
                       ))}
                     </select>
-
                     {form.collection_slug && (
                       <p className="slug-hint" style={{ marginTop: 6 }}>
                         Collection slug: {form.collection_slug}
@@ -944,10 +1036,13 @@ export default function ProductForm() {
                       placeholder="Brief description of the product..."
                       rows={4}
                       value={form.short_description}
-                      onChange={(e) => updateField("short_description", e.target.value)}
+                      onChange={(e) =>
+                        updateField("short_description", e.target.value)
+                      }
                     />
                   </div>
 
+                  {/* Images */}
                   <div>
                     <label className="form-label">Product Images</label>
                     <div className="upload-box">
@@ -958,10 +1053,11 @@ export default function ProductForm() {
                           onClick={() => imagesInputRef.current?.click()}
                         >
                           <ImageIcon size={15} />
-                          {uploadingImages ? "Uploading..." : "Upload Product Images"}
+                          {uploadingImages
+                            ? "Uploading..."
+                            : "Upload Product Images"}
                         </button>
                       </div>
-
                       <input
                         ref={imagesInputRef}
                         type="file"
@@ -970,20 +1066,20 @@ export default function ProductForm() {
                         onChange={handleImagesUpload}
                         style={{ display: "none" }}
                       />
-
                       <p className="upload-hint">
-                        Upload product images from your local folder. The first image is automatically saved as the cover thumbnail.
+                        Upload product images from your local folder. The first
+                        image is automatically saved as the cover thumbnail.
                       </p>
                       <p className="upload-hint">
-                        Uploaded images: <strong>{form.images.length}</strong> / minimum <strong>6</strong> required
+                        Uploaded images:{" "}
+                        <strong>{form.images.length}</strong> / minimum{" "}
+                        <strong>6</strong> required
                       </p>
-
                       {form.images.length > 0 && form.images.length < 6 && (
                         <p className="upload-warning">
                           Please upload at least 6 images for this product.
                         </p>
                       )}
-
                       {form.thumbnail ? (
                         <div className="cover-box">
                           <div className="cover-label">
@@ -997,7 +1093,6 @@ export default function ProductForm() {
                           />
                         </div>
                       ) : null}
-
                       {form.images.length > 0 ? (
                         <div className="preview-grid">
                           {form.images.map((url, index) => (
@@ -1007,14 +1102,12 @@ export default function ProductForm() {
                                 alt={`Product ${index + 1}`}
                                 className="preview-img-small"
                               />
-
                               {form.thumbnail === url && (
                                 <div className="img-badge">
                                   <Star size={10} />
                                   Cover
                                 </div>
                               )}
-
                               <button
                                 type="button"
                                 className="btn-remove-image"
@@ -1031,6 +1124,7 @@ export default function ProductForm() {
                 </div>
               </div>
 
+              {/* ── Pricing & Stock ── */}
               <div className="form-card">
                 <div className="form-title">
                   <Sparkles size={20} color={C.gold} />
@@ -1044,9 +1138,10 @@ export default function ProductForm() {
                       type="number"
                       min={0}
                       className="form-input"
-                      placeholder="e.g., 4999"
                       value={form.price}
-                      onChange={(e) => updateField("price", Math.max(0, Number(e.target.value)))}
+                      onChange={(e) =>
+                        updateField("price", Math.max(0, Number(e.target.value)))
+                      }
                       required
                     />
                   </div>
@@ -1062,7 +1157,9 @@ export default function ProductForm() {
                       onChange={(e) =>
                         updateField(
                           "discount_price",
-                          e.target.value ? Math.max(0, Number(e.target.value)) : null
+                          e.target.value
+                            ? Math.max(0, Number(e.target.value))
+                            : null
                         )
                       }
                     />
@@ -1074,31 +1171,30 @@ export default function ProductForm() {
                       type="number"
                       min={0}
                       className="form-input"
-                      placeholder="e.g., 10"
                       value={form.stock}
-                      onChange={(e) => updateField("stock", Math.max(0, Number(e.target.value)))}
+                      onChange={(e) =>
+                        updateField("stock", Math.max(0, Number(e.target.value)))
+                      }
                     />
                   </div>
 
-                  <div>
-                    <label className="form-label">Color</label>
-                    <input
-                      className="form-input"
-                      placeholder="e.g., Red, Gold"
-                      value={form.color}
-                      onChange={(e) => updateField("color", e.target.value)}
-                    />
-                  </div>
+                  {/* ── NEW: Color tag input ───────────────────────────────── */}
+                  <TagInput
+                    label="Color"
+                    values={form.color}
+                    onChange={(v) => updateField("color", v)}
+                    suggestions={COLOR_SUGGESTIONS}
+                    placeholder="e.g. Red, Gold…"
+                  />
 
-                  <div>
-                    <label className="form-label">Fabric</label>
-                    <input
-                      className="form-input"
-                      placeholder="e.g., Silk, Cotton"
-                      value={form.fabric}
-                      onChange={(e) => updateField("fabric", e.target.value)}
-                    />
-                  </div>
+                  {/* ── NEW: Fabric tag input ──────────────────────────────── */}
+                  <TagInput
+                    label="Fabric"
+                    values={form.fabric}
+                    onChange={(v) => updateField("fabric", v)}
+                    suggestions={FABRIC_SUGGESTIONS}
+                    placeholder="e.g. Silk, Cotton…"
+                  />
 
                   <div>
                     <label className="form-label">Weaving Technique</label>
@@ -1106,36 +1202,41 @@ export default function ProductForm() {
                       className="form-input"
                       placeholder="e.g., Banarasi, Kanchipuram"
                       value={form.technique}
-                      onChange={(e) => updateField("technique", e.target.value)}
+                      onChange={(e) =>
+                        updateField("technique", e.target.value)
+                      }
                     />
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* ── Settings ── */}
             <div className="form-card" style={{ marginTop: 28 }}>
               <div className="form-title">
                 <Layers size={20} color={C.gold} />
                 Settings
               </div>
-
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <label className="form-checkbox-label">
                   <input
                     type="checkbox"
                     className="form-checkbox"
                     checked={form.is_featured}
-                    onChange={(e) => updateField("is_featured", e.target.checked)}
+                    onChange={(e) =>
+                      updateField("is_featured", e.target.checked)
+                    }
                   />
                   Featured Product
                 </label>
-
                 <label className="form-checkbox-label">
                   <input
                     type="checkbox"
                     className="form-checkbox"
                     checked={form.is_active}
-                    onChange={(e) => updateField("is_active", e.target.checked)}
+                    onChange={(e) =>
+                      updateField("is_active", e.target.checked)
+                    }
                   />
                   Active Product
                 </label>
@@ -1149,9 +1250,12 @@ export default function ProductForm() {
                 className="btn-save"
               >
                 <Save size={16} />
-                {loading ? "Saving..." : isEdit ? "Update Product" : "Create Product"}
+                {loading
+                  ? "Saving..."
+                  : isEdit
+                  ? "Update Product"
+                  : "Create Product"}
               </button>
-
               <button
                 type="button"
                 onClick={() => navigate("/admin/products")}

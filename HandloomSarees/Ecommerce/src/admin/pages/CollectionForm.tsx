@@ -5,7 +5,6 @@ import adminApi from "../lib/adminApi";
 import { Layers, Sparkles, Save, X, Upload } from "lucide-react";
 import { uploadCollectionImage } from "../lib/uploadCollectionImage";
 
-// ─── Brand palette (matches all other pages) ─────────────────────────────────
 const C = {
   maroon: '#800020',
   maroonDk: '#5a0016',
@@ -17,6 +16,22 @@ const C = {
   warmGrey: '#4a3828',
   navy: '#1B2A6B',
 };
+
+// ── All available collection categories ──────────────────────────────────────
+// These drive the filter sidebar in CollectionsPage. Whatever you pick here
+// appears as a clickable filter chip for the user. Keep this list consistent.
+const COLLECTION_CATEGORIES = [
+  "Wedding",
+  "Party & Festive",
+  "Casual Wear",
+  "Formal",
+  "Summer",
+  "Winter & Silk",
+  "Heritage",
+  "Bridal",
+  "Daily Wear",
+  "Other",
+] as const;
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
@@ -40,7 +55,7 @@ const CSS = `
   padding: 28px;
   box-shadow: 0 8px 36px rgba(0,0,0,.06);
 }
-.form-input, .form-textarea {
+.form-input, .form-textarea, .form-select {
   width: 100%;
   padding: 12px 16px;
   background: white;
@@ -51,7 +66,7 @@ const CSS = `
   color: #1a1010;
   transition: all 0.25s;
 }
-.form-input:focus, .form-textarea:focus {
+.form-input:focus, .form-textarea:focus, .form-select:focus {
   outline: none;
   border-color: #C4980A;
   box-shadow: 0 0 0 3px rgba(196,152,10,.12);
@@ -65,6 +80,12 @@ const CSS = `
   color: #C4980A;
   font-weight: 600;
   margin-bottom: 8px;
+}
+.form-hint {
+  font-size: 11px;
+  color: #9a8070;
+  margin-top: 5px;
+  line-height: 1.5;
 }
 .form-checkbox {
   width: 18px;
@@ -137,13 +158,12 @@ const CSS = `
   background: rgba(128,0,32,.05);
   transform: translateY(-2px);
 }
-  .upload-box {
+.upload-box {
   border: 1.5px dashed rgba(196,152,10,.45);
   background: rgba(255,255,255,.8);
   border-radius: 18px;
   padding: 16px;
 }
-
 .upload-btn {
   display: inline-flex;
   align-items: center;
@@ -159,23 +179,31 @@ const CSS = `
   text-transform: uppercase;
   cursor: pointer;
 }
-
 .upload-hint {
   font-size: 12px;
   color: #8b735f;
   margin-top: 8px;
 }
+
+/* ── Category preview chip ── */
+.cat-preview {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  background: rgba(128,0,32,.07);
+  border: 1px solid rgba(128,0,32,.18);
+  font-size: 12px;
+  font-weight: 600;
+  color: #800020;
+  letter-spacing: 0.06em;
+}
+
 @media (max-width: 768px) {
-  .form-card {
-    padding: 20px;
-  }
-  .form-title {
-    font-size: 18px;
-  }
-  .btn-save, .btn-cancel {
-    flex: 1;
-    justify-content: center;
-  }
+  .form-card { padding: 20px; }
+  .form-title { font-size: 18px; }
+  .btn-save, .btn-cancel { flex: 1; justify-content: center; }
 }
 `;
 
@@ -186,6 +214,8 @@ type CollectionPayload = {
   banner_image: string;
   is_active: boolean;
   featured: boolean;
+  // ── NEW: category field sent to backend ────────────────────────────────────
+  category: string;
 };
 
 type CollectionResponse = {
@@ -200,7 +230,9 @@ const initialForm: CollectionPayload = {
   banner_image: "",
   is_active: true,
   featured: false,
+  category: "",      // ← new
 };
+
 export default function CollectionForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -209,15 +241,15 @@ export default function CollectionForm() {
   const [form, setForm] = useState<CollectionPayload>(initialForm);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(isEdit);
-const [uploadingImage, setUploadingImage] = useState(false);
-const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+
   const updateField = <K extends keyof CollectionPayload>(
     key: K,
     value: CollectionPayload[K]
-  ) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
+  ) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  // ── Fetch existing collection (edit mode) ──────────────────────────────────
   useEffect(() => {
     if (!isEdit || !id) return;
 
@@ -227,14 +259,19 @@ const imageInputRef = useRef<HTMLInputElement | null>(null);
         const collection = res.data?.data || res.data?.collection || res.data;
 
         if (collection) {
-         setForm({
-  name: collection.name || "",
-  slug: collection.slug || "",
-  description: collection.description || "",
-  banner_image: collection.banner_image || collection.image || collection.thumbnail || "",
-  is_active: collection.is_active ?? true,
-  featured: collection.featured ?? false,
-});
+          setForm({
+            name: collection.name || "",
+            slug: collection.slug || "",
+            description: collection.description || "",
+            banner_image:
+              collection.banner_image ||
+              collection.image ||
+              collection.thumbnail ||
+              "",
+            is_active: collection.is_active ?? true,
+            featured: collection.featured ?? false,
+            category: collection.category || "",   // ← load saved category
+          });
         }
       } catch (error) {
         console.error("Failed to fetch collection", error);
@@ -245,42 +282,37 @@ const imageInputRef = useRef<HTMLInputElement | null>(null);
 
     fetchCollection();
   }, [id, isEdit]);
-const handleCollectionImageUpload = async (
-  e: React.ChangeEvent<HTMLInputElement>
-) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
 
-  try {
-    setUploadingImage(true);
+  // ── Image upload ───────────────────────────────────────────────────────────
+  const handleCollectionImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingImage(true);
+      const imageUrl = await uploadCollectionImage(file);
+      setForm((prev) => ({ ...prev, banner_image: imageUrl }));
+    } catch (error) {
+      console.error("Collection image upload failed", error);
+      alert("Image upload failed");
+    } finally {
+      setUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  };
 
-    const imageUrl = await uploadCollectionImage(file);
-
-    setForm((prev) => ({
-  ...prev,
-  banner_image: imageUrl,
-}));
-  } catch (error) {
-    console.error("Collection image upload failed", error);
-    alert("Image upload failed");
-  } finally {
-    setUploadingImage(false);
-    if (imageInputRef.current) imageInputRef.current.value = "";
-  }
-};
+  // ── Save ───────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = { ...form };
-
       if (isEdit && id) {
         await adminApi.put(`/collections/${id}`, payload);
       } else {
         await adminApi.post("/collections", payload);
       }
-
       navigate("/admin/collections");
     } catch (error) {
       console.error("Failed to save collection", error);
@@ -293,7 +325,10 @@ const handleCollectionImageUpload = async (
   if (pageLoading) {
     return (
       <AdminLayout title={isEdit ? "Edit Collection" : "New Collection"}>
-        <div className="collection-form" style={{ fontFamily: "'Josefin Sans', sans-serif", textAlign: "center", padding: "60px 20px" }}>
+        <div
+          className="collection-form"
+          style={{ textAlign: "center", padding: "60px 20px" }}
+        >
           Loading collection data...
         </div>
       </AdminLayout>
@@ -306,14 +341,25 @@ const handleCollectionImageUpload = async (
       <AdminLayout title={isEdit ? "Edit Collection" : "New Collection"}>
         <div className="collection-form">
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gap: 28, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-              {/* Basic Details Card */}
+            <div
+              style={{
+                display: "grid",
+                gap: 28,
+                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              }}
+            >
+              {/* ── Basic Details ── */}
               <div className="form-card">
                 <div className="form-title">
-                  <Layers size={20} style={{ display: "inline", marginRight: 8, color: C.gold }} />
+                  <Layers
+                    size={20}
+                    style={{ display: "inline", marginRight: 8, color: C.gold }}
+                  />
                   Basic Details
                 </div>
+
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  {/* Name */}
                   <div>
                     <label className="form-label">Collection Name</label>
                     <input
@@ -324,6 +370,8 @@ const handleCollectionImageUpload = async (
                       required
                     />
                   </div>
+
+                  {/* Slug */}
                   <div>
                     <label className="form-label">Slug</label>
                     <input
@@ -333,8 +381,40 @@ const handleCollectionImageUpload = async (
                       onChange={(e) => updateField("slug", e.target.value)}
                       required
                     />
-                    <p style={{ fontSize: 11, color: "#9a8070", marginTop: 4 }}>URL-friendly identifier (lowercase, hyphens)</p>
+                    <p className="form-hint">
+                      URL-friendly identifier (lowercase, hyphens)
+                    </p>
                   </div>
+
+                  {/* ── NEW: Category dropdown ──────────────────────────────
+                      This replaces the old name-guessing logic.
+                      Whatever is selected here becomes the filter tag that
+                      users see in CollectionsPage sidebar.
+                  ─────────────────────────────────────────────────────────── */}
+                  <div>
+                    <label className="form-label">Category</label>
+                    <select
+                      className="form-select"
+                      value={form.category}
+                      onChange={(e) => updateField("category", e.target.value)}
+                    >
+                      <option value="">— Select a category —</option>
+                      {COLLECTION_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="form-hint">
+                      This determines which filter tab the collection appears
+                      under on the shop page.
+                    </p>
+                    {form.category && (
+                      <div className="cat-preview">{form.category}</div>
+                    )}
+                  </div>
+
+                  {/* Description */}
                   <div>
                     <label className="form-label">Description</label>
                     <textarea
@@ -342,68 +422,81 @@ const handleCollectionImageUpload = async (
                       placeholder="Describe the collection..."
                       rows={5}
                       value={form.description}
-                      onChange={(e) => updateField("description", e.target.value)}
+                      onChange={(e) =>
+                        updateField("description", e.target.value)
+                      }
                     />
                   </div>
-                 <div>
-  <label className="form-label">Collection Image</label>
 
-  <div className="upload-box">
-    <button
-      type="button"
-      className="upload-btn"
-      onClick={() => imageInputRef.current?.click()}
-    >
-      <Upload size={14} />
-      {uploadingImage ? "Uploading..." : "Upload Image"}
-    </button>
+                  {/* Image upload */}
+                  <div>
+                    <label className="form-label">Collection Image</label>
+                    <div className="upload-box">
+                      <button
+                        type="button"
+                        className="upload-btn"
+                        onClick={() => imageInputRef.current?.click()}
+                      >
+                        <Upload size={14} />
+                        {uploadingImage ? "Uploading..." : "Upload Image"}
+                      </button>
 
-    <input
-      ref={imageInputRef}
-      type="file"
-      accept="image/*"
-      onChange={handleCollectionImageUpload}
-      style={{ display: "none" }}
-    />
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCollectionImageUpload}
+                        style={{ display: "none" }}
+                      />
 
-    <p className="upload-hint">
-      Select image from your device. It will be uploaded automatically.
-    </p>
+                      <p className="upload-hint">
+                        Select image from your device. It will be uploaded
+                        automatically.
+                      </p>
 
-    {form.banner_image && (
-      <img
-        src={form.banner_image}
-        alt="Collection preview"
-        className="preview-img"
-      />
-    )}
-  </div>
-</div>
+                      {form.banner_image && (
+                        <img
+                          src={form.banner_image}
+                          alt="Collection preview"
+                          className="preview-img"
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Settings Card */}
+              {/* ── Settings ── */}
               <div className="form-card">
                 <div className="form-title">
-                  <Sparkles size={20} style={{ display: "inline", marginRight: 8, color: C.gold }} />
+                  <Sparkles
+                    size={20}
+                    style={{ display: "inline", marginRight: 8, color: C.gold }}
+                  />
                   Settings
                 </div>
+
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <label className="form-checkbox-label">
                     <input
                       type="checkbox"
                       className="form-checkbox"
                       checked={form.featured}
-                      onChange={(e) => updateField("featured", e.target.checked)}
+                      onChange={(e) =>
+                        updateField("featured", e.target.checked)
+                      }
                     />
                     Featured Collection
                   </label>
+
                   <label className="form-checkbox-label">
                     <input
                       type="checkbox"
                       className="form-checkbox"
                       checked={form.is_active}
-                      onChange={(e) => updateField("is_active", e.target.checked)}
+                      onChange={(e) =>
+                        updateField("is_active", e.target.checked)
+                      }
                     />
                     Active Collection
                   </label>
@@ -415,7 +508,9 @@ const handleCollectionImageUpload = async (
                         src={form.banner_image}
                         alt="Collection preview"
                         className="preview-img"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
                       />
                     </div>
                   )}
@@ -423,13 +518,32 @@ const handleCollectionImageUpload = async (
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: "flex", gap: 16, marginTop: 32, flexWrap: "wrap" }}>
-              <button type="submit" disabled={loading} className="btn-save">
+            {/* Action buttons */}
+            <div
+              style={{
+                display: "flex",
+                gap: 16,
+                marginTop: 32,
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-save"
+              >
                 <Save size={16} />
-                {loading ? "Saving..." : (isEdit ? "Update Collection" : "Create Collection")}
+                {loading
+                  ? "Saving..."
+                  : isEdit
+                  ? "Update Collection"
+                  : "Create Collection"}
               </button>
-              <button type="button" onClick={() => navigate("/admin/collections")} className="btn-cancel">
+              <button
+                type="button"
+                onClick={() => navigate("/admin/collections")}
+                className="btn-cancel"
+              >
                 <X size={16} />
                 Cancel
               </button>

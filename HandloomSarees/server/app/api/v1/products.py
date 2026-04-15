@@ -14,8 +14,20 @@ async def list_products(
     page_size: int = Query(default=12, ge=1, le=50),
     collection: str | None = Query(default=None),
     occasion: str | None = Query(default=None),
-    fabric: str | None = Query(default=None),
-    color: str | None = Query(default=None),
+
+    # ── CHANGED: these now accept comma-separated multi-values ────────────────
+    # Single:   ?fabric=Silk
+    # Multiple: ?fabric=Silk,Cotton   (frontend joins selected chips with ",")
+    fabric: str | None = Query(
+        default=None,
+        description="Comma-separated fabric values e.g. Silk,Cotton"
+    ),
+    color: str | None = Query(
+        default=None,
+        description="Comma-separated color values e.g. Red,Gold"
+    ),
+    # ─────────────────────────────────────────────────────────────────────────
+
     featured: bool | None = Query(default=None),
     min_price: float | None = Query(default=None, ge=0),
     max_price: float | None = Query(default=None, ge=0),
@@ -23,6 +35,14 @@ async def list_products(
     sort_by: str = Query(default="created_at", pattern="^(created_at|price|name)$"),
     sort_order: str = Query(default="desc", pattern="^(asc|desc)$"),
 ):
+    """
+    List products with optional filters.
+
+    Multi-value example:
+        GET /products?color=Red,Gold&fabric=Silk,Cotton
+    Returns products that match ANY of the selected colors AND ANY of the
+    selected fabrics (OR within each group, AND between groups).
+    """
     data = ProductService.list_filtered(
         page=page,
         page_size=page_size,
@@ -39,10 +59,13 @@ async def list_products(
     )
     return success_response("Products fetched successfully", data)
 
+
 @router.get("/slug/{slug}", response_model=dict)
 async def get_product_by_slug(slug: str):
     data = ProductService.get_public_by_slug(slug)
     return success_response("Product fetched successfully", data)
+
+
 @router.get("/{product_id}", response_model=dict)
 async def get_product(product_id: str):
     data = ProductService.get_by_id(product_id)
