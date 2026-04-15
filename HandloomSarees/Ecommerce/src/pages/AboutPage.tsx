@@ -453,7 +453,7 @@ export default function AboutPage() {
               Whether you seek regal grandeur, quiet minimalism, or the soul of artisan hands —<br />
               Neyge is the thread that weaves it all together.
             </p>
-            <Link to="/shop" className="about-btn">
+            <Link to="/collections" className="about-btn">
               Discover the Collection <ArrowRight size={14} />
             </Link>
           </div>

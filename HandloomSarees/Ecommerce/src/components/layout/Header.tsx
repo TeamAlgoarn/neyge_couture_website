@@ -225,7 +225,7 @@ const MOBILE_LINKS = [
   { to: '/',                 label: 'Home'           },
   { to: '/shop',             label: 'Shop'           },
   { to: '/video-shopping',   label: 'Video Shopping' },
-  { to: '/collections/silk', label: 'Silk'           },
+  // { to: '/collections/silk', label: 'Silk'           },
   { to: '/about',            label: 'About US'       },
 ];
 

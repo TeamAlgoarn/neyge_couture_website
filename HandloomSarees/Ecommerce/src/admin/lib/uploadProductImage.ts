@@ -16,12 +16,7 @@ export async function uploadProductImage(file: File): Promise<string> {
 
   const res = await adminApi.post<UploadResponse>(
     "/uploads/product-image",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    formData
   );
 
   return res.data.data.url;

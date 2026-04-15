@@ -79,7 +79,6 @@ class CollectionUpdateRequest(BaseModel):
     story: Optional[str] = None
     is_active: Optional[bool] = None
     featured: Optional[bool] = None
-    # ── NEW ──────────────────────────────────────────────────────────────────
     category: Optional[str] = Field(default=None, max_length=80)
 
 

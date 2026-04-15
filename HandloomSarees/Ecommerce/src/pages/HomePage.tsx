@@ -1609,7 +1609,7 @@ function Hero() {
 
         <div className="hero-btns" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", animation: "fadeUp 1s ease .98s both" }}>
           <Link to="/shop" className="btn-gold">Discover the Collection</Link>
-          <Link to="/artisans" className="btn-outline-white">Meet the Artisans</Link>
+          <Link to="/about" className="btn-outline-white">Meet the Artisans</Link>
         </div>
       </div>
 
@@ -1703,7 +1703,7 @@ function LoomStory() {
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. COLLECTION BLOCK — parallax, maroon + navy gradient overlay
 // ─────────────────────────────────────────────────────────────────────────────
-function CollectionBlock({ img, title, subtitle, slug }: { img: string; title: string; subtitle: string; slug: string }) {
+function CollectionBlock({ img, title, subtitle }: { img: string; title: string; subtitle: string; slug: string }) {
   const [ref, on] = useInView<HTMLDivElement>(0.08);
   const scrollRef = useRef<HTMLDivElement>(null);
 
