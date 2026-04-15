@@ -123,7 +123,7 @@ function AppContent() {
           {/* Public routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
-          <Route path="/collections/:type" element={<ShopPage />} />
+          {/* <Route path="/collections/:type" element={<ShopPage />} /> */}
           <Route path="/product/:slug" element={<ProductDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />

@@ -364,8 +364,8 @@ export function CollectionsPage() {
     });
   }, [collections, search, activeCategory]);
 
-  const handleCollectionClick = (slug: string) => {
-    navigate(`/collections/${slug}`);
+  const handleCollectionClick = () => {
+    navigate(`/collections`);
   };
 
   return (

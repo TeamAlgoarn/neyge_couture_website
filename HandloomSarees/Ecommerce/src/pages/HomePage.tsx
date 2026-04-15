@@ -1741,7 +1741,7 @@ function CollectionBlock({ img, title, subtitle, slug }: { img: string; title: s
           {subtitle}
         </p>
         <div className={`rv d4 ${on ? "on" : ""}`}>
-          <Link to={`/collections/${slug}`} className="col-btn">Explore Collection</Link>
+          <Link to={`/collections`} className="col-btn">Explore Collection</Link>
         </div>
       </div>
     </div>
