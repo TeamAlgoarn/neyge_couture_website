@@ -56,7 +56,7 @@ const CSS = `
 .ft-logo { display:inline-block; text-decoration:none; margin-bottom:20px; }
 .ft-logo-img {
   display:block;
-  height: 120px;        /* ⬆ was 90px */
+  height: 120px;
   width:auto; object-fit:contain;
   filter: brightness(0) invert(1) drop-shadow(0 2px 12px rgba(196,152,10,.30));
   transition: opacity .3s;
@@ -84,16 +84,16 @@ const CSS = `
 /* ── Brand tagline — brighter ── */
 .ft-tagline {
   font-family: 'Cinzel', serif; font-size: 11px;
-  letter-spacing: .22em; color: rgba(196,152,10,.85);   /* ⬆ was .60 */
+  letter-spacing: .22em; color: rgba(196,152,10,.85);
   text-transform: uppercase;
   margin-bottom: 16px; font-weight: 400;
 }
 
 /* ── Brand description — much more visible ── */
 .ft-brand-desc {
-  font-family: 'Josefin Sans'; font-size: 14px;         /* ⬆ was 13px */
-  font-weight: 400;                                      /* ⬆ was 300 */
-  color: rgba(255,255,255,.72);                          /* ⬆ was .46 */
+  font-family: 'Josefin Sans'; font-size: 14px;
+  font-weight: 400;
+  color: rgba(255,255,255,.72);
   line-height: 1.90; margin-bottom: 26px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.30);
   letter-spacing: .030em;
@@ -117,9 +117,9 @@ const CSS = `
 /* ── Column heading — same gold, a touch brighter ── */
 .ft-col-head {
   display: flex; align-items: center; gap: 8px;
-  font-family: 'Josefin Sans'; font-size: 11px;         /* ⬆ was 10px */
+  font-family: 'Josefin Sans'; font-size: 11px;
   letter-spacing: .28em;
-  text-transform: uppercase; color: #D4A80E;             /* ⬆ slightly brighter gold */
+  text-transform: uppercase; color: #D4A80E;
   font-weight: 600;
   margin-bottom: 22px;
 }
@@ -129,9 +129,9 @@ const CSS = `
 .ft-links { list-style:none; padding:0; margin:0; }
 .ft-links li { margin-bottom: 13px; }
 .ft-link {
-  font-family: 'Josefin Sans'; font-size: 13.5px;       /* ⬆ was 12px */
-  font-weight: 400;                                      /* ⬆ was 300 */
-  color: rgba(255,255,255,.68);                          /* ⬆ was .44 */
+  font-family: 'Josefin Sans'; font-size: 13.5px;
+  font-weight: 400;
+  color: rgba(255,255,255,.68);
   text-decoration: none;
   letter-spacing: .08em;
   transition: color .25s, padding-left .25s; display: inline-block;
@@ -144,9 +144,9 @@ const CSS = `
 .ft-contact li { display:flex; align-items:flex-start; gap:11px; margin-bottom:15px; }
 .ft-contact-icon { flex-shrink:0; margin-top:1px; }
 .ft-contact-text {
-  font-family: 'Josefin Sans'; font-size: 13px;         /* ⬆ was 12px */
-  font-weight: 400;                                      /* ⬆ was 300 */
-  color: rgba(255,255,255,.68);                          /* ⬆ was .44 */
+  font-family: 'Josefin Sans'; font-size: 13px;
+  font-weight: 400;
+  color: rgba(255,255,255,.68);
   line-height: 1.6; letter-spacing: .04em;
   text-shadow: 0 1px 2px rgba(0,0,0,0.20);
 }
@@ -163,14 +163,14 @@ const CSS = `
 @media(max-width:480px){ .ft-newsletter { margin:0 -16px; padding:20px 16px; flex-direction:column; } }
 
 .ft-newsletter-text h4 {
-  font-family: 'Cinzel', serif; font-size: 17px;        /* ⬆ was 16px */
+  font-family: 'Cinzel', serif; font-size: 17px;
   font-weight: 500;
   color: #F5E6D3; letter-spacing: .06em; margin-bottom: 5px;
 }
 .ft-newsletter-text p {
-  font-family: 'Josefin Sans'; font-size: 13px;         /* ⬆ was 12px */
-  font-weight: 400;                                      /* ⬆ was 300 */
-  color: rgba(255,255,255,.62);                          /* ⬆ was .44 */
+  font-family: 'Josefin Sans'; font-size: 13px;
+  font-weight: 400;
+  color: rgba(255,255,255,.62);
   letter-spacing: .06em;
 }
 .ft-newsletter-form { display: flex; gap: 0; flex-shrink: 0; }
@@ -203,18 +203,18 @@ const CSS = `
 @media(max-width:480px){ .ft-bottom { padding:16px 16px 22px; flex-direction:column; text-align:center; } }
 
 .ft-copy {
-  font-family: 'Josefin Sans'; font-size: 11px;         /* ⬆ was 10px */
+  font-family: 'Josefin Sans'; font-size: 11px;
   letter-spacing: .10em;
-  color: rgba(255,255,255,.48);                          /* ⬆ was .26 */
+  color: rgba(255,255,255,.48);
   font-weight: 300;
 }
-.ft-copy em { color: rgba(196,152,10,.80); font-style: normal; } /* ⬆ was .55 */
+.ft-copy em { color: rgba(196,152,10,.80); font-style: normal; }
 
 .ft-bottom-links { display:flex; gap:20px; }
 .ft-bottom-link {
-  font-family: 'Josefin Sans'; font-size: 11px;         /* ⬆ was 10px */
+  font-family: 'Josefin Sans'; font-size: 11px;
   letter-spacing: .12em;
-  color: rgba(255,255,255,.48);                          /* ⬆ was .26 */
+  color: rgba(255,255,255,.48);
   text-decoration:none; transition:color .2s;
 }
 .ft-bottom-link:hover { color: rgba(196,152,10,.85); }
@@ -228,9 +228,9 @@ const CSS = `
 }
 .ft-integrity-dot { width: 6px; height: 6px; border-radius: 50%; background: #D4A80E; flex-shrink: 0; }
 .ft-integrity-text {
-  font-family: 'Josefin Sans'; font-size: 9.5px;        /* ⬆ was 9px */
+  font-family: 'Josefin Sans'; font-size: 9.5px;
   letter-spacing: .20em;
-  color: rgba(196,152,10,.90);                           /* ⬆ was .70 */
+  color: rgba(196,152,10,.90);
   text-transform: uppercase; font-weight: 600;
 }
 
@@ -249,7 +249,28 @@ const CSS = `
 @media(max-width:480px){ .ft-bottom-links { display:none; } }
 `;
 
-const SOCIAL_ICONS = [Facebook, Instagram, Twitter, Youtube];
+const SOCIAL_LINKS = [
+  {
+    Icon: Facebook,
+    label: 'Facebook',
+    href: 'https://www.facebook.com/neygecouture',
+  },
+  {
+    Icon: Instagram,
+    label: 'Instagram',
+    href: 'https://www.instagram.com/neygecouture',
+  },
+  {
+    Icon: Twitter,
+    label: 'Twitter / X',
+    href: 'https://www.twitter.com/neygecouture',
+  },
+  {
+    Icon: Youtube,
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@neygecouture',
+  },
+];
 
 const EXPLORE = [
   { label: 'Shop All',        to: '/shop'             },
@@ -313,8 +334,15 @@ export function Footer() {
               </div>
 
               <div className="ft-socials" style={{ marginTop: 20 }}>
-                {SOCIAL_ICONS.map((Icon, i) => (
-                  <a key={i} href="#" className="ft-social-btn" aria-label="Social link">
+                {SOCIAL_LINKS.map(({ Icon, label, href }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    className="ft-social-btn"
+                    aria-label={label}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Icon size={15} color="rgba(255,249,240,.75)" strokeWidth={1.5} />
                   </a>
                 ))}

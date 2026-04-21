@@ -4,7 +4,7 @@ import { ShoppingCart, Heart, User, Search, Menu, X } from 'lucide-react';
 import { useCart } from '@/hooks/useCarts';
 import { useWishlist } from '@/hooks/useWishlist';
 import { authService } from '@/lib/auth';
-import logo from '@/assets/Client_NC_Logo-04.png';
+import logo from '@/assets/Client_NC_Logo-03.png';
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');

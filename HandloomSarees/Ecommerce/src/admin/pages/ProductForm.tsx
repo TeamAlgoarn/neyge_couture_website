@@ -935,8 +935,8 @@ export default function ProductForm() {
       } else {
         alert(
           error?.response?.data?.message ||
-            error?.response?.data?.detail ||
-            "Save failed"
+          error?.response?.data?.detail ||
+          "Save failed"
         );
       }
     } finally {
@@ -1147,22 +1147,29 @@ export default function ProductForm() {
                   </div>
 
                   <div>
-                    <label className="form-label">Discount Price (₹)</label>
+                    <label className="form-label">Discount Amount (₹)</label>
                     <input
                       type="number"
                       min={0}
                       className="form-input"
-                      placeholder="Optional"
-                      value={form.discount_price ?? ""}
+                      placeholder="e.g. 200 (amount off the price)"
+                      value={form.discount_price ?? ''}
                       onChange={(e) =>
-                        updateField(
-                          "discount_price",
-                          e.target.value
-                            ? Math.max(0, Number(e.target.value))
-                            : null
-                        )
+                        updateField('discount_price', e.target.value ? Number(e.target.value) : null)
                       }
                     />
+                    {form.discount_price != null && form.discount_price > 0 && form.price > 0 && (
+                      <p className="form-hint" style={{ marginTop: 6 }}>
+                        Selling price:{' '}
+                        <strong style={{ color: '#800020' }}>
+                          ₹{Math.max(0, form.price - form.discount_price).toLocaleString('en-IN')}
+                        </strong>
+                        {' '}·{' '}
+                        <strong style={{ color: '#059669' }}>
+                          {Math.round((form.discount_price / form.price) * 100)}% off
+                        </strong>
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -1253,8 +1260,8 @@ export default function ProductForm() {
                 {loading
                   ? "Saving..."
                   : isEdit
-                  ? "Update Product"
-                  : "Create Product"}
+                    ? "Update Product"
+                    : "Create Product"}
               </button>
               <button
                 type="button"

@@ -797,10 +797,24 @@ const CSS = `
 .pd-stars{display:flex;align-items:center;gap:10px;margin-bottom:18px}
 .pd-star-row{display:flex;align-items:center;gap:4px}
 .pd-rating-text{font-family:'Josefin Sans',sans-serif;color:#7a6a5d;font-size:14px}
-.pd-price-box{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.pd-price-main{font-family:'Cinzel',serif;font-size:30px;color:${C.maroon};font-weight:700}
+
+/* ── Price block ── */
+.pd-price-box{display:flex;align-items:flex-start;flex-direction:column;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.pd-price-row-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pd-price-main{font-family:'Cinzel',serif;font-size:30px;color:${C.maroon};font-weight:700;line-height:1}
 .pd-price-orig{color:#9a8a7e;text-decoration:line-through;font-family:'Josefin Sans',sans-serif;font-size:18px}
-.pd-price-off{font-family:'Josefin Sans',sans-serif;font-size:12px;letter-spacing:.08em;color:#0f766e;font-weight:700}
+.pd-price-off-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:100px;
+  background:rgba(5,150,105,.12);border:1px solid rgba(5,150,105,.25);
+  font-family:'Josefin Sans',sans-serif;font-size:12px;letter-spacing:.06em;
+  color:#059669;font-weight:700;
+}
+.pd-price-save-note{
+  font-family:'Josefin Sans',sans-serif;font-size:13px;
+  color:#059669;font-weight:500;letter-spacing:.02em;
+}
+
 .pd-desc{font-family:'Josefin Sans',sans-serif;font-size:16px;line-height:1.7;color:${C.warmGrey};margin-bottom:22px}
 .pd-info-grid{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:12px;margin-bottom:22px}
 @media(max-width:560px){.pd-info-grid{grid-template-columns:1fr}}
@@ -878,6 +892,16 @@ type ProductsApiResponse = {
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FIXED mapProductToSaree
+//
+// discount_price = the DISCOUNT AMOUNT in ₹ (e.g. 200)
+//   → MRP (originalPrice)  = product.price          (e.g. ₹2,000)
+//   → Selling price (price) = product.price - discount_price  (e.g. ₹1,800)
+//
+// The old code was: price = discount_price ?? product.price
+// which treated discount_price as the final price itself — that was the bug.
+// ─────────────────────────────────────────────────────────────────────────────
 function mapProductToSaree(product: BackendProduct): Saree {
   const imageSet = new Set<string>();
 
@@ -889,12 +913,18 @@ function mapProductToSaree(product: BackendProduct): Saree {
   const allImages = Array.from(imageSet);
   const primaryImage = product.thumbnail || allImages[0] || '';
 
+  const mrp = product.price;
+  const sellingPrice =
+    product.discount_price != null && product.discount_price > 0
+      ? Math.max(0, mrp - product.discount_price)
+      : mrp;
+
   return {
     id: product.id,
     name: product.name,
     slug: product.slug || '',
-    price: product.discount_price ?? product.price,
-    originalPrice: product.price,
+    price: sellingPrice,          // what customer pays
+    originalPrice: mrp,           // MRP (shown struck-through when discounted)
     image: primaryImage,
     images: allImages,
     description: product.short_description || '',
@@ -1073,6 +1103,21 @@ export function ProductDetailPage() {
     return Array.isArray(saree.occasion) ? saree.occasion.join(', ') : saree.occasion;
   }, [saree]);
 
+  // ── Discount display calculations ─────────────────────────────────────────
+  const hasDiscount =
+    saree !== null &&
+    saree.originalPrice != null &&
+    saree.originalPrice > saree.price;
+
+  const discountPct = hasDiscount && saree
+    ? Math.round(((saree.originalPrice! - saree.price) / saree.originalPrice!) * 100)
+    : 0;
+
+  const savedAmount = hasDiscount && saree
+    ? saree.originalPrice! - saree.price
+    : 0;
+  // ──────────────────────────────────────────────────────────────────────────
+
   const handleAddToCart = async () => {
     if (!saree || adding) return;
 
@@ -1235,18 +1280,31 @@ export function ProductDetailPage() {
                 </span>
               </div>
 
+              {/* ── FIXED Price block ── */}
               <div className="pd-price-box">
-                <span className="pd-price-main">{formatCurrency(saree.price)}</span>
-                {saree.originalPrice && saree.originalPrice > saree.price && (
-                  <>
-                    <span className="pd-price-orig">{formatCurrency(saree.originalPrice)}</span>
-                    <span className="pd-price-off">
-                      {Math.round(
-                        ((saree.originalPrice - saree.price) / saree.originalPrice) * 100
-                      )}
-                      % OFF
-                    </span>
-                  </>
+                <div className="pd-price-row-main">
+                  {/* Selling price (MRP - discount) */}
+                  <span className="pd-price-main">{formatCurrency(saree.price)}</span>
+
+                  {hasDiscount && (
+                    <>
+                      {/* MRP struck-through */}
+                      <span className="pd-price-orig">
+                        {formatCurrency(saree.originalPrice!)}
+                      </span>
+                      {/* % off badge */}
+                      <span className="pd-price-off-badge">
+                        {discountPct}% OFF
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                {/* "You save ₹X" note */}
+                {hasDiscount && savedAmount > 0 && (
+                  <span className="pd-price-save-note">
+                    You save {formatCurrency(savedAmount)}
+                  </span>
                 )}
               </div>
 

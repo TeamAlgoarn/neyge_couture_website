@@ -2320,8 +2320,10 @@ function mapProductToSaree(product: BackendProduct): Saree {
     id: product.id,
     name: product.name,
     slug: product.slug || '',
-    price: product.discount_price ?? product.price,
-    originalPrice: product.price,
+    price: product.discount_price != null && product.discount_price > 0
+  ? Math.max(0, product.price - product.discount_price)
+  : product.price,
+   originalPrice: product.price,
     image: product.thumbnail || product.images?.[0] || shopHeroImg,
     images: product.images && product.images.length > 0 ? product.images : [shopHeroImg],
     description: product.short_description || '',
