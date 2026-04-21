@@ -82,6 +82,8 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { Toaster } from 'sonner';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { CartProvider } from '@/hooks/useCarts';
+
 import HomePage from '@/pages/HomePage';
 import { ShopPage } from '@/pages/ShopPage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
@@ -108,6 +110,7 @@ import CollectionForm from "@/admin/pages/CollectionForm";
 import AdminOrders from "@/admin/pages/AdminOrders";
 import AdminOrderDetail from "@/admin/pages/AdminOrderDetail";
 import AdminVideoBookingsPage from './admin/pages/AdminVideoBookingsPage';
+
 import './styles/luxury-styles.css';
 
 function AppContent() {
@@ -120,10 +123,8 @@ function AppContent() {
 
       <main className="flex-1">
         <Routes>
-          {/* Public routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
-          {/* <Route path="/collections/:type" element={<ShopPage />} /> */}
           <Route path="/product/:slug" element={<ProductDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
@@ -137,10 +138,8 @@ function AppContent() {
           <Route path="/backdrop" element={<SareeBackdropSection />} />
           <Route path="/collections" element={<CollectionsPage />} />
 
-          {/* Admin public route */}
           <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Admin protected routes */}
           <Route element={<AdminRoute />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/products" element={<AdminProducts />} />
@@ -167,7 +166,9 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
     </Router>
   );
 }

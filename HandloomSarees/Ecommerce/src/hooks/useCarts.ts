@@ -278,228 +278,195 @@
 
 
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import api from "@/api/client";
-import { tokenStorage } from "@/lib/token";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { CartItem, Saree } from "@/types";
 
-type BackendCartProduct = {
-  id: string;
-  name: string;
-  slug?: string;
-  price: number;
-  discount_price?: number | null;
-  thumbnail?: string | null;
-  images?: string[];
-  short_description?: string | null;
-  color?: string | null;
-  fabric?: string | null;
-  stock?: number | null;
-  technique?: string | null;
-  artisan?: {
-    name?: string;
-    region?: string;
-    experience?: string;
-  } | null;
-  occasion?: string[];
-  care_instructions?: string | null;
-  is_featured?: boolean;
+type CartContextType = {
+  cart: CartItem[];
+  loading: boolean;
+  initialized: boolean;
+  refreshCart: () => Promise<void>;
+  addToCart: (saree: Saree, quantity?: number) => Promise<void>;
+  removeFromCart: (sareeId: string) => Promise<void>;
+  updateQuantity: (sareeId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  getCartTotal: () => number;
+  getCartCount: () => number;
+  isInCart: (sareeId: string) => boolean;
+  getItemQuantity: (sareeId: string) => number;
 };
 
-type BackendCartItem = {
-  id: string;
-  product_id: string;
-  quantity: number;
-  unit_price: number;
-  line_total: number;
-  product: BackendCartProduct;
-};
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
-type CartResponse = {
-  success: boolean;
-  message: string;
-  data: {
-    cart_id: string;
-    user_id: string;
-    items: BackendCartItem[];
-    subtotal: number;
-    total_items: number;
-  };
-};
+const CART_STORAGE_KEY = "neyge_cart_v1";
 
-function mapProductToSaree(product: BackendCartProduct): Saree {
-  const safeImages =
-    Array.isArray(product.images) && product.images.length > 0
-      ? product.images.filter(
-          (img) =>
-            typeof img === "string" &&
-            img.trim() !== "" &&
-            !img.includes("via.placeholder.com") &&
-            !img.includes("example.com")
-        )
-      : [];
-
-  const primaryImage =
-    product.thumbnail &&
-    product.thumbnail.trim() !== "" &&
-    !product.thumbnail.includes("via.placeholder.com") &&
-    !product.thumbnail.includes("example.com")
-      ? product.thumbnail
-      : safeImages[0] || "";
-
-  return {
-    id: product.id,
-    name: product.name,
-    slug: product.slug || "",
-    price: product.discount_price ?? product.price,
-    originalPrice: product.price,
-    image: primaryImage,
-    images: safeImages,
-    description: product.short_description || "",
-    color: product.color || "",
-    fabric: product.fabric || "",
-    occasion: product.occasion || [],
-    weavingTechnique: product.technique || "",
-    artisanDetails: product.artisan?.name
-      ? `${product.artisan.name}${product.artisan.region ? ` - ${product.artisan.region}` : ""}`
-      : "",
-    careInstructions: product.care_instructions || "",
-    stock: product.stock || 0,
-    rating: 0,
-    reviews: 0,
-    featured: product.is_featured || false,
-    blousePiece: false,
-    length: "",
-    newArrival: false,
-    bestSeller: false,
-  };
+function readCartFromStorage(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
-export function useCart() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
+function writeCartToStorage(cart: CartItem[]) {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  } catch {
+    // ignore localStorage errors
+  }
+}
 
-  const loadCart = useCallback(async () => {
-    setLoading(true);
+function mergeOrAddItem(
+  current: CartItem[],
+  saree: Saree,
+  quantityToAdd: number
+): CartItem[] {
+  const existing = current.find((item) => item.saree.id === saree.id);
 
+  if (existing) {
+    return current.map((item) =>
+      item.saree.id === saree.id
+        ? { ...item, quantity: item.quantity + quantityToAdd }
+        : item
+    );
+  }
+
+  return [...current, { saree, quantity: quantityToAdd }];
+}
+
+function replaceQuantity(
+  current: CartItem[],
+  sareeId: string,
+  quantity: number
+): CartItem[] {
+  if (quantity <= 0) {
+    return current.filter((item) => item.saree.id !== sareeId);
+  }
+
+  return current.map((item) =>
+    item.saree.id === sareeId ? { ...item, quantity } : item
+  );
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [cart, setCart] = useState<CartItem[]>(() => readCartFromStorage());
+  const [loading] = useState(false);
+  const [initialized, setInitialized] = useState(true);
+
+  useEffect(() => {
+    writeCartToStorage(cart);
+  }, [cart]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setCart(readCartFromStorage());
+      setInitialized(true);
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const refreshCart = useCallback(async () => {
+    setCart(readCartFromStorage());
+    setInitialized(true);
+  }, []);
+
+  const addToCart = useCallback(async (saree: Saree, quantity: number = 1) => {
+    setCart((prev) => mergeOrAddItem(prev, saree, quantity));
+    setInitialized(true);
+  }, []);
+
+  const removeFromCart = useCallback(async (sareeId: string) => {
+    setCart((prev) => prev.filter((item) => item.saree.id !== sareeId));
+  }, []);
+
+  const updateQuantity = useCallback(async (sareeId: string, quantity: number) => {
+    setCart((prev) => replaceQuantity(prev, sareeId, quantity));
+  }, []);
+
+  const clearCart = useCallback(async () => {
+    setCart([]);
     try {
-      if (!tokenStorage.has()) {
-        setCart([]);
-        return;
-      }
-
-      const res = await api.get<CartResponse>("/cart");
-      const backendItems = res.data?.data?.items || [];
-
-      const mappedItems: CartItem[] = backendItems.map((item) => ({
-        saree: mapProductToSaree(item.product),
-        quantity: item.quantity,
-      }));
-
-      setCart(mappedItems);
-    } catch (error: any) {
-      if (error?.response?.status === 401) {
-        setCart([]);
-      } else {
-        console.error("Failed to load cart", error);
-      }
-    } finally {
-      setLoading(false);
+      localStorage.removeItem(CART_STORAGE_KEY);
+    } catch {
+      // ignore
     }
   }, []);
 
-  useEffect(() => {
-    loadCart();
-  }, [loadCart]);
-
-  const addToCart = async (saree: Saree, quantity: number = 1) => {
-    if (!tokenStorage.has()) return;
-
-    try {
-      await api.post("/cart/add", {
-        product_id: saree.id,
-        quantity,
-      });
-      await loadCart();
-    } catch (error) {
-      console.error("Failed to add to cart", error);
-      throw error;
-    }
-  };
-
-  const removeFromCart = async (sareeId: string) => {
-    if (!tokenStorage.has()) return;
-
-    try {
-      await api.post("/cart/remove", {
-        product_id: sareeId,
-      });
-      await loadCart();
-    } catch (error) {
-      console.error("Failed to remove from cart", error);
-      throw error;
-    }
-  };
-
-  const updateQuantity = async (sareeId: string, quantity: number) => {
-    if (!tokenStorage.has()) return;
-
-    try {
-      if (quantity <= 0) {
-        await removeFromCart(sareeId);
-        return;
-      }
-
-      await api.post("/cart/remove", {
-        product_id: sareeId,
-      });
-
-      await api.post("/cart/add", {
-        product_id: sareeId,
-        quantity,
-      });
-
-      await loadCart();
-    } catch (error) {
-      console.error("Failed to update cart quantity", error);
-      throw error;
-    }
-  };
-
-  const clearCart = async () => {
-    if (!tokenStorage.has()) return;
-
-    try {
-      for (const item of cart) {
-        await api.post("/cart/remove", {
-          product_id: item.saree.id,
-        });
-      }
-      await loadCart();
-    } catch (error) {
-      console.error("Failed to clear cart", error);
-      throw error;
-    }
-  };
-
-  const getCartTotal = useMemo(() => {
-    return () =>
-      cart.reduce((total, item) => total + item.saree.price * item.quantity, 0);
+  const getCartTotal = useCallback(() => {
+    return cart.reduce(
+      (total, item) => total + item.saree.price * item.quantity,
+      0
+    );
   }, [cart]);
 
-  const getCartCount = useMemo(() => {
-    return () => cart.reduce((count, item) => count + item.quantity, 0);
+  const getCartCount = useCallback(() => {
+    return cart.reduce((count, item) => count + item.quantity, 0);
   }, [cart]);
 
-  return {
-    cart,
-    loading,
-    refreshCart: loadCart,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getCartTotal,
-    getCartCount,
-  };
+  const isInCart = useCallback(
+    (sareeId: string) => cart.some((item) => item.saree.id === sareeId),
+    [cart]
+  );
+
+  const getItemQuantity = useCallback(
+    (sareeId: string) =>
+      cart.find((item) => item.saree.id === sareeId)?.quantity || 0,
+    [cart]
+  );
+
+  const value = useMemo<CartContextType>(
+    () => ({
+      cart,
+      loading,
+      initialized,
+      refreshCart,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      getCartTotal,
+      getCartCount,
+      isInCart,
+      getItemQuantity,
+    }),
+    [
+      cart,
+      loading,
+      initialized,
+      refreshCart,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      getCartTotal,
+      getCartCount,
+      isInCart,
+      getItemQuantity,
+    ]
+  );
+
+  return React.createElement(CartContext.Provider, { value }, children);
+}
+
+export function useCart() {
+  const context = useContext(CartContext);
+
+  if (!context) {
+    throw new Error("useCart must be used inside CartProvider");
+  }
+
+  return context;
 }
