@@ -482,23 +482,23 @@ declare global {
   }
 }
 
-// ─── Brand palette (matches HomePage, CartPage, VideoShoppingPage) ────────────
+// ─── Brand palette ────────────────────────────────────────────────────────────
 const C = {
-  maroon:   '#800020',
+  maroon: '#800020',
   maroonDk: '#5a0016',
-  gold:     '#C4980A',
-  goldV:    '#D4AF37',
-  cream:    '#F5E6D3',
-  creamLt:  '#FFF9F0',
+  gold: '#C4980A',
+  goldV: '#D4AF37',
+  cream: '#F5E6D3',
+  creamLt: '#FFF9F0',
   creamMid: '#F8EEE2',
-  creamDk:  '#EDD8C4',
+  creamDk: '#EDD8C4',
   warmGrey: '#4a3828',
-  navy:     '#1B2A6B',
-  forest:   '#14402A',
-  blush:    '#F2C4CE',
+  navy: '#1B2A6B',
+  forest: '#14402A',
+  blush: '#F2C4CE',
 };
 
-// ─── CSS – using brand fonts and styles (Cinzel + Josefin Sans) ──────────────
+// ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
@@ -519,7 +519,6 @@ const CSS = `
 @media(max-width:900px){.co-wrap{padding:0 24px;}}
 @media(max-width:480px){.co-wrap{padding:0 16px;}}
 
-/* ── Eyebrow (brand gold) ── */
 .ey {
   font-family: 'Josefin Sans', sans-serif;
   font-size: 10px;
@@ -528,8 +527,6 @@ const CSS = `
   color: #C4980A;
   font-weight: 600;
 }
-
-/* ── Gold divider ── */
 .gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
 .co-page-top {
@@ -866,7 +863,6 @@ const CSS = `
   letter-spacing: 0.02em;
 }
 
-/* Button matches btn-gold from other pages */
 .co-place-btn {
   width:100%;
   padding:16px;
@@ -938,9 +934,19 @@ type CheckoutCreateResponse = {
   };
 };
 
+type BackendCartResponse = {
+  data?: {
+    items?: Array<{
+      product_id?: string;
+      quantity?: number;
+      product?: { id?: string };
+    }>;
+  };
+};
+
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { cart, loading, getCartTotal, clearCart } = useCart();
+  const { cart, loading, getCartTotal, clearCart, refreshCart } = useCart();
   const user = authService.getCurrentUser();
 
   const [paymentMethod, setPaymentMethod] = useState('upi');
@@ -999,6 +1005,31 @@ export function CheckoutPage() {
     });
   };
 
+  const syncFrontendCartToBackend = async () => {
+    // 1) read existing backend cart
+    const backendCartRes = await api.get<BackendCartResponse>('/cart');
+    const backendItems = backendCartRes.data?.data?.items || [];
+
+    // 2) clear backend cart
+    for (const item of backendItems) {
+      const productId = item.product_id || item.product?.id;
+      if (productId) {
+        await api.post('/cart/remove', { product_id: productId });
+      }
+    }
+
+    // 3) push current frontend cart to backend
+    for (const item of cart) {
+      await api.post('/cart/add', {
+        product_id: item.saree.id,
+        quantity: item.quantity,
+      });
+    }
+
+    // 4) refresh shared cart state
+    await refreshCart();
+  };
+
   const handlePlaceOrder = async () => {
     if (!user) {
       toast.error('Please log in to continue');
@@ -1008,6 +1039,11 @@ export function CheckoutPage() {
 
     if (!user.addresses || user.addresses.length === 0) {
       toast.error('Please add a delivery address');
+      return;
+    }
+
+    if (cart.length === 0) {
+      toast.error('Cart is empty');
       return;
     }
 
@@ -1032,8 +1068,12 @@ export function CheckoutPage() {
         country: 'India',
       };
 
+      // IMPORTANT: sync UI cart to backend cart before order creation
+      await syncFrontendCartToBackend();
+
       const createRes = await api.post<CheckoutCreateResponse>('/orders/create', {
         shipping_address: shippingAddress,
+        payment_method: paymentMethod,
       });
 
       const checkoutData = createRes.data?.data;
