@@ -1048,7 +1048,9 @@
 
 
 //below code is updated with new changes as per the instructions, please check and let me know if you need any changes.
+import FestiveCollectionsSection from "@/components/features/FestiveCollectionsSection";
 import { useEffect, useMemo, useRef, useState } from "react";
+
 import { Link } from "react-router-dom";
 import heroImg from "@/assets/bd3.png";
 import loomimg from "@/assets/g1.png";
@@ -2266,9 +2268,11 @@ export default function HomePage() {
       <style>{CSS}</style>
       <div className="neyge-root">
         <Hero />
-        <HeritageBand />
-        <GoldenThread />
-        <LoomStory />
+<HeritageBand />
+<GoldenThread />
+<LoomStory />
+<FestiveCollectionsSection />
+<GoldenThread />
 
         <div style={{ marginBottom: 0 }}>
           <CollectionBlock

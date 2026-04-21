@@ -95,21 +95,25 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { VideoShoppingPage } from '@/pages/VideoShoppingPage';
 import AboutPage from '@/pages/AboutPage';
 import { Chatbot } from '@/components/features/Chatbot';
+import { FestivePopup } from '@/components/features/FestivePopup';
 import { SareeBackdropSection } from '@/pages/SareeBackdropSection';
 import { OrderConfirmationPage } from '@/pages/OrderConfirmationPage';
 import { CollectionDetailPage } from '@/pages/collections/CollectionDetailPage';
 import { CollectionsPage } from '@/pages/collections/CollectionsPage';
+import FestiveCollectionPage from '@/pages/FestiveCollectionPage';
 
 import AdminRoute from '@/admin/components/AdminRoute';
 import AdminLogin from '@/admin/pages/AdminLogin';
 import AdminDashboard from '@/admin/pages/AdminDashboard';
 import AdminProducts from '@/admin/pages/AdminProducts';
 import ProductForm from '@/admin/pages/ProductForm';
-import AdminCollections from "@/admin/pages/AdminCollections";
-import CollectionForm from "@/admin/pages/CollectionForm";
-import AdminOrders from "@/admin/pages/AdminOrders";
-import AdminOrderDetail from "@/admin/pages/AdminOrderDetail";
-import AdminVideoBookingsPage from './admin/pages/AdminVideoBookingsPage';
+import AdminCollections from '@/admin/pages/AdminCollections';
+import CollectionForm from '@/admin/pages/CollectionForm';
+import AdminOrders from '@/admin/pages/AdminOrders';
+import AdminOrderDetail from '@/admin/pages/AdminOrderDetail';
+import AdminVideoBookingsPage from '@/admin/pages/AdminVideoBookingsPage';
+import AdminFestiveCollections from '@/admin/pages/AdminFestiveCollections';
+import FestiveCollectionForm from '@/admin/pages/FestiveCollectionForm';
 
 import './styles/luxury-styles.css';
 
@@ -123,6 +127,7 @@ function AppContent() {
 
       <main className="flex-1">
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/product/:slug" element={<ProductDetailPage />} />
@@ -130,24 +135,33 @@ function AppContent() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:slug" element={<CollectionDetailPage />} />
+          <Route path="/festive/:slug" element={<FestiveCollectionPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/video-shopping" element={<VideoShoppingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/backdrop" element={<SareeBackdropSection />} />
-          <Route path="/collections" element={<CollectionsPage />} />
 
+          {/* Admin public route */}
           <Route path="/admin/login" element={<AdminLogin />} />
 
+          {/* Admin protected routes */}
           <Route element={<AdminRoute />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/products/new" element={<ProductForm />} />
             <Route path="/admin/products/:id/edit" element={<ProductForm />} />
+
             <Route path="/admin/collections" element={<AdminCollections />} />
             <Route path="/admin/collections/new" element={<CollectionForm />} />
             <Route path="/admin/collections/:id/edit" element={<CollectionForm />} />
+
+            <Route path="/admin/festive-collections" element={<AdminFestiveCollections />} />
+            <Route path="/admin/festive-collections/new" element={<FestiveCollectionForm />} />
+            <Route path="/admin/festive-collections/:id/edit" element={<FestiveCollectionForm />} />
+
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
             <Route path="/admin/video-bookings" element={<AdminVideoBookingsPage />} />
@@ -156,6 +170,7 @@ function AppContent() {
       </main>
 
       {!isAdminRoute && <Footer />}
+      {!isAdminRoute && <FestivePopup />}
       {!isAdminRoute && <Chatbot />}
 
       <Toaster position="top-center" richColors />
