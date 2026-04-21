@@ -49,7 +49,7 @@ from app.api.v1.reviews import router as reviews_router
 from app.api.v1.uploads import router as uploads_router
 from app.api.v1.video_bookings import router as video_bookings_router
 from app.api.v1.wishlist import router as wishlist_router
-
+from app.api.v1 import festive_collections
 api_router = APIRouter()
 api_router.include_router(auth_router)
 api_router.include_router(collections_router)
@@ -62,7 +62,7 @@ api_router.include_router(reviews_router)
 api_router.include_router(video_bookings_router)
 api_router.include_router(uploads_router)
 
-
+api_router.include_router(festive_collections.router, tags=["Festive Collections"])
 @api_router.get("/health", tags=["Health"])
 async def health_check():
     return {
