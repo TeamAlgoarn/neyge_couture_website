@@ -1,3 +1,5 @@
+import { uploadFestiveImage } from '../lib/uploadFestiveImage';
+import { Upload, X, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -151,6 +153,30 @@ export default function FestiveCollectionForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
+  const [imageUploading, setImageUploading] = useState(false);
+  const handleBannerUpload = async (file: File) => {
+  try {
+    setImageUploading(true);
+    const url = await uploadFestiveImage(file);
+
+    setForm((prev) => ({
+      ...prev,
+      banner_image: url,
+    }));
+
+    toast.success("Banner uploaded successfully");
+  } catch (err: any) {
+    console.error("Festive banner upload failed", err);
+    toast.error(
+      err?.response?.data?.detail ||
+      err?.response?.data?.message ||
+      err?.message ||
+      "Upload failed"
+    );
+  } finally {
+    setImageUploading(false);
+  }
+};
 
   const [loading, setLoading] = useState(false);
 
@@ -286,14 +312,88 @@ export default function FestiveCollectionForm() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">Banner Image URL</label>
-                  <input
-                    className="form-input"
-                    placeholder="https://example.com/banner.jpg"
-                    value={form.banner_image}
-                    onChange={(e) => handleChange('banner_image', e.target.value)}
-                  />
-                </div>
+  <label className="form-label">Banner Image</label>
+
+  <div
+    style={{
+      border: '1px dashed rgba(196,152,10,.4)',
+      borderRadius: 16,
+      padding: 14,
+      background: '#fff'
+    }}
+  >
+    <div style={{ marginBottom: 12 }}>
+      {form.banner_image ? (
+        <img
+          src={form.banner_image}
+          alt="preview"
+          style={{
+            width: '100%',
+            height: 180,
+            objectFit: 'cover',
+            borderRadius: 12,
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            height: 180,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#9a8070'
+          }}
+        >
+          No image uploaded
+        </div>
+      )}
+    </div>
+
+    <label
+      className="btn-save"
+      style={{ cursor: 'pointer', padding: '10px 20px' }}
+    >
+      {imageUploading ? (
+        <>
+          <Loader2 size={14} className="animate-spin" />
+          Uploading...
+        </>
+      ) : (
+        <>
+          <Upload size={14} />
+          Upload Banner
+        </>
+      )}
+
+      <input
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleBannerUpload(file);
+        }}
+      />
+    </label>
+
+    {form.banner_image && (
+      <button
+        type="button"
+        style={{
+          marginLeft: 12,
+          background: 'transparent',
+          border: '1px solid #800020',
+          padding: '8px 16px',
+          borderRadius: 12,
+          cursor: 'pointer'
+        }}
+        onClick={() => handleChange('banner_image', '')}
+      >
+        <X size={14} /> Remove
+      </button>
+    )}
+  </div>
+</div>
                 <div>
                   <label className="form-label">Popup Message</label>
                   <input

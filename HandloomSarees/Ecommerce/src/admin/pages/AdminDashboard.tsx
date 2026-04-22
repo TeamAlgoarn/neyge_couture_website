@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
-import { Package, Layers, ShoppingBag, TrendingUp, Video } from "lucide-react";
+import {
+  Package,
+  Layers,
+  ShoppingBag,
+  TrendingUp,
+  Video,
+  Sparkles,
+} from "lucide-react";
 
 // ─── Brand palette (matches all other pages) ─────────────────────────────────
 const C = {
@@ -78,7 +85,7 @@ const CSS = `
   align-items: center;
   gap: 6px;
   transition: gap .25s;
-  padding: 4px 0; /* larger touch area */
+  padding: 4px 0;
 }
 .admin-stat-link:hover { gap: 10px; color: #800020; }
 
@@ -214,6 +221,14 @@ type Collection = {
   created_at?: string;
 };
 
+type FestiveCollection = {
+  id: string;
+  name?: string;
+  slug?: string;
+  created_at?: string;
+  is_active?: boolean;
+};
+
 type Order = {
   id: string;
   order_number?: string;
@@ -244,6 +259,7 @@ type VideoBooking = {
 export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [festiveCollections, setFestiveCollections] = useState<FestiveCollection[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [videoBookings, setVideoBookings] = useState<VideoBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -270,16 +286,23 @@ export default function AdminDashboard() {
         setLoading(true);
         setError("");
 
-        const [productsRes, collectionsRes, ordersRes, videoBookingsRes] =
-          await Promise.all([
-            adminApi.get("/products"),
-            adminApi.get("/collections"),
-            adminApi.get("/orders/admin/all"),
-            adminApi.get("/video-bookings"),
-          ]);
+        const [
+          productsRes,
+          collectionsRes,
+          festiveCollectionsRes,
+          ordersRes,
+          videoBookingsRes,
+        ] = await Promise.all([
+          adminApi.get("/products"),
+          adminApi.get("/collections"),
+          adminApi.get("/admin/festive-collections"),
+          adminApi.get("/orders/admin/all"),
+          adminApi.get("/video-bookings"),
+        ]);
 
         setProducts(extractArray(productsRes.data));
         setCollections(extractArray(collectionsRes.data));
+        setFestiveCollections(extractArray(festiveCollectionsRes.data));
         setOrders(extractArray(ordersRes.data));
         setVideoBookings(extractArray(videoBookingsRes.data));
       } catch (err: any) {
@@ -352,6 +375,13 @@ export default function AdminDashboard() {
       color: C.goldV,
     },
     {
+      label: "Festive Collections",
+      value: festiveCollections.length,
+      icon: Sparkles,
+      link: "/admin/festive-collections",
+      color: C.goldV,
+    },
+    {
       label: "Video Bookings",
       value: videoBookings.length,
       icon: Video,
@@ -382,7 +412,6 @@ export default function AdminDashboard() {
 
           {!loading && !error && (
             <div className="admin-grid">
-              {/* Stats Grid */}
               <div className="admin-stats-grid">
                 {STATS.map((stat) => (
                   <div key={stat.label} className="admin-stat-card">
@@ -398,7 +427,6 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
-              {/* Three Column Layout: Recent Orders (span 2) + Video Bookings (span 1) */}
               <div className="admin-three-col">
                 <div className="admin-section-card" style={{ gridColumn: "span 2" }}>
                   <div className="admin-section-header">
@@ -469,7 +497,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Latest Products - full width */}
               <div className="admin-section-card">
                 <div className="admin-section-header">
                   <h3 className="admin-section-title">Latest Products</h3>

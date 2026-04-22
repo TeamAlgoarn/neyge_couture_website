@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Sparkles } from 'lucide-react';
 import { getActiveFestivePopup } from '@/api/festiveCollections';
+import { authService } from '@/lib/auth';
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
@@ -139,15 +140,29 @@ export function FestivePopup() {
 
   useEffect(() => {
     const loadPopup = async () => {
-      const festive = await getActiveFestivePopup();
-      if (!festive) return;
+      try {
+        const user = authService.getCurrentUser();
 
-      const seenKey = `festive_popup_seen_${festive.slug}`;
-      const seen = localStorage.getItem(seenKey);
+        // show popup only when user is logged in
+        if (!user) {
+          setData(null);
+          setOpen(false);
+          return;
+        }
 
-      if (!seen) {
+        const festive = await getActiveFestivePopup();
+        if (!festive) {
+          setData(null);
+          setOpen(false);
+          return;
+        }
+
         setData(festive);
         setOpen(true);
+      } catch (error) {
+        console.error('Failed to load festive popup:', error);
+        setData(null);
+        setOpen(false);
       }
     };
 
@@ -155,9 +170,6 @@ export function FestivePopup() {
   }, []);
 
   const handleClose = () => {
-    if (data?.slug) {
-      localStorage.setItem(`festive_popup_seen_${data.slug}`, 'true');
-    }
     setOpen(false);
   };
 
@@ -168,26 +180,31 @@ export function FestivePopup() {
       <style>{CSS}</style>
       <div className="festive-popup-overlay" onClick={handleClose}>
         <div className="festive-popup-card" onClick={(e) => e.stopPropagation()}>
-          <button className="popup-close" onClick={handleClose}>
+          <button type="button" className="popup-close" onClick={handleClose}>
             <X size={16} color="#9a8070" />
           </button>
 
-          {data.banner_image && (
+          {data.banner_image ? (
             <img
               src={data.banner_image}
               alt={data.name}
               className="popup-img"
             />
-          )}
+          ) : null}
 
           <div className="popup-content">
             <div className="popup-ey">
               <Sparkles size={12} /> Festive Edit
             </div>
+
             <h2 className="popup-title">{data.name}</h2>
+
             <p className="popup-message">
-              {data.popup_message || data.description || "Discover handcrafted festive sarees curated for your celebrations."}
+              {data.popup_message ||
+                data.description ||
+                "Discover handcrafted festive sarees curated for your celebrations."}
             </p>
+
             <Link
               to={`/festive/${data.slug}`}
               onClick={handleClose}
@@ -201,3 +218,5 @@ export function FestivePopup() {
     </>
   );
 }
+
+export default FestivePopup;

@@ -80,6 +80,7 @@ export default function AdminRoute() {
           </RequireAdminAuth>
         }
       />
+      
 
       <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
     </Routes>

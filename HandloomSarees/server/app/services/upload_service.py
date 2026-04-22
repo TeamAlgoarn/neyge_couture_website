@@ -19,6 +19,7 @@ class UploadService:
 
     PRODUCT_BUCKET = "product-images"
     COLLECTION_BUCKET = "collection-images"
+    FESTIVE_BUCKET = "collection-images"  # keep same bucket for festive banners
 
     @staticmethod
     async def upload_temp_collection_image(file: UploadFile) -> dict:
@@ -29,6 +30,26 @@ class UploadService:
 
         image_url = UploadService._upload_to_supabase(
             UploadService.COLLECTION_BUCKET,
+            path,
+            content,
+            file.content_type or "image/jpeg",
+        )
+
+        return {
+            "path": path,
+            "url": image_url,
+            "filename": file.filename,
+        }
+
+    @staticmethod
+    async def upload_temp_festive_image(file: UploadFile) -> dict:
+        content = await UploadService._validate_image(file)
+
+        extension = Path(file.filename or "festive-image").suffix or ".jpg"
+        path = f"festive/temp/{uuid.uuid4().hex}{extension}"
+
+        image_url = UploadService._upload_to_supabase(
+            UploadService.FESTIVE_BUCKET,
             path,
             content,
             file.content_type or "image/jpeg",

@@ -1,293 +1,61 @@
-// // import { useState, useEffect } from 'react';
-// // import type { CartItem, Saree } from '@/types';
-
-// // const CART_STORAGE_KEY = 'handloom_cart';
-
-// // export function useCart() {
-// //   const [cart, setCart] = useState<CartItem[]>(() => {
-// //     const saved = localStorage.getItem(CART_STORAGE_KEY);
-// //     return saved ? JSON.parse(saved) : [];
-// //   });
-
-// //   useEffect(() => {
-// //     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-// //   }, [cart]);
-
-// //   const addToCart = (saree: Saree, quantity: number = 1) => {
-// //     setCart((prevCart) => {
-// //       const existingItem = prevCart.find((item) => item.saree.id === saree.id);
-// //       if (existingItem) {
-// //         return prevCart.map((item) =>
-// //           item.saree.id === saree.id
-// //             ? { ...item, quantity: item.quantity + quantity }
-// //             : item
-// //         );
-// //       }
-// //       return [...prevCart, { saree, quantity }];
-// //     });
-// //   };
-
-// //   const removeFromCart = (sareeId: string) => {
-// //     setCart((prevCart) => prevCart.filter((item) => item.saree.id !== sareeId));
-// //   };
-
-// //   const updateQuantity = (sareeId: string, quantity: number) => {
-// //     if (quantity <= 0) {
-// //       removeFromCart(sareeId);
-// //       return;
-// //     }
-// //     setCart((prevCart) =>
-// //       prevCart.map((item) =>
-// //         item.saree.id === sareeId ? { ...item, quantity } : item
-// //       )
-// //     );
-// //   };
-
-// //   const clearCart = () => {
-// //     setCart([]);
-// //   };
-
-// //   const getCartTotal = () => {
-// //     return cart.reduce((total, item) => total + item.saree.price * item.quantity, 0);
-// //   };
-
-// //   const getCartCount = () => {
-// //     return cart.reduce((count, item) => count + item.quantity, 0);
-// //   };
-
-// //   return {
-// //     cart,
-// //     addToCart,
-// //     removeFromCart,
-// //     updateQuantity,
-// //     clearCart,
-// //     getCartTotal,
-// //     getCartCount,
-// //   };
-// // }
-
-
-// //below code is for backend cart management using API calls
-// import { useCallback, useEffect, useMemo, useState } from "react";
-// import api from "@/api/client";
-// import { tokenStorage } from "@/lib/token";
-// import type { CartItem, Saree } from "@/types";
-
-// type BackendCartProduct = {
-//   id: string;
-//   name: string;
-//   slug?: string;
-//   price: number;
-//   discount_price?: number | null;
-//   thumbnail?: string | null;
-//   images?: string[];
-//   short_description?: string | null;
-//   color?: string | null;
-//   fabric?: string | null;
-//   stock?: number | null;
-//   technique?: string | null;
-//   artisan?: {
-//     name?: string;
-//     region?: string;
-//     experience?: string;
-//   } | null;
-//   occasion?: string[];
-//   care_instructions?: string | null;
-//   is_featured?: boolean;
-// };
-
-// type BackendCartItem = {
-//   id: string;
-//   product_id: string;
-//   quantity: number;
-//   unit_price: number;
-//   line_total: number;
-//   product: BackendCartProduct;
-// };
-
-// type CartResponse = {
-//   success: boolean;
-//   message: string;
-//   data: {
-//     cart_id: string;
-//     user_id: string;
-//     items: BackendCartItem[];
-//     subtotal: number;
-//     total_items: number;
-//   };
-// };
-
-// function mapProductToSaree(product: BackendCartProduct): Saree {
-//   return {
-//     id: product.id,
-//     name: product.name,
-//     slug: product.slug || "",
-//     price: product.discount_price ?? product.price,
-//     originalPrice: product.price,
-//     image: product.thumbnail || product.images?.[0] || "",
-//     images: product.images || [],
-//     description: product.short_description || "",
-//     color: product.color || "",
-//     fabric: product.fabric || "",
-//     occasion: product.occasion || [],
-//     weavingTechnique: product.technique || "",
-//     artisanDetails: product.artisan?.name
-//       ? `${product.artisan.name}${product.artisan.region ? ` - ${product.artisan.region}` : ""}`
-//       : "",
-//     careInstructions: product.care_instructions || "",
-//     stock: product.stock || 0,
-//     rating: 0,
-//     reviews: 0,
-//     featured: product.is_featured || false,
-//     blousePiece: false,
-//     length: "",
-//   };
-// }
-
-// export function useCart() {
-//   const [cart, setCart] = useState<CartItem[]>([]);
-//   const [loading, setLoading] = useState(false);
-
-//   const loadCart = useCallback(async () => {
-//     if (!tokenStorage.has()) {
-//       setCart([]);
-//       return;
-//     }
-
-//     setLoading(true);
-//     try {
-//       const res = await api.get<CartResponse>("/cart");
-//       const backendItems = res.data?.data?.items || [];
-
-//       const mappedItems: CartItem[] = backendItems.map((item) => ({
-//         saree: mapProductToSaree(item.product),
-//         quantity: item.quantity,
-//       }));
-
-//       setCart(mappedItems);
-//     } catch (error: any) {
-//       if (error?.response?.status === 401) {
-//         setCart([]);
-//       } else {
-//         console.error("Failed to load cart", error);
-//       }
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     loadCart();
-//   }, [loadCart]);
-
-//   const addToCart = async (saree: Saree, quantity: number = 1) => {
-//     if (!tokenStorage.has()) return;
-
-//     try {
-//       await api.post("/cart/add", {
-//         product_id: saree.id,
-//         quantity,
-//       });
-//       await loadCart();
-//     } catch (error) {
-//       console.error("Failed to add to cart", error);
-//       throw error;
-//     }
-//   };
-
-//   const removeFromCart = async (sareeId: string) => {
-//     if (!tokenStorage.has()) return;
-
-//     try {
-//       await api.post("/cart/remove", {
-//         product_id: sareeId,
-//       });
-//       await loadCart();
-//     } catch (error) {
-//       console.error("Failed to remove from cart", error);
-//       throw error;
-//     }
-//   };
-
-//   const updateQuantity = async (sareeId: string, quantity: number) => {
-//     if (!tokenStorage.has()) return;
-
-//     try {
-//       if (quantity <= 0) {
-//         await removeFromCart(sareeId);
-//         return;
-//       }
-
-//       // remove old cart line completely
-//       await api.post("/cart/remove", {
-//         product_id: sareeId,
-//       });
-
-//       // add again with new exact quantity
-//       await api.post("/cart/add", {
-//         product_id: sareeId,
-//         quantity,
-//       });
-
-//       await loadCart();
-//     } catch (error) {
-//       console.error("Failed to update cart quantity", error);
-//       throw error;
-//     }
-//   };
-
-//   const clearCart = async () => {
-//     if (!tokenStorage.has()) return;
-
-//     try {
-//       for (const item of cart) {
-//         await api.post("/cart/remove", {
-//           product_id: item.saree.id,
-//         });
-//       }
-//       await loadCart();
-//     } catch (error) {
-//       console.error("Failed to clear cart", error);
-//       throw error;
-//     }
-//   };
-
-//   const getCartTotal = useMemo(() => {
-//     return () =>
-//       cart.reduce((total, item) => total + item.saree.price * item.quantity, 0);
-//   }, [cart]);
-
-//   const getCartCount = useMemo(() => {
-//     return () => cart.reduce((count, item) => count + item.quantity, 0);
-//   }, [cart]);
-
-//   return {
-//     cart,
-//     loading,
-//     refreshCart: loadCart,
-//     addToCart,
-//     removeFromCart,
-//     updateQuantity,
-//     clearCart,
-//     getCartTotal,
-//     getCartCount,
-//   };
-// }
-
-
-
-
-
-import React, {
+import {
   createContext,
+  createElement,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import api from "@/api/client";
+import { tokenStorage } from "@/lib/token";
 import type { CartItem, Saree } from "@/types";
+
+type BackendCartProduct = {
+  id: string;
+  name: string;
+  slug?: string;
+  price: number;
+  discount_price?: number | null;
+  thumbnail?: string | null;
+  images?: string[];
+  short_description?: string | null;
+  color?: string | null;
+  fabric?: string | null;
+  stock?: number | null;
+  technique?: string | null;
+  artisan?: {
+    name?: string;
+    region?: string;
+    experience?: string;
+  } | null;
+  occasion?: string[] | string | null;
+  care_instructions?: string | null;
+  is_featured?: boolean;
+};
+
+type BackendCartItem = {
+  id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  product: BackendCartProduct;
+};
+
+type CartResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    cart_id: string;
+    user_id: string;
+    items: BackendCartItem[];
+    subtotal: number;
+    total_items: number;
+  };
+};
 
 type CartContextType = {
   cart: CartItem[];
@@ -300,110 +68,250 @@ type CartContextType = {
   clearCart: () => Promise<void>;
   getCartTotal: () => number;
   getCartCount: () => number;
-  isInCart: (sareeId: string) => boolean;
-  getItemQuantity: (sareeId: string) => number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = "neyge_cart_v1";
-
-function readCartFromStorage(): CartItem[] {
-  try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function normalizeOccasion(occasion?: string[] | string | null): string[] {
+  if (Array.isArray(occasion)) return occasion;
+  if (typeof occasion === "string" && occasion.trim()) return [occasion];
+  return [];
 }
 
-function writeCartToStorage(cart: CartItem[]) {
-  try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-  } catch {
-    // ignore localStorage errors
-  }
+function mapProductToSaree(product: BackendCartProduct): Saree {
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug || "",
+    price: product.discount_price ?? product.price,
+    originalPrice: product.price,
+    image: product.thumbnail || product.images?.[0] || "",
+    images:
+      product.images?.length
+        ? product.images
+        : product.thumbnail
+        ? [product.thumbnail]
+        : [],
+    description: product.short_description || "",
+    color: product.color || "",
+    fabric: product.fabric || "",
+    occasion: normalizeOccasion(product.occasion),
+    weavingTechnique: product.technique || "",
+    artisanDetails: product.artisan?.name
+      ? `${product.artisan.name}${
+          product.artisan.region ? ` - ${product.artisan.region}` : ""
+        }`
+      : "",
+    careInstructions: product.care_instructions || "",
+    stock: product.stock ?? 0,
+    rating: 0,
+    reviews: 0,
+    featured: product.is_featured || false,
+    blousePiece: false,
+    length: "",
+  };
 }
 
-function mergeOrAddItem(
-  current: CartItem[],
-  saree: Saree,
-  quantityToAdd: number
-): CartItem[] {
-  const existing = current.find((item) => item.saree.id === saree.id);
+function getCurrentToken(): string {
+  try {
+    if (typeof (tokenStorage as any).get === "function") {
+      return (tokenStorage as any).get() || "";
+    }
 
-  if (existing) {
-    return current.map((item) =>
-      item.saree.id === saree.id
-        ? { ...item, quantity: item.quantity + quantityToAdd }
-        : item
+    return (
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("auth_token") ||
+      ""
     );
+  } catch {
+    return "";
   }
-
-  return [...current, { saree, quantity: quantityToAdd }];
-}
-
-function replaceQuantity(
-  current: CartItem[],
-  sareeId: string,
-  quantity: number
-): CartItem[] {
-  if (quantity <= 0) {
-    return current.filter((item) => item.saree.id !== sareeId);
-  }
-
-  return current.map((item) =>
-    item.saree.id === sareeId ? { ...item, quantity } : item
-  );
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>(() => readCartFromStorage());
-  const [loading] = useState(false);
-  const [initialized, setInitialized] = useState(true);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    writeCartToStorage(cart);
-  }, [cart]);
+  const lastTokenRef = useRef<string>("");
 
-  useEffect(() => {
-    const handleStorage = () => {
-      setCart(readCartFromStorage());
+  const loadCart = useCallback(async () => {
+    const token = getCurrentToken();
+
+    if (!token || !tokenStorage.has()) {
+      setCart([]);
       setInitialized(true);
-    };
+      return;
+    }
 
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  const refreshCart = useCallback(async () => {
-    setCart(readCartFromStorage());
-    setInitialized(true);
-  }, []);
-
-  const addToCart = useCallback(async (saree: Saree, quantity: number = 1) => {
-    setCart((prev) => mergeOrAddItem(prev, saree, quantity));
-    setInitialized(true);
-  }, []);
-
-  const removeFromCart = useCallback(async (sareeId: string) => {
-    setCart((prev) => prev.filter((item) => item.saree.id !== sareeId));
-  }, []);
-
-  const updateQuantity = useCallback(async (sareeId: string, quantity: number) => {
-    setCart((prev) => replaceQuantity(prev, sareeId, quantity));
-  }, []);
-
-  const clearCart = useCallback(async () => {
-    setCart([]);
+    setLoading(true);
     try {
-      localStorage.removeItem(CART_STORAGE_KEY);
-    } catch {
-      // ignore
+      const res = await api.get<CartResponse>("/cart");
+      const backendItems = res.data?.data?.items || [];
+
+      const mappedItems: CartItem[] = backendItems.map((item) => ({
+        saree: mapProductToSaree(item.product),
+        quantity: item.quantity,
+      }));
+
+      setCart(mappedItems);
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        setCart([]);
+      } else {
+        console.error("Failed to load cart", error);
+        if (error?.response?.data) {
+          console.error("Backend error response:", error.response.data);
+        }
+      }
+    } finally {
+      setLoading(false);
+      setInitialized(true);
     }
   }, []);
+
+  useEffect(() => {
+    lastTokenRef.current = getCurrentToken();
+    loadCart();
+  }, [loadCart]);
+
+  useEffect(() => {
+    const handleAuthChange = async () => {
+      const currentToken = getCurrentToken();
+
+      if (currentToken !== lastTokenRef.current) {
+        lastTokenRef.current = currentToken;
+
+        // clear only frontend memory cart
+        setCart([]);
+
+        if (currentToken) {
+          await loadCart();
+        } else {
+          setInitialized(true);
+        }
+      }
+    };
+
+    window.addEventListener("auth-changed", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("auth-changed", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
+  }, [loadCart]);
+
+  const addToCart = useCallback(
+    async (saree: Saree, quantity: number = 1) => {
+      if (!tokenStorage.has()) return;
+
+      setLoading(true);
+      try {
+        await api.post("/cart/add", {
+          product_id: saree.id,
+          quantity,
+        });
+
+        await loadCart();
+      } catch (error: any) {
+        console.error("Failed to add to cart", error);
+        if (error?.response?.data) {
+          console.error("Backend error response:", error.response.data);
+        }
+        setLoading(false);
+        throw error;
+      }
+    },
+    [loadCart]
+  );
+
+  const removeFromCart = useCallback(
+    async (sareeId: string) => {
+      if (!tokenStorage.has()) return;
+
+      setLoading(true);
+      try {
+        await api.post("/cart/remove", {
+          product_id: sareeId,
+        });
+
+        await loadCart();
+      } catch (error: any) {
+        console.error("Failed to remove from cart", error);
+        if (error?.response?.data) {
+          console.error("Backend error response:", error.response.data);
+        }
+        setLoading(false);
+        throw error;
+      }
+    },
+    [loadCart]
+  );
+
+  const updateQuantity = useCallback(
+    async (sareeId: string, quantity: number) => {
+      if (!tokenStorage.has()) return;
+
+      setLoading(true);
+      try {
+        if (quantity <= 0) {
+          await api.post("/cart/remove", {
+            product_id: sareeId,
+          });
+
+          await loadCart();
+          return;
+        }
+
+        // Safe workaround:
+        // remove old line item first, then add again with exact new quantity
+        await api.post("/cart/remove", {
+          product_id: sareeId,
+        });
+
+        await api.post("/cart/add", {
+          product_id: sareeId,
+          quantity,
+        });
+
+        await loadCart();
+      } catch (error: any) {
+        console.error("Failed to update cart quantity", error);
+        if (error?.response?.data) {
+          console.error("Backend error response:", error.response.data);
+        }
+        setLoading(false);
+        throw error;
+      }
+    },
+    [loadCart]
+  );
+
+  const clearCart = useCallback(async () => {
+    if (!tokenStorage.has()) return;
+
+    setLoading(true);
+    try {
+      await Promise.all(
+        cart.map((item) =>
+          api.post("/cart/remove", {
+            product_id: item.saree.id,
+          })
+        )
+      );
+
+      await loadCart();
+    } catch (error: any) {
+      console.error("Failed to clear cart", error);
+      if (error?.response?.data) {
+        console.error("Backend error response:", error.response.data);
+      }
+      setLoading(false);
+      throw error;
+    }
+  }, [cart, loadCart]);
 
   const getCartTotal = useCallback(() => {
     return cart.reduce(
@@ -416,49 +324,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return cart.reduce((count, item) => count + item.quantity, 0);
   }, [cart]);
 
-  const isInCart = useCallback(
-    (sareeId: string) => cart.some((item) => item.saree.id === sareeId),
-    [cart]
-  );
-
-  const getItemQuantity = useCallback(
-    (sareeId: string) =>
-      cart.find((item) => item.saree.id === sareeId)?.quantity || 0,
-    [cart]
-  );
-
   const value = useMemo<CartContextType>(
     () => ({
       cart,
       loading,
       initialized,
-      refreshCart,
+      refreshCart: loadCart,
       addToCart,
       removeFromCart,
       updateQuantity,
       clearCart,
       getCartTotal,
       getCartCount,
-      isInCart,
-      getItemQuantity,
     }),
     [
       cart,
       loading,
       initialized,
-      refreshCart,
+      loadCart,
       addToCart,
       removeFromCart,
       updateQuantity,
       clearCart,
       getCartTotal,
       getCartCount,
-      isInCart,
-      getItemQuantity,
     ]
   );
 
-  return React.createElement(CartContext.Provider, { value }, children);
+  return createElement(CartContext.Provider, { value }, children);
 }
 
 export function useCart() {

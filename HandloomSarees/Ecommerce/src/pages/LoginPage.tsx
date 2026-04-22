@@ -436,60 +436,120 @@ export function LoginPage() {
     password: '',
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     setLoading(true);
 
-    try {
-      if (isLogin) {
-        const user = await authService.login(formData.email, formData.password);
+//     try {
+//       if (isLogin) {
+//         const user = await authService.login(formData.email, formData.password);
 
-        if (user) {
-          toast.success('Welcome back!');
-          navigate('/');
-        } else {
-          toast.error('Invalid login credentials');
-        }
+//         // if (user) {
+//         //   toast.success('Welcome back!');
+//         //   navigate('/');
+//         // } else {
+//         //   toast.error('Invalid login credentials');
+//         // }
+//         if (user) {
+//   window.dispatchEvent(new Event("auth-changed"));
+//   toast.success('Welcome back!');
+//   navigate('/');
+// } else {
+//   toast.error('Invalid login credentials');
+// }
+//       } else {
+//         if (!formData.name.trim()) {
+//           toast.error('Full name is required');
+//           setLoading(false);
+//           return;
+//         }
+
+//         if (!formData.phone.trim()) {
+//           toast.error('Phone number is required');
+//           setLoading(false);
+//           return;
+//         }
+
+//         await authService.register(
+//           formData.name,
+//           formData.email,
+//           formData.password,
+//           formData.phone
+//         );
+
+//         toast.success('Account created successfully!');
+//         navigate('/');
+//       }
+//     } catch (error: any) {
+//       const detail = error?.response?.data?.detail;
+
+//       if (Array.isArray(detail) && detail.length > 0) {
+//         toast.error(detail[0]?.msg || 'Validation failed');
+//       } else {
+//         const message =
+//           error?.response?.data?.message ||
+//           error?.response?.data?.detail ||
+//           'Something went wrong. Please try again.';
+//         toast.error(message);
+//       }
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    if (isLogin) {
+      const user = await authService.login(formData.email, formData.password);
+
+      if (user) {
+        window.dispatchEvent(new Event("auth-changed"));
+        toast.success("Welcome back!");
+        navigate("/");
       } else {
-        if (!formData.name.trim()) {
-          toast.error('Full name is required');
-          setLoading(false);
-          return;
-        }
-
-        if (!formData.phone.trim()) {
-          toast.error('Phone number is required');
-          setLoading(false);
-          return;
-        }
-
-        await authService.register(
-          formData.name,
-          formData.email,
-          formData.password,
-          formData.phone
-        );
-
-        toast.success('Account created successfully!');
-        navigate('/');
+        toast.error("Invalid login credentials");
       }
-    } catch (error: any) {
-      const detail = error?.response?.data?.detail;
-
-      if (Array.isArray(detail) && detail.length > 0) {
-        toast.error(detail[0]?.msg || 'Validation failed');
-      } else {
-        const message =
-          error?.response?.data?.message ||
-          error?.response?.data?.detail ||
-          'Something went wrong. Please try again.';
-        toast.error(message);
+    } else {
+      if (!formData.name.trim()) {
+        toast.error("Full name is required");
+        setLoading(false);
+        return;
       }
-    } finally {
-      setLoading(false);
+
+      if (!formData.phone.trim()) {
+        toast.error("Phone number is required");
+        setLoading(false);
+        return;
+      }
+
+      await authService.register(
+        formData.name,
+        formData.email,
+        formData.password,
+        formData.phone
+      );
+
+      toast.success("Account created successfully!");
+      navigate("/");
     }
-  };
+  } catch (error: any) {
+    const detail = error?.response?.data?.detail;
 
+    if (Array.isArray(detail) && detail.length > 0) {
+      toast.error(detail[0]?.msg || "Validation failed");
+    } else {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.detail ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
+    }
+  } finally {
+    setLoading(false);
+  }
+};
   const FIELDS = [
     ...(!isLogin
       ? [

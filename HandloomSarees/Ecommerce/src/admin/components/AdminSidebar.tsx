@@ -100,6 +100,7 @@ export default function AdminSidebar() {
     { to: "/admin/products", label: "Products", icon: Package },
     { to: "/admin/collections", label: "Collections", icon: Layers },
     { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
+    
   ];
 
   return (
