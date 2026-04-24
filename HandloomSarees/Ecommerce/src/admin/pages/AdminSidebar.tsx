@@ -6,7 +6,7 @@ const menuItems = [
   { label: "Collections", path: "/admin/collections" },
   { label: "Orders", path: "/admin/orders" },
   { label: "Video Bookings", path: "/admin/video-bookings" },
-  
+  { label: "Chatbot Leads", path: "/admin/chatbot-leads" },
 ];
 
 export default function AdminSidebar() {

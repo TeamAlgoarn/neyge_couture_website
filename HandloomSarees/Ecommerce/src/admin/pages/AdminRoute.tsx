@@ -8,7 +8,7 @@ import AdminCollections from "./AdminCollections";
 import AdminOrders from "./AdminOrders";
 import AdminOrderDetail from "./AdminOrderDetail";
 import AdminVideoBookingsPage from "./AdminVideoBookingsPage";
-
+import AdminChatbotLeads from "./AdminChatbotLeads";
 function RequireAdminAuth({ children }: { children: ReactElement }) {
   const token =
     localStorage.getItem("admin_access_token") ||
@@ -80,7 +80,7 @@ export default function AdminRoute() {
           </RequireAdminAuth>
         }
       />
-      
+      <Route path="/admin/chatbot-leads" element={<AdminChatbotLeads />} />
 
       <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
     </Routes>

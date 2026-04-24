@@ -114,7 +114,7 @@ import AdminOrderDetail from '@/admin/pages/AdminOrderDetail';
 import AdminVideoBookingsPage from '@/admin/pages/AdminVideoBookingsPage';
 import AdminFestiveCollections from '@/admin/pages/AdminFestiveCollections';
 import FestiveCollectionForm from '@/admin/pages/FestiveCollectionForm';
-
+import AdminChatbotLeads from "@/admin/pages/AdminChatbotLeads";
 import './styles/luxury-styles.css';
 
 function AppContent() {
@@ -157,6 +157,7 @@ function AppContent() {
             <Route path="/admin/collections" element={<AdminCollections />} />
             <Route path="/admin/collections/new" element={<CollectionForm />} />
             <Route path="/admin/collections/:id/edit" element={<CollectionForm />} />
+            
 
             <Route path="/admin/festive-collections" element={<AdminFestiveCollections />} />
             <Route path="/admin/festive-collections/new" element={<FestiveCollectionForm />} />
@@ -165,6 +166,7 @@ function AppContent() {
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
             <Route path="/admin/video-bookings" element={<AdminVideoBookingsPage />} />
+            <Route path="/admin/chatbot-leads" element={<AdminChatbotLeads />} />
           </Route>
         </Routes>
       </main>
