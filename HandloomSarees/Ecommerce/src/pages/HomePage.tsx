@@ -1070,7 +1070,7 @@ import img18 from "@/assets/i2.png";
 import { getProducts } from "@/api/products";
 import { SareeCard } from "@/components/features/SareeCard";
 import type { Saree } from "@/types";
-
+import heroVideo from "@/assets/MicrosoftTeams-video.mp4";
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAND PALETTE — extracted pixel-accurately from Neyge brand book PDFs
 // Final colour bar (last page): Navy | Maroon | Blush | Forest Green
@@ -1560,7 +1560,23 @@ function HeritageBand() {
 function Hero() {
   return (
     <section style={{ position: "relative", height: "100vh", minHeight: 640, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-      <img src={IMG.hero} alt="Neyge Couture" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+     <video
+  autoPlay
+  loop
+  muted
+  playsInline
+  poster={IMG.hero}
+  style={{
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    objectPosition: "center top",
+  }}
+>
+  <source src={heroVideo} type="video/mp4" />
+</video>
 
       {/* Maroon + navy brand overlays */}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(90,0,22,.40) 0%, rgba(128,0,32,.46) 42%, rgba(14,26,74,.68) 100%)" }} />
