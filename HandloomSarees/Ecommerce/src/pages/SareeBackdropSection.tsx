@@ -1,22 +1,20 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-// Uses one of the existing project images as the saree fabric backdrop
-// Swap `backdropImg` to any saree close-up / texture image in your assets
 import backdropImg from '@/assets/g3.png';
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
 /* ══════════════════════════════════════════
-   SAREE BACKDROP SECTION
+   SAREE BACKDROP SECTION (brand updated)
 ══════════════════════════════════════════ */
 .sb-root {
   position: relative;
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Josefin Sans', sans-serif;
 }
 
 /* ── Backdrop image ── */
@@ -29,15 +27,14 @@ const CSS = `
 }
 .sb-root.visible .sb-img { transform: scale(1); }
 
-/* ── Layered overlay ── */
-/* 1. Dark vignette so text always reads */
+/* ── Layered overlay (brand colors: maroon + navy) ── */
 .sb-overlay-1 {
   position: absolute; inset: 0;
   background: linear-gradient(
     160deg,
     rgba(10,2,2,.82) 0%,
     rgba(128,0,32,.55) 38%,
-    rgba(75,0,130,.45) 65%,
+    rgba(27,42,107,.45) 65%,
     rgba(10,2,2,.88) 100%
   );
 }
@@ -101,36 +98,49 @@ const CSS = `
   backdrop-filter: blur(8px);
   padding: 7px 20px; border-radius: 100px; margin-bottom: 22px;
 }
-.sb-ey {
-  font-family: 'Jost'; font-size: 11px; letter-spacing: .28em;
-  text-transform: uppercase; color: #D4AF37; font-weight: 600;
+.ey {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: #D4AF37;
+  font-weight: 600;
 }
 
-/* main heading */
+/* main heading - Cinzel (brand heading font) */
 .sb-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(40px, 7vw, 82px);
-  font-weight: 400; color: white;
-  line-height: 1.05; margin-bottom: 6px;
+  font-weight: 400;
+  color: white;
+  line-height: 1.05;
+  margin-bottom: 6px;
   text-shadow: 0 2px 24px rgba(0,0,0,.4);
+  letter-spacing: 0.04em;
 }
 .sb-title-em {
-  font-style: italic; color: #D4AF37;
+  font-style: italic;
+  color: #D4AF37;
+  font-family: 'Cormorant Garamond', serif;
 }
 
-/* gold divider */
+/* gold divider (matches homepage .gd) */
 .sb-gd {
   width: 64px; height: 1.5px;
   background: linear-gradient(90deg, transparent, #C4980A, transparent);
   margin: 22px auto;
 }
 
-/* subtitle */
+/* subtitle - Josefin Sans */
 .sb-sub {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(17px, 2.5vw, 22px); font-style: italic;
-  color: rgba(255,255,255,.72); line-height: 1.75;
-  max-width: 580px; margin: 0 auto 36px; font-weight: 300;
+  font-family: 'Josefin Sans';
+  font-size: clamp(17px, 2.5vw, 22px);
+  font-style: italic;
+  font-weight: 300;
+  color: rgba(255,255,255,.72);
+  line-height: 1.75;
+  max-width: 580px;
+  margin: 0 auto 36px;
 }
 
 /* stat pills */
@@ -144,11 +154,13 @@ const CSS = `
 }
 .sb-stat:last-child { border-right: none; }
 .sb-stat-n {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Cinzel', serif;
   font-size: 32px; font-weight: 500; color: #D4AF37; line-height: 1;
+  letter-spacing: 0.02em;
 }
 .sb-stat-l {
-  font-family: 'Jost'; font-size: 10px; letter-spacing: .14em;
+  font-family: 'Josefin Sans';
+  font-size: 10px; letter-spacing: .14em;
   text-transform: uppercase; color: rgba(255,255,255,.45);
   margin-top: 4px; font-weight: 400;
 }
@@ -163,13 +175,14 @@ const CSS = `
   gap: 16px; flex-wrap: wrap;
 }
 
-/* primary gold button */
+/* primary gold button (matches btn-gold) */
 .sb-btn-primary {
   display: inline-flex; align-items: center; gap: 10px;
   padding: 16px 44px; border: none; border-radius: 100px;
   background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
   color: #800020;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .14em;
+  font-family: 'Josefin Sans';
+  font-size: 13px; letter-spacing: .14em;
   font-weight: 600; text-transform: uppercase; text-decoration: none;
   transition: transform .35s, box-shadow .35s;
   box-shadow: 0 6px 28px rgba(212,175,55,.4);
@@ -182,14 +195,15 @@ const CSS = `
 }
 .sb-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(212,175,55,.55); }
 
-/* secondary ghost button */
+/* secondary ghost button (matches btn-outline) */
 .sb-btn-ghost {
   display: inline-flex; align-items: center; gap: 10px;
   padding: 15px 36px; border-radius: 100px;
   border: 1.5px solid rgba(196,152,10,.5);
   background: rgba(255,255,255,.07); backdrop-filter: blur(8px);
   color: rgba(255,255,255,.85);
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .14em;
+  font-family: 'Josefin Sans';
+  font-size: 13px; letter-spacing: .14em;
   font-weight: 500; text-transform: uppercase; text-decoration: none;
   transition: border-color .3s, background .3s, color .3s, transform .35s;
 }
@@ -218,10 +232,10 @@ const CSS = `
 `;
 
 const STATS = [
-  { n: '500+',  l: 'Artisan Families'   },
-  { n: '200+',  l: 'Saree Styles'       },
-  { n: '15+',   l: 'States Represented' },
-  { n: '50K+',  l: 'Happy Customers'    },
+  { n: '500+', l: 'Artisan Families' },
+  { n: '200+', l: 'Saree Styles' },
+  { n: '15+', l: 'States Represented' },
+  { n: '50K+', l: 'Happy Customers' },
 ];
 
 export function SareeBackdropSection() {
@@ -261,9 +275,9 @@ export function SareeBackdropSection() {
           </div>
 
           {/* badge */}
-          <div className="sb-badge" style={{ display: 'inline-flex' }}>
+          <div className="sb-badge">
             <Sparkles size={13} color="#D4AF37" />
-            <span className="sb-ey">Timeless Craftsmanship</span>
+            <span className="ey">Timeless Craftsmanship</span>
           </div>
 
           {/* heading */}

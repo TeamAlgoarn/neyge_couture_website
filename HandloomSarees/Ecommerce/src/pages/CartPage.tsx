@@ -1,373 +1,427 @@
-import { Link } from 'react-router-dom';
-import { Minus, Plus, Trash2, ShoppingBag, Sparkles, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react';
 import { useCart } from '@/hooks/useCarts';
 import { formatCurrency } from '@/lib/utils';
+import { useEffect } from 'react'; // 👈 added import
 
-// ─── Brand palette ────────────────────────────────────────────────────────────
 const C = {
-  maroon:   '#800020',
+  maroon: '#800020',
   maroonDk: '#5a0016',
-  gold:     '#C4980A',
-  goldV:    '#D4AF37',
-  cream:    '#F5E6D3',
-  creamLt:  '#FFF9F0',
+  gold: '#C4980A',
+  goldV: '#D4AF37',
+  cream: '#F5E6D3',
+  creamLt: '#FFF9F0',
   warmGrey: '#4a3828',
-  indigo:   '#4B0082',
+  indigo: '#4B0082',
 };
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Josefin+Sans:wght@300;400;500;600;700&display=swap');
 
 .cart-root {
-  font-family: 'Jost', sans-serif;
-  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
   min-height: 100vh;
-  color: #1a1010;
-  line-height: 1;
+  background:
+    radial-gradient(circle at top left, rgba(212,175,55,.10), transparent 25%),
+    radial-gradient(circle at top right, rgba(128,0,32,.08), transparent 22%),
+    linear-gradient(180deg, #FFF9F0 0%, #F5E6D3 100%);
 }
-
-/* ── Wrap ── */
 .cart-wrap {
-  max-width: 1280px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 0 56px;
+  padding: 0 24px 70px;
 }
-@media(max-width: 900px) { .cart-wrap { padding: 0 24px; } }
-@media(max-width: 480px) { .cart-wrap { padding: 0 16px; } }
+.cart-page-top { padding-top: 146px; }
 
-/* ── Eyebrow ── */
-.cart-ey {
-  font-family: 'Jost'; font-size: 11px;
-  letter-spacing: .25em; text-transform: uppercase;
-  color: #C4980A; font-weight: 600;
+.cart-fadein { animation: fadeIn .45s ease both; }
+.cart-fadeup { animation: fadeUp .6s cubic-bezier(.2,.8,.2,1) both; }
+.cart-pop { animation: popIn .48s cubic-bezier(.17,.89,.32,1.2) both; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(.97) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes shimmer { 0% { transform: translateX(-120%); } 100% { transform: translateX(140%); } }
+
+.ey {
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: #8A6A32;
+  font-weight: 600;
 }
-
-/* ── Gd ── */
-.cart-gd { width: 48px; height: 1px; background: #C4980A; display: block; }
-
-/* ─────────────────────────────
-   ANIMATIONS
-───────────────────────────── */
-@keyframes cartFadeUp  { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
-@keyframes cartFadeIn  { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
-@keyframes cartShimmer { 0%{left:-80%} 100%{left:120%} }
-@keyframes cartPop     { from{opacity:0;transform:translateY(28px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
-
-.cart-fadein { animation: cartFadeIn  .8s cubic-bezier(.4,0,.2,1) both; }
-.cart-fadeup { animation: cartFadeUp  .8s cubic-bezier(.4,0,.2,1) both; }
-.cart-pop    { animation: cartPop     .6s cubic-bezier(.34,1.56,.64,1) both; }
-.cart-d1 { animation-delay:.1s }
-.cart-d2 { animation-delay:.2s }
-
-/* ─────────────────────────────
-   PAGE TOP (clears navbar)
-───────────────────────────── */
-.cart-page-top { padding-top: 140px; padding-bottom: 80px; }
-@media(max-width: 640px) { .cart-page-top { padding-top: 110px; padding-bottom: 60px; } }
-
-/* ─────────────────────────────
-   EMPTY STATE
-───────────────────────────── */
-.cart-empty-root {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(170deg, #FFF9F0 0%, #F5E6D3 100%);
-  padding: 24px; text-align: center;
-}
-.cart-empty-icon {
-  width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 28px;
-  background: rgba(196,152,10,.1); border: 1.5px solid rgba(196,152,10,.3);
-  display: flex; align-items: center; justify-content: center;
-}
-.cart-empty-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(28px, 5vw, 44px); font-weight: 400;
-  color: #800020; margin-bottom: 12px;
-}
-.cart-empty-sub {
-  font-family: 'Jost'; font-size: 14px; font-weight: 300;
-  color: #4a3828; line-height: 1.75; margin-bottom: 32px;
+.gd {
+  width: 74px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #C4980A, transparent);
+  margin: 0 auto;
 }
 
-/* ─────────────────────────────
-   PAGE HEADER
-───────────────────────────── */
-.cart-header { margin-bottom: 44px; }
+.cart-header {
+  text-align: center;
+  padding: 10px 0 34px;
+}
 .cart-header-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(196,152,10,.12); border: 1px solid rgba(196,152,10,.35);
-  padding: 7px 18px; border-radius: 100px; margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid rgba(196,152,10,.25);
+  background: rgba(255,255,255,.54);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  margin-bottom: 18px;
 }
 .cart-header-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(36px, 6vw, 60px);
-  font-weight: 400; color: #800020; line-height: 1.06; margin-bottom: 6px;
+  font-size: clamp(44px, 6vw, 70px);
+  line-height: .95;
+  color: #800020;
+  margin: 0 0 10px;
+  letter-spacing: .03em;
 }
 .cart-header-count {
-  font-family: 'Jost'; font-size: 13px; color: #9a8070; font-weight: 300;
+  font-family: 'Josefin Sans';
+  font-size: 14px;
+  color: #4a3828;
+  margin: 0;
 }
 
-/* ─────────────────────────────
-   LAYOUT
-───────────────────────────── */
 .cart-layout {
   display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 28px;
   align-items: start;
 }
-@media(max-width: 1024px) { .cart-layout { grid-template-columns: 1fr; } }
-
-/* ─────────────────────────────
-   CART ITEM CARD
-───────────────────────────── */
-.cart-item {
-  background: rgba(255,249,240,.95); backdrop-filter: blur(10px);
-  border: 1px solid rgba(196,152,10,.22);
-  border-radius: 22px; padding: 22px 24px;
-  margin-bottom: 16px;
-  transition: box-shadow .35s, border-color .3s;
-  box-shadow: 0 6px 28px rgba(0,0,0,.06);
+@media(max-width: 1100px) {
+  .cart-layout { grid-template-columns: 1fr; }
 }
-.cart-item:hover {
-  box-shadow: 0 14px 48px rgba(128,0,32,.1);
-  border-color: rgba(196,152,10,.42);
+
+.cart-item {
+  position: relative;
+  background: rgba(255,255,255,.58);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(128,0,32,.08);
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 12px 34px rgba(90,0,22,.06);
+  margin-bottom: 18px;
+}
+.cart-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, rgba(212,175,55,.30), rgba(128,0,32,.08), rgba(255,255,255,0));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
 }
 
 .cart-item-inner {
-  display: flex; gap: 20px; align-items: flex-start;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: 20px;
 }
-@media(max-width: 560px) {
-  .cart-item-inner { flex-direction: column; }
+@media(max-width: 680px) {
+  .cart-item-inner { grid-template-columns: 1fr; }
 }
 
-/* Image */
 .cart-item-img-wrap {
-  width: 100px; flex-shrink: 0;
-  border-radius: 16px; overflow: hidden;
-  border: 1px solid rgba(196,152,10,.25);
-  box-shadow: 0 6px 20px rgba(0,0,0,.1);
+  display: block;
+  position: relative;
+  aspect-ratio: .82 / 1;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #f5e6d3);
 }
-@media(max-width: 560px) { .cart-item-img-wrap { width: 100%; height: 200px; } }
 .cart-item-img-wrap img {
-  width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block;
-  transition: transform .6s cubic-bezier(.4,0,.2,1);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .45s ease;
 }
-@media(max-width: 560px) { .cart-item-img-wrap img { aspect-ratio: unset; height: 200px; } }
-.cart-item-img-wrap:hover img { transform: scale(1.05); }
+.cart-item-img-wrap:hover img { transform: scale(1.04); }
 
-/* Body */
-.cart-item-body { flex: 1; min-width: 0; }
-
+.cart-item-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 .cart-item-name {
+  text-decoration: none;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 20px; font-weight: 500; color: #800020;
-  text-decoration: none; display: block; margin-bottom: 8px;
-  transition: color .2s; line-height: 1.2;
+  color: #800020;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: .02em;
+  margin-bottom: 10px;
 }
-.cart-item-name:hover { color: #C4980A; }
+.cart-item-name:hover { color: #5a0016; }
 
 .cart-item-tags {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
 }
 .cart-item-tag {
-  padding: 4px 12px; border-radius: 100px;
-  background: rgba(196,152,10,.08); border: 1px solid rgba(196,152,10,.25);
-  font-family: 'Jost'; font-size: 11px; color: #4a3828; font-weight: 400;
+  border: 1px solid rgba(196,152,10,.25);
+  background: rgba(255,249,240,.82);
+  color: #4a3828;
+  border-radius: 999px;
+  padding: 7px 10px 6px;
+  font-family: 'Josefin Sans';
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
 }
 
-/* Qty + remove row */
 .cart-item-actions {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  flex-wrap: wrap;
 }
-
 .cart-qty-row {
-  display: flex; align-items: center; gap: 0;
-  background: rgba(196,152,10,.08); border: 1px solid rgba(196,152,10,.25);
-  border-radius: 100px; padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255,249,240,.95);
+  border: 1px solid rgba(196,152,10,.22);
 }
 .cart-qty-btn {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: white; border: 1px solid rgba(196,152,10,.3);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: background .25s, transform .2s;
-  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(90,0,22,.08);
+  cursor: pointer;
 }
-.cart-qty-btn:hover { background: #D4AF37; transform: scale(1.1); }
-.cart-qty-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
-.cart-qty-btn:hover svg { color: white !important; }
+.cart-qty-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
 .cart-qty-val {
-  min-width: 32px; text-align: center;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 18px; font-weight: 500; color: #800020;
+  min-width: 20px;
+  text-align: center;
+  font-family: 'Josefin Sans';
+  font-size: 15px;
+  color: #4a3828;
+  font-weight: 600;
 }
-
-.cart-remove-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 16px; border-radius: 100px;
-  border: 1.5px solid rgba(200,50,50,.3);
-  background: transparent; color: #c0392b;
-  font-family: 'Jost'; font-size: 12px; font-weight: 500;
-  cursor: pointer; transition: background .25s, color .25s, transform .2s;
+.cart-price-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
-.cart-remove-btn:hover {
-  background: #c0392b; color: white; transform: scale(1.04);
-}
-
-/* Price */
 .cart-item-price {
-  text-align: right; flex-shrink: 0;
-}
-@media(max-width: 560px) { .cart-item-price { text-align: left; } }
-.cart-item-price-main {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 24px; font-weight: 600; color: #800020; display: block;
+  color: #800020;
+  font-size: 28px;
+  font-weight: 700;
 }
-.cart-item-price-orig {
-  font-family: 'Jost'; font-size: 12px; color: #9a8070;
-  text-decoration: line-through; font-weight: 300; margin-top: 3px;
+.cart-item-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: #8b1e3f;
+  cursor: pointer;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 0;
 }
 
-/* ─────────────────────────────
-   ORDER SUMMARY
-───────────────────────────── */
 .cart-summary {
-  background: rgba(255,249,240,.97); backdrop-filter: blur(12px);
-  border: 1px solid rgba(196,152,10,.25);
-  border-radius: 24px;
-  box-shadow: 0 16px 60px rgba(0,0,0,.09);
+  position: sticky;
+  top: 120px;
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(128,0,32,.08);
+  border-radius: 26px;
+  box-shadow: 0 12px 34px rgba(90,0,22,.06);
   overflow: hidden;
-  position: sticky; top: 110px;
 }
-
-/* Summary maroon top bar */
-.cart-summary-bar {
-  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #4B0082 100%);
-  padding: 22px 28px; position: relative; overflow: hidden;
+.cart-summary-head {
+  padding: 22px 24px 18px;
+  background: linear-gradient(135deg, rgba(128,0,32,.05), rgba(196,152,10,.05));
+  border-bottom: 1px solid rgba(196,152,10,.16);
 }
-.cart-summary-bar::after {
-  content: ''; position: absolute; top: -50px; right: -50px;
-  width: 160px; height: 160px; border-radius: 50%;
-  border: 1px solid rgba(212,175,55,.15); pointer-events: none;
-}
-.cart-summary-bar-title {
+.cart-summary-title {
+  margin: 0;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 22px; font-weight: 400; color: white; position: relative; z-index: 1;
+  font-size: 34px;
+  color: #800020;
 }
-
-/* Summary body */
-.cart-summary-body { padding: 26px 28px 28px; }
-
-/* Row */
+.cart-summary-sub {
+  margin-top: 5px;
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #4a3828;
+}
+.cart-summary-body {
+  padding: 22px 24px 24px;
+}
 .cart-sum-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(196,152,10,.14);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 0;
 }
-.cart-sum-row:last-of-type { border-bottom: none; }
-.cart-sum-key {
-  font-family: 'Jost'; font-size: 13px; color: #4a3828; font-weight: 400;
+.cart-sum-label {
+  font-family: 'Josefin Sans';
+  font-size: 13px;
+  color: #4a3828;
 }
 .cart-sum-val {
-  font-family: 'Jost'; font-size: 13px; color: #800020; font-weight: 600;
+  font-family: 'Josefin Sans';
+  font-size: 14px;
+  color: #4a3828;
+  font-weight: 600;
 }
 .cart-sum-free {
-  display: flex; align-items: center; gap: 5px;
-  font-family: 'Jost'; font-size: 13px; color: #059669; font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  color: #0f766e;
+  font-weight: 700;
 }
-
-/* Free shipping nudge */
 .cart-ship-nudge {
-  background: rgba(196,152,10,.07); border: 1px solid rgba(196,152,10,.22);
-  border-radius: 12px; padding: 11px 14px; margin: 8px 0;
+  margin-top: 4px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: rgba(196,152,10,.08);
+  border: 1px solid rgba(196,152,10,.18);
+  border-radius: 16px;
 }
 .cart-ship-nudge-text {
-  font-family: 'Jost'; font-size: 12px; color: #4a3828; font-weight: 300; line-height: 1.5;
+  margin: 0;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  color: #6f5320;
+  line-height: 1.45;
 }
-
-/* Total strip */
 .cart-total-strip {
-  display: flex; justify-content: space-between; align-items: center;
-  background: linear-gradient(135deg, #800020 0%, #4B0082 100%);
-  border-radius: 16px; padding: 16px 20px; margin: 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 12px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(128,0,32,.06), rgba(196,152,10,.10));
 }
 .cart-total-label {
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .1em;
-  text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
+  font-family: 'Josefin Sans';
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: #4a3828;
+  font-weight: 600;
 }
 .cart-total-val {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 28px; font-weight: 600; color: #D4AF37;
+  font-size: 34px;
+  line-height: 1;
+  color: #800020;
+  font-weight: 700;
+}
+.btn-gold {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #D4AF37 0%, #C4980A 100%);
+  color: white;
+  font-family: 'Josefin Sans';
+  font-size: 11px;
+  letter-spacing: .24em;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(212,175,55,.35);
+  transition: transform .3s, box-shadow .3s;
+}
+.btn-gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,.3), transparent);
+  animation: shimmer 3s ease infinite;
+}
+.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
+
+.cart-empty-root {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(212,175,55,.10), transparent 25%),
+    radial-gradient(circle at top right, rgba(128,0,32,.08), transparent 22%),
+    linear-gradient(180deg, #FFF9F0 0%, #F5E6D3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 140px 24px 60px;
+  text-align: center;
+}
+.cart-empty-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(196,152,10,.10);
+  border: 1px solid rgba(196,152,10,.22);
+  margin-bottom: 18px;
+}
+.cart-empty-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(40px, 6vw, 58px);
+  color: #800020;
+  line-height: .95;
+  margin: 0 0 10px;
+}
+.cart-empty-sub {
+  font-family: 'Josefin Sans';
+  font-size: 15px;
+  line-height: 1.7;
+  color: #4a3828;
+  margin: 0 0 28px;
 }
 
-/* Checkout button */
-.cart-checkout-btn {
-  display: block; width: 100%; padding: 16px;
-  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
-  color: #800020; border: none; border-radius: 100px; text-align: center;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
-  font-weight: 600; text-transform: uppercase; text-decoration: none;
-  cursor: pointer; transition: transform .35s, box-shadow .35s;
-  box-shadow: 0 6px 24px rgba(212,175,55,.38);
-  position: relative; overflow: hidden; margin-bottom: 12px;
-}
-.cart-checkout-btn::after {
-  content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
-  animation: cartShimmer 3s ease infinite;
-}
-.cart-checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
-
-.cart-continue-link {
-  display: block; text-align: center;
-  font-family: 'Jost'; font-size: 12px; letter-spacing: .1em;
-  text-transform: uppercase; color: #4a3828; font-weight: 500;
-  text-decoration: none; transition: color .2s; padding: 6px 0;
-}
-.cart-continue-link:hover { color: #800020; }
-
-/* Trust signals */
-.cart-trust { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(196,152,10,.18); }
-.cart-trust-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 0;
-}
-.cart-trust-dot {
-  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-}
-.cart-trust-text {
-  font-family: 'Jost'; font-size: 12px; color: #4a3828; font-weight: 400;
-}
-
-/* ─────────────────────────────
-   BUTTONS SHARED
-───────────────────────────── */
-.cart-btn-shop {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 16px 44px;
-  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
-  color: #800020; border-radius: 100px;
-  font-family: 'Jost'; font-size: 13px; letter-spacing: .12em;
-  font-weight: 600; text-transform: uppercase; text-decoration: none;
-  transition: transform .35s, box-shadow .35s;
-  box-shadow: 0 6px 24px rgba(212,175,55,.38);
-  position: relative; overflow: hidden;
-}
-.cart-btn-shop::after {
-  content: ''; position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
-  animation: cartShimmer 3s ease infinite;
-}
-.cart-btn-shop:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,175,55,.52); }
-
-/* ─────────────────────────────
-   RESPONSIVE
-───────────────────────────── */
 @media(max-width: 480px) {
   .cart-header-title { font-size: 34px; }
   .cart-item { padding: 18px 16px; border-radius: 18px; }
@@ -376,15 +430,70 @@ const CSS = `
 }
 `;
 
-// ─── COMPONENT ────────────────────────────────────────────────────────────────
+function getProductUrl(product: { id: string; slug?: string }) {
+  return `/product/${product.slug?.trim() ? product.slug : product.id}`;
+}
+
+function getOccasionText(occasion: unknown): string {
+  if (Array.isArray(occasion)) return occasion.filter(Boolean).join(', ');
+  if (typeof occasion === 'string') return occasion;
+  return '';
+}
+
+function getProductImage(product: {
+  image?: string;
+  images?: string[];
+}) {
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images.find(Boolean) || '';
+  }
+  return product.image || '';
+}
+
 export function CartPage() {
-  const { cart, updateQuantity, removeFromCart, getCartTotal } = useCart();
+  // ✅ Force scroll to top whenever this page is loaded/opened
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const {
+    cart,
+    loading,
+    initialized,
+    updateQuantity,
+    removeFromCart,
+    getCartTotal,
+  } = useCart();
+
+  const navigate = useNavigate();
 
   const subtotal = getCartTotal();
-  const shipping  = subtotal > 2999 ? 0 : 150;
-  const total     = subtotal + shipping;
+  const shipping = subtotal > 2999 ? 0 : 150;
+  const total = subtotal + shipping;
 
-  // ── Empty state ──
+  const handleCheckout = () => {
+    navigate('/checkout');
+  };
+
+  if (!initialized && cart.length === 0) {
+    return (
+      <>
+        <style>{CSS}</style>
+        <div className="cart-empty-root">
+          <div className="cart-fadeup">
+            <div className="cart-empty-icon">
+              <ShoppingBag size={48} color={C.gold} />
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <span className="ey">Loading Cart</span>
+            </div>
+            <h2 className="cart-empty-title">Please wait...</h2>
+            <p className="cart-empty-sub">Loading your selected items</p>
+          </div>
+        </div>
+      </>
+    );
+  }
   if (cart.length === 0) {
     return (
       <>
@@ -395,13 +504,17 @@ export function CartPage() {
               <ShoppingBag size={48} color={C.gold} />
             </div>
             <div style={{ marginBottom: 8 }}>
-              <span className="cart-ey">Your Selection</span>
+              <span className="ey">Your Selection</span>
             </div>
             <h2 className="cart-empty-title">Your Cart is Empty</h2>
             <p className="cart-empty-sub">
               Discover our beautiful collection<br />of handcrafted sarees
             </p>
-            <Link to="/shop" className="cart-btn-shop">
+            <Link
+              to="/shop"
+              className="btn-gold"
+              style={{ display: 'inline-flex', width: 'auto', padding: '16px 44px' }}
+            >
               Continue Shopping <ArrowRight size={15} />
             </Link>
           </div>
@@ -415,113 +528,119 @@ export function CartPage() {
       <style>{CSS}</style>
       <div className="cart-root">
         <div className="cart-wrap cart-page-top">
-
-          {/* ── Header ── */}
           <div className="cart-header cart-fadein">
             <div className="cart-header-badge">
               <Sparkles size={13} color={C.gold} />
-              <span className="cart-ey">Your Selection</span>
+              <span className="ey">Your Selection</span>
             </div>
             <h1 className="cart-header-title">Shopping Cart</h1>
-            <p className="cart-header-count">{cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart</p>
+            <p className="cart-header-count">
+              {cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart
+            </p>
+            {loading && (
+              <p style={{ marginTop: 8, fontSize: 12, color: '#8A6A32', fontFamily: 'Josefin Sans' }}>
+                Updating cart...
+              </p>
+            )}
+            <div className="gd" style={{ marginTop: 16 }} />
           </div>
 
-          {/* ── Layout ── */}
           <div className="cart-layout">
-
-            {/* ── Items ── */}
             <div>
-              {cart.map((item, i) => (
-                <div
-                  key={item.saree.id}
-                  className="cart-item cart-pop"
-                  style={{ animationDelay: `${i * 0.07}s` }}
-                >
-                  <div className="cart-item-inner">
+              {cart.map((item, i) => {
+                const productUrl = getProductUrl(item.saree);
+                const productImage = getProductImage(item.saree);
+                const occasionText = getOccasionText(item.saree.occasion);
 
-                    {/* Image */}
-                    <Link to={`/product/${item.saree.id}`} className="cart-item-img-wrap">
-                      <img src={item.saree.images[0]} alt={item.saree.name} />
-                    </Link>
-
-                    {/* Body */}
-                    <div className="cart-item-body">
-                      <Link to={`/product/${item.saree.id}`} className="cart-item-name">
-                        {item.saree.name}
+                return (
+                  <div
+                    key={item.saree.id}
+                    className="cart-item cart-pop"
+                    style={{ animationDelay: `${i * 0.07}s` }}
+                  >
+                    <div className="cart-item-inner">
+                      <Link to={productUrl} className="cart-item-img-wrap">
+                        <img src={productImage} alt={item.saree.name} />
                       </Link>
-                      <div className="cart-item-tags">
-                        <span className="cart-item-tag">{item.saree.fabric}</span>
-                        <span className="cart-item-tag">{item.saree.color}</span>
-                        <span className="cart-item-tag">{item.saree.occasion}</span>
-                      </div>
-                      <div className="cart-item-actions">
-                        {/* Qty */}
-                        <div className="cart-qty-row">
-                          <button
-                            className="cart-qty-btn"
-                            onClick={() => updateQuantity(item.saree.id, item.quantity - 1)}
-                          >
-                            <Minus size={13} color={C.maroon} />
-                          </button>
-                          <span className="cart-qty-val">{item.quantity}</span>
-                          <button
-                            className="cart-qty-btn"
-                            onClick={() => updateQuantity(item.saree.id, item.quantity + 1)}
-                            disabled={item.quantity >= item.saree.stock}
-                          >
-                            <Plus size={13} color={C.maroon} />
-                          </button>
+
+                      <div className="cart-item-body">
+                        <Link to={productUrl} className="cart-item-name">
+                          {item.saree.name}
+                        </Link>
+
+                        <div className="cart-item-tags">
+                          {item.saree.fabric ? (
+                            <span className="cart-item-tag">{item.saree.fabric}</span>
+                          ) : null}
+                          {item.saree.color ? (
+                            <span className="cart-item-tag">{item.saree.color}</span>
+                          ) : null}
+                          {occasionText ? (
+                            <span className="cart-item-tag">{occasionText}</span>
+                          ) : null}
                         </div>
-                        {/* Remove */}
-                        <button
-                          className="cart-remove-btn"
-                          onClick={() => removeFromCart(item.saree.id)}
-                        >
-                          <Trash2 size={13} /> Remove
-                        </button>
+
+                        <div className="cart-item-actions">
+                          <div className="cart-qty-row">
+                            <button
+                              type="button"
+                              className="cart-qty-btn"
+                              onClick={() => updateQuantity(item.saree.id, item.quantity - 1)}
+                              aria-label={`Decrease quantity of ${item.saree.name}`}
+                            >
+                              <Minus size={13} color={C.maroon} />
+                            </button>
+
+                            <span className="cart-qty-val">{item.quantity}</span>
+
+                            <button
+                              type="button"
+                              className="cart-qty-btn"
+                              onClick={() => updateQuantity(item.saree.id, item.quantity + 1)}
+                              aria-label={`Increase quantity of ${item.saree.name}`}
+                              disabled={item.quantity >= item.saree.stock}
+                            >
+                              <Plus size={13} color={C.maroon} />
+                            </button>
+                          </div>
+
+                          <div className="cart-price-row">
+                            <span className="cart-item-price">
+                              {formatCurrency(item.saree.price * item.quantity)}
+                            </span>
+
+                            <button
+                              type="button"
+                              className="cart-item-remove"
+                              onClick={() => removeFromCart(item.saree.id)}
+                              aria-label={`Remove ${item.saree.name} from cart`}
+                            >
+                              <Trash2 size={14} />
+                              Remove
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Price */}
-                    <div className="cart-item-price">
-                      <span className="cart-item-price-main">
-                        {formatCurrency(item.saree.price * item.quantity)}
-                      </span>
-                      {item.saree.originalPrice && (
-                        <p className="cart-item-price-orig">
-                          {formatCurrency(item.saree.originalPrice * item.quantity)}
-                        </p>
-                      )}
-                    </div>
-
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* ── Summary ── */}
-            <div className="cart-summary cart-fadein cart-d1">
-
-              {/* Maroon bar */}
-              <div className="cart-summary-bar">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, position: 'relative', zIndex: 1 }}>
-                  <Sparkles size={14} color="rgba(212,175,55,.8)" />
-                  <span style={{ fontFamily: "'Jost'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)' }}>
-                    Neyge Couture
-                  </span>
-                </div>
-                <div className="cart-summary-bar-title">Order Summary</div>
+            <aside className="cart-summary cart-fadeup">
+              <div className="cart-summary-head">
+                <h2 className="cart-summary-title">Order Summary</h2>
+                <p className="cart-summary-sub">Review your handcrafted selection</p>
               </div>
 
               <div className="cart-summary-body">
-
-                {/* Rows */}
                 <div className="cart-sum-row">
-                  <span className="cart-sum-key">Subtotal</span>
+                  <span className="cart-sum-label">Subtotal</span>
                   <span className="cart-sum-val">{formatCurrency(subtotal)}</span>
                 </div>
+
                 <div className="cart-sum-row">
-                  <span className="cart-sum-key">Shipping</span>
+                  <span className="cart-sum-label">Shipping</span>
                   {shipping === 0 ? (
                     <span className="cart-sum-free">
                       <Sparkles size={12} /> FREE
@@ -535,50 +654,29 @@ export function CartPage() {
                   <div className="cart-ship-nudge">
                     <p className="cart-ship-nudge-text">
                       Add{' '}
-                      <strong style={{ color: C.maroon }}>{formatCurrency(2999 - subtotal)}</strong>
-                      {' '}more for free shipping
+                      <strong style={{ color: C.maroon }}>
+                        {formatCurrency(2999 - subtotal)}
+                      </strong>{' '}
+                      more for free shipping
                     </p>
                   </div>
                 )}
 
-                {/* Total */}
                 <div className="cart-total-strip">
                   <span className="cart-total-label">Total</span>
                   <span className="cart-total-val">{formatCurrency(total)}</span>
                 </div>
 
-                {/* Checkout */}
-                <Link to="/checkout" className="cart-checkout-btn">
+                <button type="button" className="btn-gold" onClick={handleCheckout}>
                   Proceed to Checkout
-                </Link>
-                <Link to="/shop" className="cart-continue-link">
-                  ← Continue Shopping
-                </Link>
-
-                {/* Trust */}
-                <div className="cart-trust">
-                  {[
-                    { text: 'Secure Checkout',        bg: 'rgba(16,185,129,.12)',  border: 'rgba(16,185,129,.3)',  color: '#059669' },
-                    { text: '7-Day Easy Returns',      bg: 'rgba(59,130,246,.10)',  border: 'rgba(59,130,246,.3)',  color: '#2563eb' },
-                    { text: '100% Authentic Products', bg: 'rgba(196,152,10,.12)', border: 'rgba(196,152,10,.35)', color: '#C4980A' },
-                  ].map(({ text, bg, border, color }) => (
-                    <div key={text} className="cart-trust-item">
-                      <div className="cart-trust-dot" style={{ background: bg, border: `1px solid ${border}` }}>
-                        <svg width="11" height="11" viewBox="0 0 20 20" fill={color}>
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <span className="cart-trust-text">{text}</span>
-                    </div>
-                  ))}
-                </div>
-
+                </button>
               </div>
-            </div>
-
+            </aside>
           </div>
         </div>
       </div>
     </>
   );
 }
+
+export default CartPage;
