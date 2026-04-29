@@ -1865,7 +1865,7 @@ html { scroll-behavior: smooth; }
 
 .sp-wrap { max-width: 1320px; margin: 0 auto; padding: 0 64px; }
 @media(max-width: 900px)  { .sp-wrap { padding: 0 24px; } }
-@media(max-width: 480px)  { .sp-wrap { padding: 0 16px; } }
+@media(max-width: 480px)  { .sp-wrap { padding: 0 12px; } }
 
 /* ── Eyebrow label ── */
 .ey {
@@ -1981,25 +1981,26 @@ html { scroll-behavior: smooth; }
 /* Toolbar */
 .sp-toolbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 0;
+  padding: 16px 0;
   border-bottom: 1px solid rgba(196,152,10,.18);
-  margin-bottom: 24px;
-  flex-wrap: wrap; gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap; gap: 10px;
 }
 .sp-toolbar-left {
-  font-family: 'Josefin Sans'; font-size: 14px; color: #4a3828; font-weight: 400;
+  font-family: 'Josefin Sans'; font-size: 13px; color: #4a3828; font-weight: 400;
 }
-.sp-toolbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sp-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .sp-filter-trigger {
   display: flex; align-items: center; gap: 8px;
-  padding: 10px 22px;
+  padding: 9px 18px;
   background: rgba(255,249,240,.9); backdrop-filter: blur(8px);
   border: 1.5px solid rgba(196,152,10,.35); border-radius: 100px;
-  font-family: 'Josefin Sans'; font-size: 13px; font-weight: 600;
+  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 600;
   color: #800020; cursor: pointer;
   transition: transform .3s, box-shadow .3s;
   box-shadow: 0 3px 16px rgba(0,0,0,.07);
+  white-space: nowrap;
 }
 .sp-filter-trigger:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.1); }
 .sp-filter-badge {
@@ -2007,6 +2008,7 @@ html { scroll-behavior: smooth; }
   background: #800020; color: white;
   font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 
 .sp-sort-wrap { position: relative; }
@@ -2014,35 +2016,42 @@ html { scroll-behavior: smooth; }
   appearance: none; -webkit-appearance: none;
   background: rgba(255,249,240,.9); backdrop-filter: blur(8px);
   border: 1.5px solid rgba(196,152,10,.35);
-  padding: 10px 40px 10px 18px; border-radius: 100px;
-  font-family: 'Josefin Sans'; font-size: 13px; font-weight: 500;
+  padding: 9px 36px 9px 14px; border-radius: 100px;
+  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 500;
   color: #800020; cursor: pointer;
   transition: box-shadow .3s; box-shadow: 0 3px 16px rgba(0,0,0,.07);
+  max-width: 160px;
 }
 .sp-sort:focus { outline: none; border-color: #C4980A; }
 .sp-sort:hover { box-shadow: 0 8px 24px rgba(0,0,0,.1); }
 
 /* Active chips */
-.sp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.sp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .sp-chip-active {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   background: rgba(128,0,32,.08); border: 1px solid rgba(128,0,32,.25);
   border-radius: 100px;
-  font-family: 'Josefin Sans'; font-size: 12px; color: #800020; font-weight: 500;
+  font-family: 'Josefin Sans'; font-size: 11px; color: #800020; font-weight: 500;
   cursor: pointer; transition: background .2s;
 }
 .sp-chip-active:hover { background: rgba(128,0,32,.15); }
 
-/* Product grid */
+/* ── Product grid ── */
 .sp-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 28px;
 }
-@media(max-width: 1100px) { .sp-grid { grid-template-columns: repeat(3, 1fr); } }
-@media(max-width: 820px) { .sp-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
-@media(max-width: 480px) { .sp-grid { grid-template-columns: 1fr; gap: 16px; } }
+@media(max-width: 1100px) { .sp-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
+@media(max-width: 820px)  { .sp-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
+@media(max-width: 480px)  {
+  .sp-grid {
+    /* Single column on small phones — matches Amazon-style reference */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
 
 /* Filter panel overlay */
 .sp-overlay {
@@ -2250,6 +2259,7 @@ html { scroll-behavior: smooth; }
   font-weight: 600;
 }
 
+/* ── Mobile overrides ── */
 @media(max-width: 640px) {
   .sp-panel {
     top: auto; left: 0; right: 0; bottom: 0;
@@ -2263,8 +2273,21 @@ html { scroll-behavior: smooth; }
   .sp-panel-title { font-size: 24px; }
   .sp-hero { height: 100vh; min-height: 480px; }
   .sp-hero-desc { font-size: 14px; }
-  .sp-toolbar { gap: 10px; }
-  .sp-toolbar-left { font-size: 13px; }
+
+  /* Toolbar: stack label above controls on very small screens */
+  .sp-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 0;
+  }
+  .sp-toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .sp-filter-trigger { flex: 1; justify-content: center; }
+  .sp-sort-wrap { flex: 1; }
+  .sp-sort { max-width: 100%; width: 100%; }
 }
 
 @media(max-width: 400px) {
@@ -2321,9 +2344,9 @@ function mapProductToSaree(product: BackendProduct): Saree {
     name: product.name,
     slug: product.slug || '',
     price: product.discount_price != null && product.discount_price > 0
-  ? Math.max(0, product.price - product.discount_price)
-  : product.price,
-   originalPrice: product.price,
+      ? Math.max(0, product.price - product.discount_price)
+      : product.price,
+    originalPrice: product.price,
     image: product.thumbnail || product.images?.[0] || shopHeroImg,
     images: product.images && product.images.length > 0 ? product.images : [shopHeroImg],
     description: product.short_description || '',
@@ -2346,22 +2369,11 @@ function mapProductToSaree(product: BackendProduct): Saree {
 
 function sortProducts(items: Saree[], sortBy: string): Saree[] {
   const sorted = [...items];
-
-  if (sortBy === 'price-asc') {
-    sorted.sort((a, b) => a.price - b.price);
-    return sorted;
-  }
-
-  if (sortBy === 'price-desc') {
-    sorted.sort((a, b) => b.price - a.price);
-    return sorted;
-  }
-
+  if (sortBy === 'price-asc') { sorted.sort((a, b) => a.price - b.price); return sorted; }
+  if (sortBy === 'price-desc') { sorted.sort((a, b) => b.price - a.price); return sorted; }
   return sorted;
 }
 
-// ─── Multi-select toggle helper ───────────────────────────────────────────────
-// Adds value if not present, removes it if already selected
 function toggleMulti(
   value: string,
   setter: React.Dispatch<React.SetStateAction<string[]>>
@@ -2375,7 +2387,12 @@ export function ShopPage() {
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
 
-  // ── Multi-select state for fabrics, occasions, colors ──────────────────────
+  // ── Scroll to top on mount ──────────────────────────────────────────────────
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // ── Multi-select state ──────────────────────────────────────────────────────
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>(() => {
     const f = searchParams.get('fabric');
     return f ? [f] : [];
@@ -2409,7 +2426,6 @@ export function ShopPage() {
     selectedColors.length +
     (priceRange[1] < 50000 ? 1 : 0);
 
-  // ── Active chips: one chip per selected value, removes only that value ──────
   const activeChips: { label: string; onRemove: () => void }[] = [
     ...selectedFabrics.map((v) => ({
       label: v,
@@ -2424,19 +2440,13 @@ export function ShopPage() {
       onRemove: () => setSelectedColors((prev) => prev.filter((c) => c !== v)),
     })),
     ...(priceRange[1] < 50000
-      ? [
-          {
-            label: `≤ ₹${priceRange[1].toLocaleString('en-IN')}`,
-            onRemove: () => setPriceRange([0, 50000]),
-          },
-        ]
+      ? [{ label: `≤ ₹${priceRange[1].toLocaleString('en-IN')}`, onRemove: () => setPriceRange([0, 50000]) }]
       : []),
   ];
 
   const loadProducts = async () => {
     setLoading(true);
     setError('');
-
     try {
       const response = (await getProducts({
         page: 1,
@@ -2446,9 +2456,7 @@ export function ShopPage() {
       })) as ProductsApiResponse;
 
       const items = response?.data?.items || [];
-      const mapped = items.map(mapProductToSaree);
-
-      setAllProducts(mapped);
+      setAllProducts(items.map(mapProductToSaree));
     } catch (err) {
       setError('Failed to load products');
       setAllProducts([]);
@@ -2465,35 +2473,23 @@ export function ShopPage() {
   const filteredProducts = useMemo(() => {
     let result = [...allProducts];
 
-    // Multi-select: product must match ANY selected fabric
     if (selectedFabrics.length > 0) {
       result = result.filter((item) =>
-        selectedFabrics.some(
-          (fabric) => item.fabric?.toLowerCase() === fabric.toLowerCase()
-        )
+        selectedFabrics.some((fabric) => item.fabric?.toLowerCase() === fabric.toLowerCase())
       );
     }
-
-    // Multi-select: product must match ANY selected occasion
     if (selectedOccasions.length > 0) {
       result = result.filter((item) =>
         item.occasion?.some((occasion) =>
-          selectedOccasions.some(
-            (selected) => selected.toLowerCase() === occasion.toLowerCase()
-          )
+          selectedOccasions.some((selected) => selected.toLowerCase() === occasion.toLowerCase())
         )
       );
     }
-
-    // Multi-select: product must match ANY selected color
     if (selectedColors.length > 0) {
       result = result.filter((item) =>
-        selectedColors.some(
-          (color) => item.color?.toLowerCase() === color.toLowerCase()
-        )
+        selectedColors.some((color) => item.color?.toLowerCase() === color.toLowerCase())
       );
     }
-
     result = result.filter((item) => item.price >= priceRange[0] && item.price <= priceRange[1]);
 
     return sortProducts(result, sortBy);
@@ -2505,6 +2501,7 @@ export function ShopPage() {
     <>
       <style>{CSS}</style>
       <div className="sp-root">
+        {/* ── Hero ── */}
         <section className="sp-hero">
           <img src={shopHeroImg} alt="Shop" className="sp-hero-img" />
           <div className="sp-hero-overlay" />
@@ -2560,9 +2557,7 @@ export function ShopPage() {
             <div className="sp-hero-pills sp-fade sp-d4">
               {['✦  Authentic Handloom', '✦  Premium Fabrics', '✦  Exclusive Designs', '✦  Artisan Crafted'].map(
                 (label) => (
-                  <span key={label} className="sp-hero-pill">
-                    {label}
-                  </span>
+                  <span key={label} className="sp-hero-pill">{label}</span>
                 )
               )}
             </div>
@@ -2595,6 +2590,7 @@ export function ShopPage() {
           </div>
         </section>
 
+        {/* ── Product listing ── */}
         <div className="sp-wrap" style={{ paddingTop: 40, paddingBottom: 100 }}>
           <div className="sp-toolbar">
             <div className="sp-toolbar-left">
@@ -2684,6 +2680,7 @@ export function ShopPage() {
           )}
         </div>
 
+        {/* ── Filter panel ── */}
         {showFilters && (
           <>
             <div className="sp-overlay" onClick={() => setShowFilters(false)} />
@@ -2727,7 +2724,6 @@ export function ShopPage() {
               </div>
 
               <div className="sp-panel-body">
-                {/* Multi-select Fabric accordion */}
                 <AccordionSection
                   title="Fabric"
                   items={FABRICS}
@@ -2735,8 +2731,6 @@ export function ShopPage() {
                   toggle={(v) => toggleMulti(v, setSelectedFabrics)}
                   defaultOpen
                 />
-
-                {/* Multi-select Occasion accordion */}
                 <AccordionSection
                   title="Occasion"
                   items={OCCASIONS}
@@ -2744,8 +2738,6 @@ export function ShopPage() {
                   toggle={(v) => toggleMulti(v, setSelectedOccasions)}
                   defaultOpen
                 />
-
-                {/* Multi-select Colour accordion */}
                 <AccordionSection
                   title="Colour"
                   items={COLORS}
@@ -2757,7 +2749,6 @@ export function ShopPage() {
                   <div className="sp-acc-head" style={{ cursor: 'default' }}>
                     <span className="sp-acc-label">Price Range</span>
                   </div>
-
                   <div className="sp-price-wrap">
                     <div className="sp-price-track-outer">
                       <div
@@ -2765,7 +2756,6 @@ export function ShopPage() {
                         style={{ width: `${(priceRange[1] / 50000) * 100}%` }}
                       />
                     </div>
-
                     <input
                       type="range"
                       min="0"
@@ -2775,7 +2765,6 @@ export function ShopPage() {
                       onChange={(e) => setPriceRange([0, parseInt(e.target.value, 10)])}
                       className="sp-slider"
                     />
-
                     <div className="sp-price-row">
                       <span className="sp-price-lbl">₹0</span>
                       <span className="sp-price-val">

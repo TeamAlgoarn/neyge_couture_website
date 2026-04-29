@@ -3,7 +3,6 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '@/api/client';
 import { ArrowRight, Sparkles, ShoppingBag, ChevronRight } from 'lucide-react';
 
-// ─── Brand palette ────────────────────────────────────────────────────────────
 const C = {
   maroon:   '#800020',
   maroonDk: '#5a0016',
@@ -38,226 +37,142 @@ const CSS = `
   padding: 140px 64px 80px;
 }
 @media(max-width:900px){ .cd-wrap { padding: 120px 24px 60px; } }
-@media(max-width:480px){ .cd-wrap { padding: 110px 16px 50px; } }
+@media(max-width:480px){ .cd-wrap { padding: 110px 12px 50px; } }
 
-/* ── Eyebrow ── */
 .ey {
   font-family: 'Josefin Sans', sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.30em;
-  text-transform: uppercase;
-  color: #C4980A;
-  font-weight: 600;
+  font-size: 10px; letter-spacing: 0.30em; text-transform: uppercase;
+  color: #C4980A; font-weight: 600;
 }
-
-/* ── Gold divider ── */
 .gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
-/* ── Breadcrumb ── */
 .cd-breadcrumb {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-family: 'Josefin Sans';
-  font-size: 12px;
-  color: #9a8070;
-  margin-bottom: 24px;
+  font-family: 'Josefin Sans'; font-size: 12px; color: #9a8070; margin-bottom: 24px;
 }
-.cd-breadcrumb a {
-  color: #800020;
-  text-decoration: none;
-  transition: color 0.2s;
-}
+.cd-breadcrumb a { color: #800020; text-decoration: none; transition: color 0.2s; }
 .cd-breadcrumb a:hover { color: #C4980A; }
 
-/* ── Back link ── */
 .cd-back {
   display: inline-flex; align-items: center; gap: 8px;
-  margin-bottom: 18px;
-  text-decoration: none;
-  font-family: 'Josefin Sans';
-  font-size: 12px;
-  font-weight: 500;
-  color: #800020;
-  transition: gap 0.25s, color 0.25s;
+  margin-bottom: 18px; text-decoration: none;
+  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 500;
+  color: #800020; transition: gap 0.25s, color 0.25s;
 }
 .cd-back:hover { gap: 12px; color: #C4980A; }
 
-/* ── Collection filter strip ── */
+/* ── Filter strip ── */
 .cd-filter-strip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 32px;
-  padding: 18px 22px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 32px; padding: 18px 22px;
   background: rgba(255,249,240,.97);
   border: 1px solid rgba(196,152,10,.2);
-  border-radius: 18px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.04);
+  border-radius: 18px; box-shadow: 0 4px 16px rgba(0,0,0,.04);
 }
 .cd-filter-label {
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #9a8070;
-  font-weight: 600;
-  white-space: nowrap;
-  margin-right: 4px;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: #9a8070; font-weight: 600; white-space: nowrap; margin-right: 4px;
 }
-.cd-filter-scroll {
-  display: flex; gap: 8px; flex-wrap: wrap; flex: 1;
-}
+.cd-filter-scroll { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
 .cd-filter-chip {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 8px 16px;
-  border-radius: 100px;
-  border: 1px solid rgba(196,152,10,.25);
-  background: transparent;
-  font-family: 'Josefin Sans';
-  font-size: 12px;
-  font-weight: 500;
-  color: #4a3828;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all .22s ease;
-  white-space: nowrap;
+  padding: 8px 16px; border-radius: 100px;
+  border: 1px solid rgba(196,152,10,.25); background: transparent;
+  font-family: 'Josefin Sans'; font-size: 12px; font-weight: 500;
+  color: #4a3828; cursor: pointer; text-decoration: none;
+  transition: all .22s ease; white-space: nowrap;
 }
 .cd-filter-chip:hover {
-  border-color: rgba(196,152,10,.5);
-  background: rgba(196,152,10,.08);
-  color: #800020;
-  transform: translateY(-1px);
+  border-color: rgba(196,152,10,.5); background: rgba(196,152,10,.08);
+  color: #800020; transform: translateY(-1px);
 }
 .cd-filter-chip.active {
-  background: #800020;
-  border-color: #800020;
-  color: #fff;
+  background: #800020; border-color: #800020; color: #fff;
   box-shadow: 0 4px 12px rgba(128,0,32,.22);
 }
-.cd-filter-chip.active:hover {
-  background: #5a0016;
-  transform: translateY(-1px);
-}
+.cd-filter-chip.active:hover { background: #5a0016; transform: translateY(-1px); }
 
-/* ── Hero section ── */
+/* ── Hero ── */
 .cd-hero {
-  position: relative;
-  border-radius: 28px;
-  overflow: hidden;
-  min-height: 420px;
-  box-shadow: 0 20px 70px rgba(0,0,0,.12);
-  margin-bottom: 40px;
-  background: #eee;
+  position: relative; border-radius: 28px; overflow: hidden;
+  min-height: 420px; box-shadow: 0 20px 70px rgba(0,0,0,.12);
+  margin-bottom: 40px; background: #eee;
 }
-.cd-hero-img {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-}
+.cd-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cd-hero-overlay {
   position: absolute; inset: 0;
   background: linear-gradient(to top, rgba(90,0,22,.78) 0%, rgba(27,42,107,.55) 42%, rgba(0,0,0,.18) 100%);
 }
 .cd-hero-content {
-  position: relative; z-index: 2;
-  padding: 46px 42px;
-  max-width: 760px;
-  color: white;
+  position: relative; z-index: 2; padding: 46px 42px; max-width: 760px; color: white;
 }
 @media(max-width:640px){ .cd-hero-content { padding: 28px 22px; } }
+
 .cd-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(212,175,55,.16);
-  border: 1px solid rgba(212,175,55,.35);
+  background: rgba(212,175,55,.16); border: 1px solid rgba(212,175,55,.35);
   padding: 7px 16px; border-radius: 100px; margin-bottom: 16px;
 }
 .cd-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(40px, 6vw, 68px);
-  font-weight: 400;
-  line-height: 1.02;
-  margin-bottom: 14px;
-  letter-spacing: 0.04em;
+  font-size: clamp(40px, 6vw, 68px); font-weight: 400;
+  line-height: 1.02; margin-bottom: 14px; letter-spacing: 0.04em;
 }
 .cd-desc {
-  font-family: 'Josefin Sans';
-  font-size: 15px;
-  line-height: 1.8;
-  color: rgba(255,255,255,.88);
-  max-width: 620px;
-  font-weight: 300;
+  font-family: 'Josefin Sans'; font-size: 15px; line-height: 1.8;
+  color: rgba(255,255,255,.88); max-width: 620px; font-weight: 300;
 }
-.cd-meta {
-  display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px;
-}
+.cd-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
 .cd-pill {
-  display: inline-flex; align-items: center;
-  padding: 8px 14px; border-radius: 100px;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.16);
-  font-family: 'Josefin Sans';
-  font-size: 12px;
-  color: rgba(255,255,255,.92);
-  font-weight: 400;
+  display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 100px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16);
+  font-family: 'Josefin Sans'; font-size: 12px; color: rgba(255,255,255,.92); font-weight: 400;
 }
 
-/* ── Section headers ── */
 .cd-section-head {
-  display: flex; align-items: end; justify-content: space-between; gap: 16px;
-  margin-bottom: 24px; flex-wrap: wrap;
+  display: flex; align-items: end; justify-content: space-between;
+  gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
 }
 .cd-section-title {
   font-family: 'Cinzel', serif;
-  font-size: 38px; font-weight: 500; color: #800020; line-height: 1.1;
-  letter-spacing: 0.02em;
+  font-size: 38px; font-weight: 500; color: #800020; line-height: 1.1; letter-spacing: 0.02em;
 }
 .cd-section-sub {
-  font-family: 'Josefin Sans';
-  font-size: 14px; color: #6b5848; line-height: 1.7;
-  font-weight: 300;
+  font-family: 'Josefin Sans'; font-size: 14px; color: #6b5848; line-height: 1.7; font-weight: 300;
 }
 
-/* ── State messages ── */
 .cd-state {
-  border: 1px solid rgba(196,152,10,.2);
-  background: rgba(255,249,240,.95);
-  border-radius: 24px;
-  padding: 40px 24px;
-  text-align: center;
-  box-shadow: 0 8px 30px rgba(0,0,0,.04);
-  font-family: 'Josefin Sans';
-  font-weight: 300;
+  border: 1px solid rgba(196,152,10,.2); background: rgba(255,249,240,.95);
+  border-radius: 24px; padding: 40px 24px; text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,.04); font-family: 'Josefin Sans'; font-weight: 300;
 }
-.cd-error { color: #b42318; }
+.cd-error   { color: #b42318; }
 .cd-loading { color: #6b5848; }
 
-/* ── Product grid ── */
+/* ── Product grid ─────────────────────────────────────────────────────── */
 .cd-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
-@media(max-width:1100px){ .cd-grid { grid-template-columns: repeat(3, 1fr); } }
-@media(max-width:820px){ .cd-grid { grid-template-columns: repeat(2, 1fr); } }
-@media(max-width:520px){ .cd-grid { grid-template-columns: 1fr; } }
+@media(max-width:1100px){ .cd-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
+@media(max-width:820px) { .cd-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+/* KEY FIX: 2-col on mobile, NOT 1-col */
+@media(max-width:480px) { .cd-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
 
+/* ── Card ── */
 .cd-card {
-  display: block;
-  text-decoration: none;
-  background: rgba(255,249,240,.96);
-  border: 1px solid rgba(196,152,10,.18);
-  border-radius: 24px;
-  overflow: hidden;
+  display: block; text-decoration: none;
+  background: rgba(255,249,240,.96); border: 1px solid rgba(196,152,10,.18);
+  border-radius: 24px; overflow: hidden;
   box-shadow: 0 10px 28px rgba(0,0,0,.05);
   transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
 }
 .cd-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 44px rgba(0,0,0,.12);
+  transform: translateY(-6px); box-shadow: 0 18px 44px rgba(0,0,0,.12);
   border-color: rgba(196,152,10,.4);
 }
-.cd-card-img-wrap {
-  aspect-ratio: 3/4;
-  background: #f1e4d2;
-  overflow: hidden;
-}
+.cd-card-img-wrap { aspect-ratio: 3/4; background: #f1e4d2; overflow: hidden; }
 .cd-card-img {
   width: 100%; height: 100%; object-fit: cover; display: block;
   transition: transform .6s ease;
@@ -267,68 +182,74 @@ const CSS = `
 .cd-card-title {
   font-family: 'Cinzel', serif;
   font-size: 24px; font-weight: 500; color: #800020; line-height: 1.12;
-  margin-bottom: 8px;
-  letter-spacing: 0.02em;
+  margin-bottom: 8px; letter-spacing: 0.02em;
 }
 .cd-card-desc {
-  font-family: 'Josefin Sans';
-  font-size: 13px; line-height: 1.65; color: #6d5a4b;
-  min-height: 42px;
-  font-weight: 300;
+  font-family: 'Josefin Sans'; font-size: 13px; line-height: 1.65;
+  color: #6d5a4b; min-height: 42px; font-weight: 300;
 }
 .cd-card-bottom {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 16px; gap: 12px;
 }
-.cd-price {
-  font-family: 'Cinzel', serif;
-  font-size: 18px; font-weight: 600; color: #800020;
-}
+.cd-price { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 600; color: #800020; }
 .cd-link {
   display: inline-flex; align-items: center; gap: 6px;
-  font-family: 'Josefin Sans';
-  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-  font-weight: 600; color: #C4980A;
-  transition: gap 0.25s;
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; font-weight: 600; color: #C4980A; transition: gap 0.25s;
 }
 .cd-card:hover .cd-link { gap: 10px; }
+
+/* ── Mobile card overrides ── */
+@media(max-width:480px){
+  .cd-card { border-radius: 12px; }
+  .cd-card:hover { transform: none; }
+
+  /* Slightly less tall so 2 sit nicely side-by-side */
+  .cd-card-img-wrap { aspect-ratio: 3/3.6; }
+
+  .cd-card-body  { padding: 10px 10px 12px; }
+  .cd-card-title { font-size: 13px; margin-bottom: 4px; }
+  .cd-card-desc  {
+    font-size: 11px; min-height: unset; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .cd-card-bottom { margin-top: 8px; gap: 4px; }
+  .cd-price { font-size: 13px; }
+  .cd-link  { font-size: 9px; gap: 3px; letter-spacing: .08em; }
+
+  /* Filter strip: scroll horizontally on mobile */
+  .cd-filter-strip { padding: 12px 14px; gap: 8px; margin-bottom: 20px; }
+  .cd-filter-scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .cd-filter-scroll::-webkit-scrollbar { height: 3px; }
+  .cd-filter-scroll::-webkit-scrollbar-thumb { background: #C4980A; border-radius: 2px; }
+  .cd-filter-chip { font-size: 11px; padding: 6px 12px; }
+
+  /* Hero compact on mobile */
+  .cd-hero { min-height: 240px; border-radius: 16px; margin-bottom: 20px; }
+  .cd-section-title { font-size: 24px; }
+  .cd-section-sub   { font-size: 12px; }
+}
 `;
 
 type Collection = {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  image?: string;
-  image_url?: string;
-  thumbnail?: string;
-  banner_image?: string;
-  is_active?: boolean;
+  id: string; name: string; slug: string;
+  description?: string; image?: string; image_url?: string;
+  thumbnail?: string; banner_image?: string; is_active?: boolean;
 };
 
 type Product = {
-  id: string;
-  name: string;
-  slug: string;
-  price?: number;
-  discount_price?: number | null;
-  short_description?: string;
-  description?: string;
-  thumbnail?: string;
-  image?: string;
-  images?: string[];
-  is_active?: boolean;
-  collection_id?: string;
-  collection?: {
-    id?: string;
-    slug?: string;
-    name?: string;
-  } | null;
+  id: string; name: string; slug: string;
+  price?: number; discount_price?: number | null;
+  short_description?: string; description?: string;
+  thumbnail?: string; image?: string; images?: string[];
+  is_active?: boolean; collection_id?: string;
+  collection?: { id?: string; slug?: string; name?: string; } | null;
 };
 
 const FALLBACK_COLLECTION_IMAGE =
   'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1400&auto=format&fit=crop';
-
 const FALLBACK_PRODUCT_IMAGE =
   'https://images.unsplash.com/photo-1583391733981-84978a7e0c04?q=80&w=900&auto=format&fit=crop';
 
@@ -342,12 +263,14 @@ export function CollectionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // ── Scroll to top on every slug change ──
+  useEffect(() => { window.scrollTo(0, 0); }, [slug]);
+
   useEffect(() => {
     const fetchCollectionPage = async () => {
       if (!slug) return;
       try {
-        setLoading(true);
-        setError('');
+        setLoading(true); setError('');
 
         const [collectionRes, productsRes, allCollectionsRes] = await Promise.all([
           api.get(`/collections/${slug}`),
@@ -355,24 +278,17 @@ export function CollectionDetailPage() {
           api.get('/collections'),
         ]);
 
-        // ── Current collection ──
         let collectionData: Collection | null =
-          collectionRes.data?.data ||
-          collectionRes.data?.collection ||
-          collectionRes.data ||
-          null;
+          collectionRes.data?.data || collectionRes.data?.collection || collectionRes.data || null;
 
-        // ── All collections (for filter strip) ──
         const rawAll = allCollectionsRes.data;
         let allItems: Collection[] = [];
         if (Array.isArray(rawAll)) allItems = rawAll;
         else if (Array.isArray(rawAll?.data)) allItems = rawAll.data;
         else if (Array.isArray(rawAll?.collections)) allItems = rawAll.collections;
         else if (Array.isArray(rawAll?.items)) allItems = rawAll.items;
-
         setAllCollections(allItems.filter((c) => c.is_active !== false));
 
-        // ── Products ──
         let productItems: Product[] = [];
         const rawProducts = productsRes.data;
         if (Array.isArray(rawProducts)) productItems = rawProducts;
@@ -383,64 +299,46 @@ export function CollectionDetailPage() {
 
         const filteredProducts = productItems.filter((product) => {
           if (product.is_active === false) return false;
-          const byCollectionSlug = product.collection?.slug === slug;
-          const byCollectionId = collectionData?.id && product.collection_id === collectionData.id;
-          return byCollectionSlug || byCollectionId;
+          return (
+            product.collection?.slug === slug ||
+            (collectionData?.id && product.collection_id === collectionData.id)
+          );
         });
 
         setCollection(collectionData);
         setProducts(filteredProducts);
       } catch (err: any) {
-        console.error('Failed to load collection detail page:', err);
         setError(
           err?.response?.data?.detail ||
-            err?.response?.data?.message ||
-            err?.message ||
-            'Failed to load collection'
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to load collection'
         );
       } finally {
         setLoading(false);
       }
     };
-
     fetchCollectionPage();
   }, [slug]);
 
-  const bannerImage = useMemo(() => {
-    return (
-      collection?.banner_image ||
-      collection?.image_url ||
-      collection?.image ||
-      collection?.thumbnail ||
-      FALLBACK_COLLECTION_IMAGE
-    );
-  }, [collection]);
+  const bannerImage = useMemo(() => (
+    collection?.banner_image || collection?.image_url ||
+    collection?.image || collection?.thumbnail || FALLBACK_COLLECTION_IMAGE
+  ), [collection]);
 
-  if (loading) {
-    return (
-      <>
-        <style>{CSS}</style>
-        <div className="cd-root">
-          <div className="cd-wrap">
-            <div className="cd-state cd-loading">Loading collection...</div>
-          </div>
-        </div>
-      </>
-    );
-  }
+  if (loading) return (
+    <><style>{CSS}</style>
+    <div className="cd-root"><div className="cd-wrap">
+      <div className="cd-state cd-loading">Loading collection...</div>
+    </div></div></>
+  );
 
-  if (error || !collection) {
-    return (
-      <>
-        <style>{CSS}</style>
-        <div className="cd-root">
-          <div className="cd-wrap">
-            <div className="cd-state cd-error">{error || 'Collection not found'}</div>
-          </div>
-        </div>
-      </>
-    );
-  }
+  if (error || !collection) return (
+    <><style>{CSS}</style>
+    <div className="cd-root"><div className="cd-wrap">
+      <div className="cd-state cd-error">{error || 'Collection not found'}</div>
+    </div></div></>
+  );
 
   return (
     <>
@@ -448,7 +346,7 @@ export function CollectionDetailPage() {
       <div className="cd-root">
         <div className="cd-wrap">
 
-          {/* ── Breadcrumb ── */}
+          {/* Breadcrumb */}
           <div className="cd-breadcrumb">
             <Link to="/">Home</Link>
             <ChevronRight size={12} />
@@ -457,24 +355,14 @@ export function CollectionDetailPage() {
             <span>{collection.name}</span>
           </div>
 
-          <Link to="/collections" className="cd-back">
-            ← Back to Collections
-          </Link>
+          <Link to="/collections" className="cd-back">← Back to Collections</Link>
 
-          {/* ── Collection Filter Strip ── */}
+          {/* Collection filter strip */}
           {allCollections.length > 1 && (
             <div className="cd-filter-strip">
               <span className="cd-filter-label">Browse:</span>
               <div className="cd-filter-scroll">
-                {/* "All" chip */}
-                <Link
-                  to="/collections"
-                  className="cd-filter-chip"
-                >
-                  All Collections
-                </Link>
-
-                {/* Individual collection chips */}
+                <Link to="/collections" className="cd-filter-chip">All Collections</Link>
                 {allCollections.map((col) => (
                   <button
                     key={col.id}
@@ -488,7 +376,7 @@ export function CollectionDetailPage() {
             </div>
           )}
 
-          {/* ── Hero ── */}
+          {/* Hero */}
           <section className="cd-hero">
             <img src={bannerImage} alt={collection.name} className="cd-hero-img" />
             <div className="cd-hero-overlay" />
@@ -509,13 +397,11 @@ export function CollectionDetailPage() {
             </div>
           </section>
 
-          {/* ── Products Section ── */}
+          {/* Products */}
           <div className="cd-section-head">
             <div>
               <h2 className="cd-section-title">Explore the Collection</h2>
-              <p className="cd-section-sub">
-                Browse the products available under {collection.name}.
-              </p>
+              <p className="cd-section-sub">Browse the products available under {collection.name}.</p>
             </div>
           </div>
           <div className="gd" style={{ marginBottom: 32 }} />
@@ -529,23 +415,14 @@ export function CollectionDetailPage() {
             <div className="cd-grid">
               {products.map((product) => {
                 const productImage =
-                  product.thumbnail ||
-                  product.image ||
-                  product.images?.[0] ||
-                  FALLBACK_PRODUCT_IMAGE;
-
+                  product.thumbnail || product.image || product.images?.[0] || FALLBACK_PRODUCT_IMAGE;
                 const price = product.discount_price ?? product.price ?? 0;
                 const desc =
-                  product.short_description ||
-                  product.description ||
+                  product.short_description || product.description ||
                   'Handwoven elegance crafted for timeless style.';
 
                 return (
-                  <Link
-                    key={product.id}
-                    to={`/product/${product.slug}`}
-                    className="cd-card"
-                  >
+                  <Link key={product.id} to={`/product/${product.slug}`} className="cd-card">
                     <div className="cd-card-img-wrap">
                       <img src={productImage} alt={product.name} className="cd-card-img" />
                     </div>
@@ -554,10 +431,7 @@ export function CollectionDetailPage() {
                       <p className="cd-card-desc">{desc}</p>
                       <div className="cd-card-bottom">
                         <div className="cd-price">₹{Number(price).toLocaleString('en-IN')}</div>
-                        <div className="cd-link">
-                          <span>View</span>
-                          <ArrowRight size={14} />
-                        </div>
+                        <div className="cd-link"><span>View</span><ArrowRight size={13} /></div>
                       </div>
                     </div>
                   </Link>

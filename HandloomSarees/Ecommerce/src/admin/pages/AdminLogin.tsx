@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminAuth } from "../lib/adminAuth";
 import adminApi from "../lib/adminApi";
@@ -225,6 +225,11 @@ const CSS = `
 `;
 
 export default function AdminLogin() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

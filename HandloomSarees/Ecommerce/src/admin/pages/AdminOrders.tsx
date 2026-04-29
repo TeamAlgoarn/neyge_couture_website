@@ -116,6 +116,11 @@ type Order = {
 };
 
 export default function AdminOrders() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

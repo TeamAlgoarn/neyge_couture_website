@@ -945,6 +945,11 @@ type BackendCartResponse = {
 };
 
 export function CheckoutPage() {
+  // ✅ Force scroll to top whenever this page is loaded/opened
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const { cart, loading, getCartTotal, clearCart, refreshCart } = useCart();
   const user = authService.getCurrentUser();

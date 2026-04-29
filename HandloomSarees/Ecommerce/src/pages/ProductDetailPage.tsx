@@ -764,6 +764,9 @@ const TRUST = [
   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MODIFIED CSS: image gallery width reduced, aspect ratio adjusted, layout refined
+// ─────────────────────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:wght@300;400;500;600;700&display=swap');
 .pd-root{min-height:100vh;background:linear-gradient(180deg,#f7f0e8 0%, #fdf9f4 100%);padding-top:140px}
@@ -779,17 +782,17 @@ const CSS = `
 .pd-breadcrumb a{color:#7a6a5d;text-decoration:none}
 .pd-breadcrumb-current{color:${C.maroon};font-weight:600}
 .pd-breadcrumb-sep{opacity:.55}
-.pd-main-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px}
+.pd-main-grid{display:grid;grid-template-columns:0.7fr 1.3fr;gap:32px}
 @media(max-width:980px){.pd-main-grid{grid-template-columns:1fr;gap:24px}.pd-root{padding-top:110px}}
 .pd-gallery-card,.pd-summary-card,.pd-details-panel,.pd-related-panel{background:rgba(255,255,255,.58);border:1px solid rgba(128,0,32,.08);border-radius:28px;box-shadow:0 12px 36px rgba(90,0,22,.06);backdrop-filter:blur(8px)}
-.pd-gallery-card{padding:24px}
-.pd-main-image-wrap{position:relative;border-radius:22px;overflow:hidden;background:#f5eee7;aspect-ratio:4/5}
-.pd-main-image{width:100%;height:100%;object-fit:cover;display:block}
+.pd-gallery-card{padding:20px}
+.pd-main-image-wrap{position:relative;border-radius:22px;overflow:hidden;background:#f5eee7;max-width:320px;margin:0 auto;height:auto;max-height:420px}
+.pd-main-image{width:100%;height:auto;object-fit:cover;display:block}
 .pd-nav-btn{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:none;border-radius:999px;background:rgba(255,255,255,.88);color:${C.maroon};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.08)}
 .pd-nav-btn.left{left:14px}
 .pd-nav-btn.right{right:14px}
-.pd-thumbs{display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:12px;margin-top:16px}
-.pd-thumb{border:2px solid transparent;border-radius:16px;overflow:hidden;background:#fff;cursor:pointer;padding:0;aspect-ratio:1/1}
+.pd-thumbs{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:10px;margin-top:16px;max-width:320px;margin-left:auto;margin-right:auto}
+.pd-thumb{border:2px solid transparent;border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;padding:0;aspect-ratio:1/1}
 .pd-thumb.active{border-color:${C.gold}}
 .pd-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .pd-summary-card{padding:28px}
@@ -797,24 +800,12 @@ const CSS = `
 .pd-stars{display:flex;align-items:center;gap:10px;margin-bottom:18px}
 .pd-star-row{display:flex;align-items:center;gap:4px}
 .pd-rating-text{font-family:'Josefin Sans',sans-serif;color:#7a6a5d;font-size:14px}
-
-/* ── Price block ── */
 .pd-price-box{display:flex;align-items:flex-start;flex-direction:column;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .pd-price-row-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .pd-price-main{font-family:'Cinzel',serif;font-size:30px;color:${C.maroon};font-weight:700;line-height:1}
 .pd-price-orig{color:#9a8a7e;text-decoration:line-through;font-family:'Josefin Sans',sans-serif;font-size:18px}
-.pd-price-off-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:4px 10px;border-radius:100px;
-  background:rgba(5,150,105,.12);border:1px solid rgba(5,150,105,.25);
-  font-family:'Josefin Sans',sans-serif;font-size:12px;letter-spacing:.06em;
-  color:#059669;font-weight:700;
-}
-.pd-price-save-note{
-  font-family:'Josefin Sans',sans-serif;font-size:13px;
-  color:#059669;font-weight:500;letter-spacing:.02em;
-}
-
+.pd-price-off-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;background:rgba(5,150,105,.12);border:1px solid rgba(5,150,105,.25);font-family:'Josefin Sans',sans-serif;font-size:12px;letter-spacing:.06em;color:#059669;font-weight:700}
+.pd-price-save-note{font-family:'Josefin Sans',sans-serif;font-size:13px;color:#059669;font-weight:500;letter-spacing:.02em}
 .pd-desc{font-family:'Josefin Sans',sans-serif;font-size:16px;line-height:1.7;color:${C.warmGrey};margin-bottom:22px}
 .pd-info-grid{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:12px;margin-bottom:22px}
 @media(max-width:560px){.pd-info-grid{grid-template-columns:1fr}}
@@ -853,6 +844,10 @@ const CSS = `
 .pd-related-body{padding:14px}
 .pd-related-name{font-family:'Cinzel',serif;color:${C.maroon};font-size:16px;line-height:1.35;margin-bottom:8px}
 .pd-related-price{font-family:'Josefin Sans',sans-serif;color:${C.warmGrey};font-weight:700}
+@media (max-width: 640px) {
+  .pd-main-image-wrap { max-width: 260px; max-height: 340px; }
+  .pd-thumbs { max-width: 260px; }
+}
 `;
 
 type BackendProduct = {
@@ -894,13 +889,6 @@ type ProductsApiResponse = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FIXED mapProductToSaree
-//
-// discount_price = the DISCOUNT AMOUNT in ₹ (e.g. 200)
-//   → MRP (originalPrice)  = product.price          (e.g. ₹2,000)
-//   → Selling price (price) = product.price - discount_price  (e.g. ₹1,800)
-//
-// The old code was: price = discount_price ?? product.price
-// which treated discount_price as the final price itself — that was the bug.
 // ─────────────────────────────────────────────────────────────────────────────
 function mapProductToSaree(product: BackendProduct): Saree {
   const imageSet = new Set<string>();
@@ -923,8 +911,8 @@ function mapProductToSaree(product: BackendProduct): Saree {
     id: product.id,
     name: product.name,
     slug: product.slug || '',
-    price: sellingPrice,          // what customer pays
-    originalPrice: mrp,           // MRP (shown struck-through when discounted)
+    price: sellingPrice,
+    originalPrice: mrp,
     image: primaryImage,
     images: allImages,
     description: product.short_description || '',
@@ -1004,11 +992,16 @@ export function ProductDetailPage() {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
+  // ✅ 1. Scroll to top on page load (dedicated effect)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     let active = true;
 
     const loadProduct = async () => {
-      window.scrollTo(0, 0);
+      // (We already have a dedicated scroll-to-top effect, so we remove the one inside)
 
       if (!slug) {
         if (active) {
@@ -1103,7 +1096,6 @@ export function ProductDetailPage() {
     return Array.isArray(saree.occasion) ? saree.occasion.join(', ') : saree.occasion;
   }, [saree]);
 
-  // ── Discount display calculations ─────────────────────────────────────────
   const hasDiscount =
     saree !== null &&
     saree.originalPrice != null &&
@@ -1116,7 +1108,6 @@ export function ProductDetailPage() {
   const savedAmount = hasDiscount && saree
     ? saree.originalPrice! - saree.price
     : 0;
-  // ──────────────────────────────────────────────────────────────────────────
 
   const handleAddToCart = async () => {
     if (!saree || adding) return;
@@ -1280,19 +1271,15 @@ export function ProductDetailPage() {
                 </span>
               </div>
 
-              {/* ── FIXED Price block ── */}
               <div className="pd-price-box">
                 <div className="pd-price-row-main">
-                  {/* Selling price (MRP - discount) */}
                   <span className="pd-price-main">{formatCurrency(saree.price)}</span>
 
                   {hasDiscount && (
                     <>
-                      {/* MRP struck-through */}
                       <span className="pd-price-orig">
                         {formatCurrency(saree.originalPrice!)}
                       </span>
-                      {/* % off badge */}
                       <span className="pd-price-off-badge">
                         {discountPct}% OFF
                       </span>
@@ -1300,7 +1287,6 @@ export function ProductDetailPage() {
                   )}
                 </div>
 
-                {/* "You save ₹X" note */}
                 {hasDiscount && savedAmount > 0 && (
                   <span className="pd-price-save-note">
                     You save {formatCurrency(savedAmount)}

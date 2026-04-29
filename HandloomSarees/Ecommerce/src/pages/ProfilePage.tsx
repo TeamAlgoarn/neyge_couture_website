@@ -1352,6 +1352,11 @@ const initialForm: AddressFormState = {
 };
 
 export function ProfilePage() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 

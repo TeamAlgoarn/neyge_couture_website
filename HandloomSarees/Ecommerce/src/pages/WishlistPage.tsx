@@ -208,7 +208,7 @@
 //   );
 // }
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // 👈 added useEffect
 import { Link } from 'react-router-dom';
 import { Heart, Sparkles, ArrowRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -562,6 +562,11 @@ const CSS = `
 `;
 
 export function WishlistPage() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const { wishlist, loading, removeFromWishlist } = useWishlist();
   const [removingId, setRemovingId] = useState<string | null>(null);
 

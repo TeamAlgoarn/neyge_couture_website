@@ -293,6 +293,11 @@ const CSS = `
 `;
 
 export default function AdminOrderDetail() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState<OrderDetail | null>(null);

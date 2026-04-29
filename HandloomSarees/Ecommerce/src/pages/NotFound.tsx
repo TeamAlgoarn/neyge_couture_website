@@ -148,6 +148,11 @@ const CSS = `
 const NotFound = () => {
   const location = useLocation();
 
+  // ✅ Scroll to top when this 404 page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",

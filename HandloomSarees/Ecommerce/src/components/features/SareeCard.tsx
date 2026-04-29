@@ -637,7 +637,6 @@
 
 
 
-
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart } from 'lucide-react';
 import type { Saree } from '@/types';
@@ -708,8 +707,7 @@ const CSS = `
 
 .sc-badges {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 14px; left: 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -727,21 +725,12 @@ const CSS = `
   text-transform: uppercase;
   font-weight: 600;
 }
-.sc-badge-new {
-  background: rgba(16,185,129,.2);
-  border: 1px solid rgba(16,185,129,.4);
-  color: #6ee7b7;
-}
-.sc-badge-best {
-  background: rgba(196,152,10,.25);
-  border: 1px solid rgba(196,152,10,.5);
-  color: #D4AF37;
-}
+.sc-badge-new  { background: rgba(16,185,129,.2); border: 1px solid rgba(16,185,129,.4); color: #6ee7b7; }
+.sc-badge-best { background: rgba(196,152,10,.25); border: 1px solid rgba(196,152,10,.5); color: #D4AF37; }
 
 .sc-actions {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 14px; right: 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -750,187 +739,148 @@ const CSS = `
   transform: translateX(10px);
   transition: opacity .35s, transform .35s;
 }
-.sc-card:hover .sc-actions {
-  opacity: 1;
-  transform: translateX(0);
-}
+.sc-card:hover .sc-actions { opacity: 1; transform: translateX(0); }
+
 .sc-action-btn {
-  width: 34px;
-  height: 34px;
+  width: 34px; height: 34px;
   border-radius: 50%;
   border: 1px solid rgba(255,255,255,.18);
   background: rgba(255,255,255,.12);
   backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: background .25s, border-color .25s, transform .2s;
 }
-.sc-action-btn:hover {
-  transform: scale(1.12);
-}
-.sc-action-btn.wish-active {
-  background: rgba(200,40,40,.25);
-  border-color: rgba(200,40,40,.5);
-}
-.sc-action-btn.cart-btn {
-  background: rgba(196,152,10,.25);
-  border-color: rgba(196,152,10,.55);
-}
-.sc-action-btn.cart-btn:hover {
-  background: rgba(196,152,10,.55);
-}
-.sc-action-btn:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-  transform: none;
-}
+.sc-action-btn:hover { transform: scale(1.12); }
+.sc-action-btn.wish-active { background: rgba(200,40,40,.25); border-color: rgba(200,40,40,.5); }
+.sc-action-btn.cart-btn { background: rgba(196,152,10,.25); border-color: rgba(196,152,10,.55); }
+.sc-action-btn.cart-btn:hover { background: rgba(196,152,10,.55); }
+.sc-action-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 .sc-info {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   padding: 20px 18px 18px;
   z-index: 2;
 }
-
 .sc-fabric {
   font-family: 'Jost';
-  font-size: 10px;
-  letter-spacing: .18em;
+  font-size: 10px; letter-spacing: .18em;
   text-transform: uppercase;
-  color: rgba(196,152,10,.8);
-  font-weight: 500;
+  color: rgba(196,152,10,.8); font-weight: 500;
   margin-bottom: 5px;
 }
-
 .sc-name {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 19px;
-  font-weight: 500;
-  color: white;
-  line-height: 1.15;
-  margin-bottom: 10px;
+  font-size: 19px; font-weight: 500; color: white;
+  line-height: 1.15; margin-bottom: 10px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
 .sc-line {
   height: 1px;
   background: rgba(196,152,10,.35);
   margin-bottom: 10px;
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
 }
 .sc-line::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 100%;
+  content: ''; position: absolute;
+  left: 0; top: 0; width: 0; height: 100%;
   background: #C4980A;
   transition: width .45s cubic-bezier(.4,0,.2,1);
 }
-.sc-card:hover .sc-line::after {
-  width: 100%;
-}
+.sc-card:hover .sc-line::after { width: 100%; }
 
 .sc-price-row {
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px; flex-wrap: wrap;
 }
-.sc-price {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 22px;
-  font-weight: 600;
-  color: #D4AF37;
-  line-height: 1;
+.sc-price { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: #D4AF37; line-height: 1; }
+.sc-orig  { font-family: 'Jost'; font-size: 12px; color: rgba(255,255,255,.35); text-decoration: line-through; font-weight: 300; }
+.sc-off   {
+  padding: 3px 8px; border-radius: 100px;
+  background: rgba(128,0,32,.6); border: 1px solid rgba(196,152,10,.4);
+  font-family: 'Jost'; font-size: 10px; font-weight: 700;
+  letter-spacing: .06em; color: #D4AF37; white-space: nowrap;
 }
-.sc-orig {
-  font-family: 'Jost';
-  font-size: 12px;
-  color: rgba(255,255,255,.35);
-  text-decoration: line-through;
-  font-weight: 300;
-}
-.sc-off {
-  padding: 3px 8px;
-  border-radius: 100px;
-  background: rgba(128,0,32,.6);
-  border: 1px solid rgba(196,152,10,.4);
-  font-family: 'Jost';
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  color: #D4AF37;
-  white-space: nowrap;
-}
-
 .sc-stock {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-family: 'Jost';
-  font-size: 10px;
-  letter-spacing: .08em;
-  color: rgba(255,255,255,.4);
-  font-weight: 300;
-  margin-top: 6px;
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'Jost'; font-size: 10px; letter-spacing: .08em;
+  color: rgba(255,255,255,.4); font-weight: 300; margin-top: 6px;
 }
 .sc-stock-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
   animation: scDot 2.5s ease infinite;
 }
 @keyframes scDot {
   0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-  50% { box-shadow: 0 0 8px 2px rgba(16,185,129,.35); }
+  50%      { box-shadow: 0 0 8px 2px rgba(16,185,129,.35); }
 }
 
 .sc-ring {
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0;
   border-radius: 22px;
   border: 1.5px solid transparent;
   transition: border-color .45s;
-  pointer-events: none;
-  z-index: 3;
+  pointer-events: none; z-index: 3;
 }
-.sc-card:hover .sc-ring {
-  border-color: rgba(196,152,10,.55);
-}
+.sc-card:hover .sc-ring { border-color: rgba(196,152,10,.55); }
 
 .sc-oos {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  background: rgba(0,0,0,.38);
-  backdrop-filter: blur(1px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute; inset: 0; z-index: 4;
+  background: rgba(0,0,0,.38); backdrop-filter: blur(1px);
+  display: flex; align-items: center; justify-content: center;
   border-radius: 22px;
 }
 .sc-oos-label {
-  padding: 8px 20px;
-  border-radius: 100px;
+  padding: 8px 20px; border-radius: 100px;
   border: 1px solid rgba(255,255,255,.25);
-  background: rgba(0,0,0,.5);
-  backdrop-filter: blur(8px);
-  font-family: 'Jost';
-  font-size: 11px;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.6);
-  font-weight: 500;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(8px);
+  font-family: 'Jost'; font-size: 11px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(255,255,255,.6); font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE ≤ 480px — compact portrait, 2-col grid friendly
+   Card stays vertical. Just scaled down tightly.
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .sc-card {
+    border-radius: 12px;
+    transition: box-shadow .3s;
+    box-shadow: 0 3px 12px rgba(0,0,0,.22);
+  }
+  /* No lift on touch devices */
+  .sc-card:hover { transform: none; box-shadow: 0 3px 12px rgba(0,0,0,.22); }
+
+  /* Slightly less tall so 2 cards sit comfortably side by side */
+  .sc-img-wrap { aspect-ratio: 3 / 3.8; border-radius: 12px 12px 0 0; }
+
+  /* Always show action buttons on touch (no hover) */
+  .sc-actions { opacity: 1; transform: none; top: 7px; right: 7px; gap: 4px; }
+  .sc-action-btn { width: 26px; height: 26px; }
+
+  .sc-badges { top: 7px; left: 7px; gap: 3px; }
+  .sc-badge  { font-size: 7px; padding: 2px 6px; letter-spacing: .05em; }
+
+  /* Compact info text */
+  .sc-info    { padding: 10px 10px 12px; }
+  .sc-fabric  { font-size: 8px; letter-spacing: .1em; margin-bottom: 3px; }
+  .sc-name    { font-size: 13px; line-height: 1.2; margin-bottom: 6px; -webkit-line-clamp: 2; }
+  .sc-line    { margin-bottom: 6px; }
+  .sc-price   { font-size: 15px; }
+  .sc-orig    { font-size: 10px; }
+  .sc-off     { font-size: 8px; padding: 2px 5px; }
+  .sc-stock   { font-size: 8px; margin-top: 4px; gap: 4px; }
+  .sc-stock-dot { width: 5px; height: 5px; }
+
+  .sc-ring    { border-radius: 12px; }
+  .sc-oos     { border-radius: 12px; }
+  .sc-oos-label { font-size: 9px; padding: 5px 12px; letter-spacing: .1em; }
 }
 `;
 
@@ -982,9 +932,7 @@ export function SareeCard({ saree }: Props) {
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (outOfStock) return;
-
     try {
       await addToCart(saree);
       toast.success(`${saree.name} added to cart`);
@@ -996,7 +944,6 @@ export function SareeCard({ saree }: Props) {
   const handleWish = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     try {
       await toggleWishlist(saree);
       toast.success(inWishlist ? 'Removed from wishlist' : 'Added to wishlist');
@@ -1026,20 +973,15 @@ export function SareeCard({ saree }: Props) {
               }}
             />
           ) : null}
-
-          <div
-            className="sc-fallback"
-            style={{ display: cardImage ? 'none' : 'flex' }}
-          >
+          <div className="sc-fallback" style={{ display: cardImage ? 'none' : 'flex' }}>
             No Image
           </div>
-
           <div className="sc-img-overlay" />
         </div>
 
         <div className="sc-badges">
           {saree.newArrival && <span className="sc-badge sc-badge-new">✦ New</span>}
-          {saree.bestSeller && <span className="sc-badge sc-badge-best">★ Best Seller</span>}
+          {saree.bestSeller && <span className="sc-badge sc-badge-best">★ Best</span>}
         </div>
 
         <div className="sc-actions">
@@ -1048,20 +990,15 @@ export function SareeCard({ saree }: Props) {
             onClick={handleWish}
             aria-label="Wishlist"
           >
-            <Heart
-              size={14}
-              color={inWishlist ? '#f87171' : 'white'}
-              fill={inWishlist ? '#f87171' : 'none'}
-            />
+            <Heart size={12} color={inWishlist ? '#f87171' : 'white'} fill={inWishlist ? '#f87171' : 'none'} />
           </button>
-
           <button
             className="sc-action-btn cart-btn"
             onClick={handleAdd}
             disabled={outOfStock}
             aria-label="Add to cart"
           >
-            <ShoppingCart size={14} color="#D4AF37" />
+            <ShoppingCart size={12} color="#D4AF37" />
           </button>
         </div>
 
@@ -1069,23 +1006,17 @@ export function SareeCard({ saree }: Props) {
           <div className="sc-fabric">{saree.fabric || 'Handloom'}</div>
           <div className="sc-name">{saree.name}</div>
           <div className="sc-line" />
-
           <div className="sc-price-row">
             <span className="sc-price">{formatCurrency(saree.price)}</span>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               {saree.originalPrice && saree.originalPrice > saree.price && (
                 <span className="sc-orig">{formatCurrency(saree.originalPrice)}</span>
               )}
               {discount > 0 && <span className="sc-off">{discount}% off</span>}
             </div>
           </div>
-
           <div className="sc-stock">
-            <span
-              className="sc-stock-dot"
-              style={{ background: outOfStock ? '#ef4444' : '#10b981' }}
-            />
+            <span className="sc-stock-dot" style={{ background: outOfStock ? '#ef4444' : '#10b981' }} />
             {outOfStock ? 'Out of stock' : `${saree.stock} left`}
           </div>
         </div>

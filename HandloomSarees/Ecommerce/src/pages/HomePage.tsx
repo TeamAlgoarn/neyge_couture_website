@@ -1047,7 +1047,6 @@
 // }
 
 
-//below code is updated with new changes as per the instructions, please check and let me know if you need any changes.
 import FestiveCollectionsSection from "@/components/features/FestiveCollectionsSection";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -2279,6 +2278,11 @@ function FinalCTA() {
 
 // ─── ROOT ────────────────────────────────────────────────────────────────────
 export default function HomePage() {
+  // ✅ Force scroll to top whenever the home page is loaded/opened
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <style>{CSS}</style>

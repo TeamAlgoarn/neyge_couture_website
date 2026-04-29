@@ -147,6 +147,11 @@ const CSS = `
 `;
 
 export default function FestiveCollectionPage() {
+  // ✅ Force scroll to top whenever this page is loaded/opened
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const { slug = '' } = useParams();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

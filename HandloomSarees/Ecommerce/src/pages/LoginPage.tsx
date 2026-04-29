@@ -227,7 +227,7 @@
 
 
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // 👈 added useEffect import
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@/lib/auth';
 import { toast } from 'sonner';
@@ -426,6 +426,11 @@ const CSS = `
 `;
 
 export function LoginPage() {
+  // ✅ Force scroll to top whenever this page is loaded/opened
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -436,120 +441,61 @@ export function LoginPage() {
     password: '',
   });
 
-//   const handleSubmit = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-//     try {
-//       if (isLogin) {
-//         const user = await authService.login(formData.email, formData.password);
+    try {
+      if (isLogin) {
+        const user = await authService.login(formData.email, formData.password);
 
-//         // if (user) {
-//         //   toast.success('Welcome back!');
-//         //   navigate('/');
-//         // } else {
-//         //   toast.error('Invalid login credentials');
-//         // }
-//         if (user) {
-//   window.dispatchEvent(new Event("auth-changed"));
-//   toast.success('Welcome back!');
-//   navigate('/');
-// } else {
-//   toast.error('Invalid login credentials');
-// }
-//       } else {
-//         if (!formData.name.trim()) {
-//           toast.error('Full name is required');
-//           setLoading(false);
-//           return;
-//         }
-
-//         if (!formData.phone.trim()) {
-//           toast.error('Phone number is required');
-//           setLoading(false);
-//           return;
-//         }
-
-//         await authService.register(
-//           formData.name,
-//           formData.email,
-//           formData.password,
-//           formData.phone
-//         );
-
-//         toast.success('Account created successfully!');
-//         navigate('/');
-//       }
-//     } catch (error: any) {
-//       const detail = error?.response?.data?.detail;
-
-//       if (Array.isArray(detail) && detail.length > 0) {
-//         toast.error(detail[0]?.msg || 'Validation failed');
-//       } else {
-//         const message =
-//           error?.response?.data?.message ||
-//           error?.response?.data?.detail ||
-//           'Something went wrong. Please try again.';
-//         toast.error(message);
-//       }
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-
-  try {
-    if (isLogin) {
-      const user = await authService.login(formData.email, formData.password);
-
-      if (user) {
-        window.dispatchEvent(new Event("auth-changed"));
-        toast.success("Welcome back!");
-        navigate("/");
+        if (user) {
+          window.dispatchEvent(new Event("auth-changed"));
+          toast.success("Welcome back!");
+          navigate("/");
+        } else {
+          toast.error("Invalid login credentials");
+        }
       } else {
-        toast.error("Invalid login credentials");
-      }
-    } else {
-      if (!formData.name.trim()) {
-        toast.error("Full name is required");
-        setLoading(false);
-        return;
-      }
+        if (!formData.name.trim()) {
+          toast.error("Full name is required");
+          setLoading(false);
+          return;
+        }
 
-      if (!formData.phone.trim()) {
-        toast.error("Phone number is required");
-        setLoading(false);
-        return;
+        if (!formData.phone.trim()) {
+          toast.error("Phone number is required");
+          setLoading(false);
+          return;
+        }
+
+        await authService.register(
+          formData.name,
+          formData.email,
+          formData.password,
+          formData.phone
+        );
+
+        toast.success("Account created successfully!");
+        navigate("/");
       }
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail;
 
-      await authService.register(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.phone
-      );
-
-      toast.success("Account created successfully!");
-      navigate("/");
+      if (Array.isArray(detail) && detail.length > 0) {
+        toast.error(detail[0]?.msg || "Validation failed");
+      } else {
+        const message =
+          error?.response?.data?.message ||
+          error?.response?.data?.detail ||
+          "Something went wrong. Please try again.";
+        toast.error(message);
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    const detail = error?.response?.data?.detail;
+  };
 
-    if (Array.isArray(detail) && detail.length > 0) {
-      toast.error(detail[0]?.msg || "Validation failed");
-    } else {
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.detail ||
-        "Something went wrong. Please try again.";
-      toast.error(message);
-    }
-  } finally {
-    setLoading(false);
-  }
-};
   const FIELDS = [
     ...(!isLogin
       ? [

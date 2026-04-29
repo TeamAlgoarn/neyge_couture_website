@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/hooks/useCarts';
 import { formatCurrency } from '@/lib/utils';
+import { useEffect } from 'react'; // 👈 added import
 
 const C = {
   maroon: '#800020',
@@ -450,6 +451,11 @@ function getProductImage(product: {
 }
 
 export function CartPage() {
+  // ✅ Force scroll to top whenever this page is loaded/opened
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const {
     cart,
     loading,
@@ -470,24 +476,24 @@ export function CartPage() {
   };
 
   if (!initialized && cart.length === 0) {
-  return (
-    <>
-      <style>{CSS}</style>
-      <div className="cart-empty-root">
-        <div className="cart-fadeup">
-          <div className="cart-empty-icon">
-            <ShoppingBag size={48} color={C.gold} />
+    return (
+      <>
+        <style>{CSS}</style>
+        <div className="cart-empty-root">
+          <div className="cart-fadeup">
+            <div className="cart-empty-icon">
+              <ShoppingBag size={48} color={C.gold} />
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <span className="ey">Loading Cart</span>
+            </div>
+            <h2 className="cart-empty-title">Please wait...</h2>
+            <p className="cart-empty-sub">Loading your selected items</p>
           </div>
-          <div style={{ marginBottom: 8 }}>
-            <span className="ey">Loading Cart</span>
-          </div>
-          <h2 className="cart-empty-title">Please wait...</h2>
-          <p className="cart-empty-sub">Loading your selected items</p>
         </div>
-      </div>
-    </>
-  );
-}
+      </>
+    );
+  }
   if (cart.length === 0) {
     return (
       <>

@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '@/api/client';
 import { Sparkles, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
 
-// ─── Brand palette ────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
@@ -22,7 +21,7 @@ const CSS = `
   padding: 140px 64px 80px;
 }
 @media(max-width:900px){ .cl-wrap { padding: 120px 24px 60px; } }
-@media(max-width:480px){ .cl-wrap { padding: 110px 16px 50px; } }
+@media(max-width:480px){ .cl-wrap { padding: 110px 12px 50px; } }
 
 /* ── Page Header ── */
 .cl-header {
@@ -106,7 +105,6 @@ const CSS = `
 }
 .cl-search::placeholder { color: #b09880; }
 
-/* Filter tags */
 .cl-filter-label {
   font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
   color: #9a8070; font-weight: 600; margin-bottom: 12px; margin-top: 20px;
@@ -166,7 +164,7 @@ const CSS = `
 /* ── Main content ── */
 .cl-main-top {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
 }
 .cl-results-label {
   font-size: 13px; color: #6b5848; font-weight: 300;
@@ -179,8 +177,11 @@ const CSS = `
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
 }
-@media(max-width:1100px){ .cl-grid { grid-template-columns: repeat(2, 1fr); } }
-@media(max-width:600px){ .cl-grid { grid-template-columns: 1fr; } }
+@media(max-width:1100px){ .cl-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
+@media(max-width:600px){
+  /* 2-col on mobile like Amazon */
+  .cl-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
 
 /* ── Collection card ── */
 .cl-card {
@@ -277,6 +278,19 @@ const CSS = `
     margin-bottom: 20px;
   }
 }
+
+/* ── Mobile card tweaks ── */
+@media(max-width:600px){
+  .cl-card { border-radius: 14px; }
+  .cl-card:hover { transform: none; }
+  .cl-card-img-wrap { aspect-ratio: 1/1; }
+  .cl-card-body { padding: 10px 10px 12px; }
+  .cl-card-tag  { font-size: 8px; margin-bottom: 4px; }
+  .cl-card-name { font-size: 14px; margin-bottom: 4px; }
+  .cl-card-desc { font-size: 11px; margin-bottom: 8px; -webkit-line-clamp: 2; }
+  .cl-card-count { font-size: 10px; }
+  .cl-card-cta  { font-size: 10px; gap: 4px; }
+}
 `;
 
 type Collection = {
@@ -296,7 +310,6 @@ type Collection = {
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=900&auto=format&fit=crop';
 
-// Derive category tags from collection names for filtering
 function deriveCategory(name: string): string {
   const n = name.toLowerCase();
   if (n.includes('wedding') || n.includes('bridal') || n.includes('bride')) return 'Wedding';
@@ -317,6 +330,10 @@ export function CollectionsPage() {
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -341,7 +358,6 @@ export function CollectionsPage() {
     fetchCollections();
   }, []);
 
-  // Build category list dynamically from collections
   const categories = useMemo(() => {
     const counts: Record<string, number> = { All: collections.length };
     collections.forEach((c) => {
@@ -351,7 +367,6 @@ export function CollectionsPage() {
     return counts;
   }, [collections]);
 
-  // Filtered collections
   const filtered = useMemo(() => {
     return collections.filter((c) => {
       const matchSearch =
@@ -364,17 +379,12 @@ export function CollectionsPage() {
     });
   }, [collections, search, activeCategory]);
 
-  const handleCollectionClick = () => {
-    navigate(`/collections`);
-  };
-
   return (
     <>
       <style>{CSS}</style>
       <div className="cl-root">
         <div className="cl-wrap">
 
-          {/* ── Page Header ── */}
           <div className="cl-header">
             <div className="cl-eyebrow">
               <Sparkles size={12} color="#C4980A" />
@@ -387,7 +397,6 @@ export function CollectionsPage() {
             <div className="cl-divider" />
           </div>
 
-          {/* Mobile filter toggle */}
           <button className="cl-mobile-toggle" onClick={() => setShowFilters(!showFilters)}>
             <SlidersHorizontal size={15} />
             {showFilters ? 'Hide Filters' : 'Filter Collections'}
@@ -400,15 +409,11 @@ export function CollectionsPage() {
           </button>
 
           <div className="cl-layout">
-
-            {/* ── Sidebar ── */}
             <aside className="cl-sidebar" style={{ display: showFilters || window.innerWidth > 900 ? 'block' : 'none' }}>
               <div className="cl-sidebar-title">
                 <SlidersHorizontal size={14} />
                 Filter
               </div>
-
-              {/* Search */}
               <div className="cl-search-wrap">
                 <Search size={14} className="cl-search-icon" />
                 <input
@@ -418,7 +423,6 @@ export function CollectionsPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-
               <span className="cl-filter-label">By Category</span>
               <div className="cl-filter-list">
                 {Object.entries(categories).map(([cat, count]) => (
@@ -432,7 +436,6 @@ export function CollectionsPage() {
                   </button>
                 ))}
               </div>
-
               {(activeCategory !== 'All' || search) && (
                 <button
                   className="cl-clear-btn"
@@ -443,7 +446,6 @@ export function CollectionsPage() {
               )}
             </aside>
 
-            {/* ── Main grid ── */}
             <main>
               <div className="cl-main-top">
                 <p className="cl-results-label">

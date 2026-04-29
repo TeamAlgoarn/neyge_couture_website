@@ -207,6 +207,11 @@ const CSS = `
 `;
 
 export default function AdminFestiveCollections() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [items, setItems] = useState<FestiveCollection[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -229,6 +229,11 @@ type OrderData = {
 };
 
 export function OrderConfirmationPage() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { orderId } = useParams();

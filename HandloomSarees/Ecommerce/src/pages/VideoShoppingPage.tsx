@@ -697,7 +697,7 @@
 
 
 //below code of frontend integration of video shopping page
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // 👈 added useEffect
 import { useNavigate } from 'react-router-dom';
 import { Star, Globe, CheckCircle, Sparkles, ArrowLeft, ChevronRight } from 'lucide-react';
 import { FASHION_ADVISORS, TIME_SLOTS } from '@/constants/advisors';
@@ -1086,6 +1086,11 @@ function StepBar({ current }: { current: (typeof STEP_KEYS)[number] }) {
 }
 
 export function VideoShoppingPage() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
   const { createBooking, submitting } = useVideoBooking();

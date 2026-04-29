@@ -257,6 +257,11 @@ type VideoBooking = {
 };
 
 export default function AdminDashboard() {
+  // ✅ Scroll to top when this page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [festiveCollections, setFestiveCollections] = useState<FestiveCollection[]>([]);
