@@ -1070,6 +1070,7 @@ import { getProducts } from "@/api/products";
 import { SareeCard } from "@/components/features/SareeCard";
 import type { Saree } from "@/types";
 import heroVideo from "@/assets/MicrosoftTeams-video.mp4";
+import SkinTonePromoSection from "@/components/features/SkinTonePromoSection";
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAND PALETTE — extracted pixel-accurately from Neyge brand book PDFs
 // Final colour bar (last page): Navy | Maroon | Blush | Forest Green
@@ -2324,6 +2325,7 @@ export default function HomePage() {
         <TextureQuote />
         <GoldenThread />
         <VideoShopping />
+        <SkinTonePromoSection />
         <GoldenThread />
         <InstagramGrid />
         <FinalCTA />

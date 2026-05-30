@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Heart, User, Search, Menu, X } from 'lucide-react';
+import { ShoppingCart, Heart, User, Search, Menu, X, Sparkles } from 'lucide-react';
 import { useCart } from '@/hooks/useCarts';
 import { useWishlist } from '@/hooks/useWishlist';
 import { authService } from '@/lib/auth';
@@ -31,54 +31,39 @@ const CSS = `
   display: flex; align-items: center; justify-content: space-between;
   transition: height .35s ease;
 }
-.hd-root.top      .hd-inner { height: 100px; }   /* ⬆ was 88px */
-.hd-root.scrolled .hd-inner { height: 76px;  }   /* ⬆ was 68px */
+.hd-root.top      .hd-inner { height: 100px; }
+.hd-root.scrolled .hd-inner { height: 76px;  }
 
 @media(max-width:900px)  { .hd-inner { padding-left:24px !important; padding-right:24px !important; } }
 @media(max-width:480px)  { .hd-inner { padding-left:16px !important; padding-right:16px !important; } }
 @media(max-width:768px)  {
-  .hd-root.top      .hd-inner { height: 80px; }  /* ⬆ was 72px */
-  .hd-root.scrolled .hd-inner { height: 64px; }  /* ⬆ was 56px */
+  .hd-root.top      .hd-inner { height: 80px; }
+  .hd-root.scrolled .hd-inner { height: 64px; }
 }
 @media(max-width:480px)  {
-  .hd-root.top      .hd-inner { height: 68px; }  /* ⬆ was 60px */
-  .hd-root.scrolled .hd-inner { height: 58px; }  /* ⬆ was 52px */
+  .hd-root.top      .hd-inner { height: 68px; }
+  .hd-root.scrolled .hd-inner { height: 58px; }
 }
 
 /* ── LOGO ── */
 .hd-logo {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  flex-shrink: 0;
-  height: 100%;
-  overflow: hidden;
+  display: flex; align-items: center; text-decoration: none;
+  flex-shrink: 0; height: 100%; overflow: hidden;
 }
 .hd-logo-img {
-  display: block;
-  width: auto;
-  object-fit: contain;
-  object-position: center;
+  display: block; width: auto; object-fit: contain; object-position: center;
   transition: height .35s ease, opacity .3s;
 }
-
-/* Desktop — top state */
-.hd-root.top      .hd-logo-img { height: 86px;  } /* ⬆ was 64px */
-/* Desktop — scrolled state */
-.hd-root.scrolled .hd-logo-img { height: 68px;  } /* ⬆ was 52px */
-
-/* Tablet */
+.hd-root.top      .hd-logo-img { height: 86px; }
+.hd-root.scrolled .hd-logo-img { height: 68px; }
 @media(max-width:768px) {
-  .hd-root.top      .hd-logo-img { height: 64px; } /* ⬆ was 48px */
-  .hd-root.scrolled .hd-logo-img { height: 52px; } /* ⬆ was 40px */
+  .hd-root.top      .hd-logo-img { height: 64px; }
+  .hd-root.scrolled .hd-logo-img { height: 52px; }
 }
-
-/* Mobile */
 @media(max-width:480px) {
-  .hd-root.top      .hd-logo-img { height: 54px; } /* ⬆ was 42px */
-  .hd-root.scrolled .hd-logo-img { height: 46px; } /* ⬆ was 36px */
+  .hd-root.top      .hd-logo-img { height: 54px; }
+  .hd-root.scrolled .hd-logo-img { height: 46px; }
 }
-
 .hd-logo:hover .hd-logo-img { opacity: .8; }
 
 /* ── DECORATIVE BORDER ── */
@@ -89,10 +74,8 @@ const CSS = `
 .hd-border::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1.5px;
   background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(128,0,32,.50) 4%,
-    rgba(128,0,32,.50) 96%,
-    transparent 100%
+    transparent 0%, rgba(128,0,32,.50) 4%,
+    rgba(128,0,32,.50) 96%, transparent 100%
   );
 }
 .hd-border-tile {
@@ -106,15 +89,14 @@ const CSS = `
   100% { transform:translateX(100vw);  opacity:0; }
 }
 .hd-border-shimmer {
-  position: absolute; top: 0; left: 0;
-  width: 240px; height: 100%;
+  position: absolute; top: 0; left: 0; width: 240px; height: 100%;
   background: linear-gradient(90deg, transparent 0%, rgba(196,152,10,.42) 50%, transparent 100%);
   animation: hdShimmer 5.5s ease-in-out infinite;
   pointer-events: none;
 }
 
 /* ── DESKTOP NAV ── */
-.hd-nav { display:flex; align-items:center; gap:30px; }
+.hd-nav { display:flex; align-items:center; gap:24px; }
 @media(max-width:1024px){ .hd-nav { display:none; } }
 
 .hd-nav-link {
@@ -127,15 +109,33 @@ const CSS = `
 .hd-nav-link:hover { color: #800020; }
 .hd-nav-link::after {
   content: ''; position: absolute; left: 0; bottom: -2px;
-  width: 0; height: 1px;
-  background: #C4980A;
+  width: 0; height: 1px; background: #C4980A;
   transition: width .35s cubic-bezier(.4,0,.2,1);
 }
 .hd-nav-link:hover::after { width: 100%; }
 
+/* ── Skin-tone special link ── */
+.hd-nav-skin {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, rgba(128,0,32,.08) 0%, rgba(196,152,10,.10) 100%);
+  border: 1px solid rgba(196,152,10,.32);
+  font-family: 'Josefin Sans'; font-size: 9px; letter-spacing: .22em;
+  text-transform: uppercase; font-weight: 700;
+  color: #800020; text-decoration: none; white-space: nowrap;
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+  position: relative; overflow: hidden;
+}
+.hd-nav-skin::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(128,0,32,.0) 0%, rgba(196,152,10,.15) 100%);
+  opacity: 0; transition: opacity .3s;
+}
+.hd-nav-skin:hover { border-color: rgba(128,0,32,.55); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(128,0,32,.12); }
+.hd-nav-skin:hover::before { opacity: 1; }
+
 .hd-nav-badge {
-  display: inline-block; margin-left: 5px;
-  padding: 2px 5px;
+  display: inline-block; margin-left: 5px; padding: 2px 5px;
   background: #800020; color: #FFF9F0;
   font-size: 8px; letter-spacing: .12em; font-weight: 600; text-transform: uppercase;
   vertical-align: middle;
@@ -149,8 +149,7 @@ const CSS = `
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none; cursor: pointer;
   transition: background .25s, transform .2s;
-  text-decoration: none;
-  color: #4a3828;
+  text-decoration: none; color: #4a3828;
 }
 .hd-icon-btn:hover { background: rgba(128,0,32,.08); transform: scale(1.08); }
 
@@ -191,6 +190,13 @@ const CSS = `
 }
 .hd-mobile-link:last-child { border-bottom: none; }
 .hd-mobile-link:hover { color: #800020; padding-left: 10px; }
+
+/* ── Skin tone mobile link special ── */
+.hd-mobile-skin {
+  display: flex; align-items: center; gap: 8px;
+  padding: 13px 0; color: #800020; font-weight: 700;
+  border-bottom: 1px solid rgba(128,0,32,.09);
+}
 `;
 
 const TILE_SVG = `
@@ -221,12 +227,12 @@ const NAV_LINKS = [
   { to: '/video-shopping', label: 'Video Shopping' },
   { to: '/about',          label: 'About US'       },
 ];
+
 const MOBILE_LINKS = [
-  { to: '/',                 label: 'Home'           },
-  { to: '/shop',             label: 'Shop'           },
-  { to: '/video-shopping',   label: 'Video Shopping' },
-  // { to: '/collections/silk', label: 'Silk'           },
-  { to: '/about',            label: 'About US'       },
+  { to: '/',               label: 'Home'           },
+  { to: '/shop',           label: 'Shop'           },
+  { to: '/video-shopping', label: 'Video Shopping' },
+  { to: '/about',          label: 'About US'       },
 ];
 
 export function Header() {
@@ -251,12 +257,7 @@ export function Header() {
 
           {/* ── Logo ── */}
           <Link to="/" className="hd-logo" aria-label="Neyge Couture — Home">
-            <img
-              src={logo}
-              alt="Neyge Couture"
-              className="hd-logo-img"
-              draggable={false}
-            />
+            <img src={logo} alt="Neyge Couture" className="hd-logo-img" draggable={false} />
           </Link>
 
           {/* ── Desktop nav ── */}
@@ -264,6 +265,11 @@ export function Header() {
             {NAV_LINKS.map(({ to, label }) => (
               <Link key={to} to={to} className="hd-nav-link">{label}</Link>
             ))}
+            {/* Skin Tone AI — special highlighted link */}
+            <Link to="/skin-tone-match" className="hd-nav-skin">
+              <Sparkles size={11} strokeWidth={1.8} />
+              AI Colour Match
+            </Link>
           </nav>
 
           {/* ── Icon row ── */}
@@ -300,15 +306,15 @@ export function Header() {
           <div className="hd-mobile">
             <div className="hd-mobile-inner">
               {MOBILE_LINKS.map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="hd-mobile-link"
-                  onClick={() => setMobileOpen(false)}
-                >
+                <Link key={to} to={to} className="hd-mobile-link" onClick={() => setMobileOpen(false)}>
                   {label}
                 </Link>
               ))}
+              {/* AI Colour Match — special mobile entry */}
+              <Link to="/skin-tone-match" className="hd-mobile-link hd-mobile-skin" onClick={() => setMobileOpen(false)}>
+                <Sparkles size={13} strokeWidth={1.8} />
+                AI Colour Match
+              </Link>
             </div>
           </div>
         )}
