@@ -5,6 +5,7 @@ from app.schemas.order import OrderCreateRequest
 from app.services.order_service import OrderService
 from app.services.payment_service import PaymentService
 from app.utils.response import success_response
+from app.api.v1.whatsapp import send_whatsapp_message
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -17,13 +18,11 @@ def resolve_user_id(current_user: dict) -> str:
         or current_user.get("user_id")
         or current_user.get("uid")
     )
-
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unable to resolve authenticated user id",
         )
-
     return str(user_id)
 
 
@@ -38,6 +37,26 @@ async def create_order_checkout(
         user_id=user_id,
         shipping_address=payload.shipping_address.model_dump(),
     )
+
+    # ── Send WhatsApp notification on order creation ──────────────────────
+    try:
+        customer_name = current_user.get("profile", {}).get("full_name", "Customer")
+        phone = current_user.get("profile", {}).get("phone", "")
+
+        if phone:
+            message = f"""Hi {customer_name}! 🛍️
+
+Your order has been initiated at Neyge Couture.
+
+Please complete your payment to confirm the order.
+
+Need help? Reply to this message or visit:
+www.negyecouture.com"""
+            await send_whatsapp_message(phone, message)
+    except Exception as e:
+        print(f"WhatsApp order notification error: {e}")
+    # ─────────────────────────────────────────────────────────────────────
+
     return success_response("Order checkout initiated successfully", data)
 
 
@@ -46,8 +65,6 @@ async def list_user_orders(
     current_user: dict = Depends(get_current_user),
 ):
     user_id = resolve_user_id(current_user)
-    print("CURRENT USER ID FOR /orders/user:", user_id)
-
     data = OrderService.list_user_orders(user_id)
     return success_response("User orders fetched successfully", data)
 

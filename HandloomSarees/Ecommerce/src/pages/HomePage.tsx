@@ -1071,6 +1071,7 @@ import { SareeCard } from "@/components/features/SareeCard";
 import type { Saree } from "@/types";
 import heroVideo from "@/assets/MicrosoftTeams-video.mp4";
 import SkinTonePromoSection from "@/components/features/SkinTonePromoSection";
+import { getInstagramMedia } from "@/api/instagram";
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAND PALETTE — extracted pixel-accurately from Neyge brand book PDFs
 // Final colour bar (last page): Navy | Maroon | Blush | Forest Green
@@ -2040,29 +2041,54 @@ const IG_IMGS = [IMG.ig1, IMG.ig2, IMG.ig3, IMG.ig4, IMG.ig5, IMG.ig6];
 
 function InstagramGrid() {
   const [ref, on] = useInView(0.08);
-  const doubled = [...IG_IMGS, ...IG_IMGS];
+  const [igPosts, setIgPosts] = useState<any[]>([]);
+  const [loadingIg, setLoadingIg] = useState(true);
+
+  useEffect(() => {
+    const loadInstagram = async () => {
+      try {
+        const res = await getInstagramMedia(6);
+        if (res?.data?.length > 0) {
+          setIgPosts(res.data);
+        }
+      } catch (e) {
+        console.error("Failed to load Instagram posts", e);
+      } finally {
+        setLoadingIg(false);
+      }
+    };
+    loadInstagram();
+  }, []);
+
+  const displayImages = igPosts.length > 0
+    ? igPosts.map((post) => post.media_url || post.thumbnail_url).filter(Boolean)
+    : IG_IMGS;
+
+  const doubled = [...displayImages, ...displayImages];
 
   return (
     <section ref={ref} className="bg-cream-3" style={{ padding: "112px 0" }}>
       <div className="wrap">
         <div className={`rv ${on ? "on" : ""}`} style={{ textAlign: "center", marginBottom: 52 }}>
           <span className="ey" style={{ display: "block", marginBottom: 14 }}>Visual Diary</span>
-          {/* Navy heading */}
           <h2 className="cinzel" style={{ fontSize: T.h2, fontWeight: 400, color: C.navy, marginBottom: 10, letterSpacing: ".06em" }}>
             From Our World
           </h2>
-          {/* Instagram handle from brand book */}
           <p style={{ fontFamily: FONT.body, fontSize: 11, color: "#9a8070", letterSpacing: ".16em", fontWeight: 500 }}>@neyge_couture</p>
         </div>
       </div>
 
       <div style={{ overflow: "hidden", width: "100%" }}>
         <div className="ig-track">
-          {doubled.map((src, i) => (
-            <div key={i} className="ig-item">
-              <img src={src} alt={`Gallery ${(i % IG_IMGS.length) + 1}`} />
-            </div>
-          ))}
+          {doubled.map((src, i) => {
+            const post = igPosts[i % igPosts.length];
+            const link = post?.permalink || "https://instagram.com/neyge_couture";
+            return (
+              <a key={i} href={link} target="_blank" rel="noreferrer" className="ig-item" style={{ textDecoration: "none" }}>
+                <img src={src} alt={`Gallery ${(i % displayImages.length) + 1}`} />
+              </a>
+            );
+          })}
         </div>
       </div>
 
