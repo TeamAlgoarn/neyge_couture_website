@@ -10,6 +10,12 @@ Repository branch:
 integration/neyge-15-day-sprint
 ```
 
+Project board:
+
+```text
+https://github.com/orgs/TeamAlgoarn/projects/5
+```
+
 Important rule:
 
 Do not push directly to `integration/neyge-15-day-sprint`. Create your own feature branch, open a PR into `integration/neyge-15-day-sprint`, and wait for review before merge.
@@ -104,6 +110,7 @@ Send one update each day with:
 - Any blocker
 - PR link, if opened
 - Test/build status
+- GitHub issue/project board status update
 
 ## If Your Baseline Differs
 

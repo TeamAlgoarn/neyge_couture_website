@@ -4,6 +4,8 @@ Milestone: `Neyge 15-Day Completion Sprint`
 
 Branch: `integration/neyge-15-day-sprint`
 
+Project board: https://github.com/orgs/TeamAlgoarn/projects/5
+
 Target completion date: August 3, 2026
 
 | Day | Date | Frontend intern focus | Backend intern focus | Owner review | Expected deliverable | Status | Blockers |
