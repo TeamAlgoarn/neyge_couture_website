@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Build output
+dist/
+build/
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+
+# Logs and local runtime files
+logs/
+*.log
+uploads/
+tmp/
+*.sqlite
+*.db
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
