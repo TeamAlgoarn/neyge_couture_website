@@ -9,10 +9,30 @@ cd HandloomSarees/Ecommerce
 npm run lint
 ```
 
-Result after safe autofix:
+Branch: `integration/neyge-15-day-sprint`
+
+Result on the integration branch after the `origin/main` / `backend-feature` reconciliation:
 
 - 84 errors
 - 1 warning
+
+## Error Categories
+
+- `@typescript-eslint/no-explicit-any`: broad typing debt across admin pages, API clients, hooks, and customer pages.
+- React Compiler: `set-state-in-effect`, `static-components`, and render purity issues.
+- Fast Refresh: UI component modules export non-component values next to components.
+- Type hygiene: empty interfaces, unused values, and type-only value usage.
+- Hook dependency warning: one missing dependency in `AdminChatbotLeads`.
+
+## Top Five Files By Lint Count
+
+1. `src/components/ui/chart.tsx`: 11 errors.
+2. `src/components/ui/resizable.tsx`: 8 errors.
+3. `src/hooks/useCarts.ts`: 7 errors.
+4. `src/admin/pages/FestiveCollectionForm.tsx`: 4 errors.
+5. `src/admin/pages/ProductForm.tsx`: 4 errors.
+
+`src/pages/CheckoutPage.tsx` also has 4 errors and should be handled in the same first lint cleanup pass.
 
 ## Remaining Files
 
