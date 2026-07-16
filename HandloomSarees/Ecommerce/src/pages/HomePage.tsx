@@ -2042,7 +2042,6 @@ const IG_IMGS = [IMG.ig1, IMG.ig2, IMG.ig3, IMG.ig4, IMG.ig5, IMG.ig6];
 function InstagramGrid() {
   const [ref, on] = useInView(0.08);
   const [igPosts, setIgPosts] = useState<any[]>([]);
-  const [loadingIg, setLoadingIg] = useState(true);
 
   useEffect(() => {
     const loadInstagram = async () => {
@@ -2053,8 +2052,6 @@ function InstagramGrid() {
         }
       } catch (e) {
         console.error("Failed to load Instagram posts", e);
-      } finally {
-        setLoadingIg(false);
       }
     };
     loadInstagram();

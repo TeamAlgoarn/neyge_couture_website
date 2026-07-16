@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '@/api/client';
 import { Sparkles, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
 
@@ -329,8 +329,6 @@ export function CollectionsPage() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [showFilters, setShowFilters] = useState(false);
-  const navigate = useNavigate();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);

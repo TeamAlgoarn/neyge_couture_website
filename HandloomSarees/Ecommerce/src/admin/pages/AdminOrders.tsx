@@ -129,7 +129,7 @@ export default function AdminOrders() {
     try {
       setLoading(true);
       const res = await adminApi.get("/orders/admin/all");
-      let items = Array.isArray(res.data) ? res.data : (res.data?.data?.items || res.data?.data || res.data?.orders || []);
+      const items = Array.isArray(res.data) ? res.data : (res.data?.data?.items || res.data?.data || res.data?.orders || []);
       setOrders(items);
     } catch (err: any) {
       setError(err.message);
