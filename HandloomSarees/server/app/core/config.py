@@ -123,6 +123,20 @@ class Settings(BaseSettings):
     CLOUDINARY_API_SECRET: str
 
     FRONTEND_URL: str = "http://localhost:3000"
+    # WhatsApp
+    WHATSAPP_PHONE_NUMBER_ID: str = ""
+    WHATSAPP_BUSINESS_ACCOUNT_ID: str = ""
+    WHATSAPP_ACCESS_TOKEN: str = ""
+    WHATSAPP_WEBHOOK_VERIFY_TOKEN: str = "neyge_webhook_secret_2024"
+    WHATSAPP_API_VERSION: str = "v25.0"
+
+    # Instagram
+    INSTAGRAM_BUSINESS_ACCOUNT_ID: str = ""
+    INSTAGRAM_ACCESS_TOKEN: str = ""
+    INSTAGRAM_APP_ID: str = ""
+    INSTAGRAM_APP_SECRET: str = ""
+    INSTAGRAM_WEBHOOK_VERIFY_TOKEN: str = "neyge_ig_webhook_secret_2024"
+    INSTAGRAM_API_VERSION: str = "v25.0"
 
     model_config = SettingsConfigDict(
         env_file=".env",
