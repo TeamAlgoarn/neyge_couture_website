@@ -4,215 +4,35 @@ Date: 2026-07-16
 
 Milestone: `Neyge 15-Day Completion Sprint`
 
-Created immediately:
-
-- #3 `[P0] Resolve Frontend Lint Baseline`
-- #4 `[P0] Expand Admin and Integration Route Security Tests`
-
-Create the remaining issues only after the first two issues are confirmed and assigned.
-
-## Issue 3
-
-Title: `[P1] Build Customer Address CRUD and Connect Profile/Checkout`
-
-Owner: Backend intern primary, Frontend intern support
-
-Labels: `priority:P1`, `team:fullstack`, `feature:address`, `intern-safe`
-
-Summary:
-
-- Persist customer addresses
-- Add create/list/update/delete APIs
-- Add default address support
-- Connect Profile page
-- Connect Checkout page
-- Enforce ownership
-- Add tests
-
-## Issue 4
-
-Title: `[P1] Add Cart Quantity Update API and UI Integration`
-
-Owner: Backend intern primary, Frontend intern support
-
-Labels: `priority:P1`, `team:fullstack`, `feature:cart`, `intern-safe`
-
-Summary:
-
-- Add backend quantity update endpoint
-- Validate stock
-- Replace remove-and-readd logic
-- Update cart UI
-- Add tests
-
-## Issue 5
-
-Title: `[P2] Add Fall and In-skirt Product Add-ons`
-
-Owner: Backend intern primary, Frontend intern support
-
-Labels: `priority:P2`, `team:fullstack`, `feature:addons`, `intern-safe`
-
-Summary:
-
-- Add product fields for fall availability/price
-- Add product fields for in-skirt availability/price
-- Admin can configure add-ons
-- Product page displays add-ons
-- Backend validates availability and price
-
-## Issue 6
-
-Title: `[P2] Carry Add-ons Through Cart, Checkout and Order Summary`
-
-Owner: Backend intern primary, Frontend intern support
-
-Labels: `priority:P2`, `team:fullstack`, `feature:addons`, `feature:checkout`, `feature:orders`, `intern-safe`
-
-Summary:
-
-- Persist selected add-ons in cart
-- Backend calculates add-on prices
-- Show selected add-ons in checkout
-- Snapshot add-ons in order items
-- Show selected add-ons in customer and admin order summary
-
-## Issue 7
-
-Title: `[P2] Add Blouse Stitching Enquiry via Call and WhatsApp`
-
-Owner: Frontend intern primary, Backend intern support
-
-Labels: `priority:P2`, `team:frontend`, `feature:blouse-enquiry`, `intern-safe`
-
-Summary:
-
-- Add Call button
-- Add WhatsApp button
-- Prefilled message with product name, URL, ID/SKU, colour
-- Do not include measurements
-- Do not include blouse stitching price
-- Optional enquiry indicator only if needed
-
-## Issue 8
-
-Title: `[P1] Add Admin Order Status and Tracking Workflow`
-
-Owner: Backend intern primary, Frontend intern support
-
-Labels: `priority:P1`, `team:fullstack`, `feature:orders`, `feature:admin`
-
-Summary:
-
-- Admin can update order status
-- Admin can add courier/tracking info
-- Customer can view tracking
-- Add tests
-- Do not implement refunds here
-
-## Issue 9
-
-Title: `[P2] Add Regression Testing for Add-ons, Cart, Checkout and Orders`
-
-Owner: Both interns
-
-Labels: `priority:P2`, `team:qa`, `testing`
-
-Summary:
-
-- Test product add-ons
-- Test cart quantity
-- Test checkout total
-- Test order snapshot
-- Test WhatsApp link generation
-- Test mobile layout
-- Test admin views
-
-## Issue 10
-
-Title: `[P3] SEO, Accessibility and Documentation Cleanup`
-
-Owner: Frontend intern primary
-
-Labels: `priority:P3`, `team:frontend`, `team:docs`
-
-Summary:
-
-- Page titles
-- Descriptions
-- Sitemap
-- Robots
-- Alt text
-- Basic accessibility
-- README status update
-
-## Issue 11
-
-Title: `[SUPERVISED] Database Migration Design and SKU Inventory Architecture`
-
-Owner: Project owner primary, backend intern assists
-
-Labels: `supervised`, `senior-review`, `team:backend`
-
-Summary:
-
-- Migration design
-- Existing schema capture
-- Add-on field migration
-- SKU/inventory architecture
-- Rollback plan
-- No destructive production operation without approval
-
-## Issue 12
-
-Title: `[SUPERVISED] Razorpay Verification, Webhooks, Refunds and Idempotency`
-
-Owner: Project owner primary, backend intern assists
-
-Labels: `supervised`, `senior-review`, `security`
-
-Summary:
-
-- Verify frontend callback
-- Razorpay webhook signature
-- Webhook event handling
-- Payment idempotency
-- Refund lifecycle
-- Transaction-safe payment/order flow
-- Use sandbox only
-
-## Issue 13
-
-Title: `[SUPERVISED] WhatsApp and Instagram Webhook Security`
-
-Owner: Project owner primary, interns assist
-
-Labels: `supervised`, `senior-review`, `security`
-
-Summary:
-
-- WhatsApp signature verification
-- Instagram signature verification
-- Webhook deduplication
-- Error sanitization
-- Production Meta configuration
-- No live credentials in code or logs
-
-## Issue 14
-
-Title: `[SUPERVISED] Production Deployment, DNS, SSL, Backup and Rollback`
-
-Owner: Project owner primary, interns assist
-
-Labels: `supervised`, `senior-review`, `team:devops`
-
-Summary:
-
-- Production deployment
-- Environment variables
-- DNS
-- SSL
-- Health checks
-- Backup
-- Rollback
-- Final smoke testing
+Target completion date: August 3, 2026
+
+Status: all sprint issues have been created on GitHub.
+
+## Created Issues
+
+| GitHub issue | Title | Owner | Labels | URL |
+| --- | --- | --- | --- | --- |
+| #3 | `[P0] Resolve Frontend Lint Baseline` | Sumangala-S-Sipoy | `priority:P0`, `team:frontend`, `testing`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/3 |
+| #4 | `[P0] Expand Admin and Integration Route Security Tests` | BhagyashreeSM5 | `priority:P0`, `team:backend`, `security`, `testing`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/4 |
+| #5 | `[P1] Build Customer Address CRUD and Connect Profile/Checkout` | BhagyashreeSM5 primary, Sumangala-S-Sipoy support | `priority:P1`, `team:fullstack`, `feature:address`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/5 |
+| #6 | `[P1] Add Cart Quantity Update API and UI Integration` | BhagyashreeSM5 primary, Sumangala-S-Sipoy support | `priority:P1`, `team:fullstack`, `feature:cart`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/6 |
+| #7 | `[P2] Add Fall and In-skirt Product Add-ons` | BhagyashreeSM5 primary, Sumangala-S-Sipoy support | `priority:P2`, `team:fullstack`, `feature:addons`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/7 |
+| #8 | `[P2] Carry Add-ons Through Cart, Checkout and Order Summary` | BhagyashreeSM5 primary, Sumangala-S-Sipoy support | `priority:P2`, `team:fullstack`, `feature:addons`, `feature:cart`, `feature:checkout`, `feature:orders`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/8 |
+| #9 | `[P2] Add Blouse Stitching Enquiry via Call and WhatsApp` | Sumangala-S-Sipoy primary, BhagyashreeSM5 support | `priority:P2`, `team:frontend`, `feature:blouse-enquiry`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/9 |
+| #10 | `[P1] Add Admin Order Status and Tracking Workflow` | BhagyashreeSM5 primary, Sumangala-S-Sipoy support | `priority:P1`, `team:fullstack`, `feature:orders`, `feature:admin`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/10 |
+| #11 | `[P2] Add Regression Testing for Add-ons, Cart, Checkout and Orders` | Sumangala-S-Sipoy and BhagyashreeSM5 | `priority:P2`, `team:qa`, `testing`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/11 |
+| #12 | `[P3] SEO, Accessibility and Documentation Cleanup` | Sumangala-S-Sipoy | `priority:P3`, `team:frontend`, `team:docs`, `intern-safe` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/12 |
+| #13 | `[SUPERVISED] Database Migration Design and SKU Inventory Architecture` | PrajwalBG1999 primary, BhagyashreeSM5 assists | `supervised`, `senior-review`, `team:backend` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/13 |
+| #14 | `[SUPERVISED] Razorpay Verification, Webhooks, Refunds and Idempotency` | PrajwalBG1999 primary, BhagyashreeSM5 assists | `supervised`, `senior-review`, `security` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/14 |
+| #15 | `[SUPERVISED] WhatsApp and Instagram Webhook Security` | PrajwalBG1999 primary, interns assist | `supervised`, `senior-review`, `security` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/15 |
+| #16 | `[SUPERVISED] Production Deployment, DNS, SSL, Backup and Rollback` | PrajwalBG1999 primary, interns assist | `supervised`, `senior-review`, `team:devops` | https://github.com/TeamAlgoarn/neyge_couture_website/issues/16 |
+
+## Project Board Follow-up
+
+Project board update was not completed because the current GitHub CLI token does not have the `read:project` scope. To enable project board automation, run:
+
+```bash
+gh auth refresh -s read:project
+```
+
+After refreshing the scope, add issues #3 through #16 to the sprint project board if one exists.
