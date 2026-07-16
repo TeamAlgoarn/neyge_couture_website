@@ -1,7 +1,9 @@
 import httpx
-from fastapi import APIRouter, Request, HTTPException, Query
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from fastapi.responses import PlainTextResponse
+
 from app.core.config import settings
+from app.core.dependencies import require_admin
 
 router = APIRouter(prefix="/instagram", tags=["Instagram"])
 
@@ -111,6 +113,10 @@ async def get_instagram_media(limit: int = 6):
 
 # ── Send Manual Message (for admin use) ───────────────────────────────────────
 @router.post("/send-message")
-async def send_manual_message(recipient_id: str, message: str):
+async def send_manual_message(
+    recipient_id: str,
+    message: str,
+    _: dict = Depends(require_admin),
+):
     result = await send_instagram_reply(recipient_id, message)
     return {"success": True, "data": result}
