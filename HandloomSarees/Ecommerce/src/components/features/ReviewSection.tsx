@@ -37,6 +37,10 @@ export function ReviewSection({ productId }: Props) {
       setComment("");
       setRating(5);
       toast.success("Review submitted successfully");
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error?.response?.status === 409) {
         toast.error("You have already reviewed this product");

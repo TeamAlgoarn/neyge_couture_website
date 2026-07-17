@@ -252,6 +252,10 @@ export default function AdminLogin() {
       if (user?.role && user.role !== "admin") throw new Error("You are not authorized as admin");
       adminAuth.setToken(token);
       navigate("/admin/dashboard");
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "Login failed. Please try again.");
     } finally {

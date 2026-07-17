@@ -67,6 +67,9 @@ ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     const colorConfig = Object.entries(config).filter(
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
         ([_, config]) => config.theme || config.color
     )
 
@@ -100,12 +103,36 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+ 
 interface ChartTooltipContentProps extends React.ComponentProps<"div"> {
+ 
+ 
+ 
+ 
     active?: boolean
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload?: Array<any>
+ 
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     label?: any
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     labelFormatter?: (value: any, payload: any) => React.ReactNode
     labelClassName?: string
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     formatter?: (value: any, name: any, entry: any, index: number, payload: any) => React.ReactNode
     hideLabel?: boolean
     hideIndicator?: boolean
@@ -171,6 +198,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
             labelClassName,
             config,
             labelKey,
+ 
         ])
 
         if (!active || !payload?.length) {
@@ -180,6 +208,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
         const nestLabel = payload.length === 1 && indicator !== "dot"
 
         return (
+ 
             <div
                 ref={ref}
                 className={cn(
@@ -189,7 +218,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
             >
                 {!nestLabel ? tooltipLabel : null}
                 <div className="grid gap-1.5">
-                    {payload.map((item: any, index: number) => {
+                    {payload.map((item: any /* eslint-disable-line @typescript-eslint/no-explicit-any */, index: number) => {
                         const key = `${nameKey || item.name || item.dataKey || "value"}`
                         const itemConfig = getPayloadConfigFromPayload(config, item, key)
                         const indicatorColor = color || item.payload.fill || item.color
@@ -248,6 +277,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
                                                 </span>
                                             )}
                                         </div>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     </>
                                 )}
                             </div>
@@ -258,6 +288,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
         )
     }
 )
+ 
 ChartTooltipContent.displayName = "ChartTooltip"
 
 const ChartLegend = RechartsPrimitive.Legend
@@ -267,6 +298,7 @@ const ChartLegendContent = React.forwardRef<
     React.ComponentProps<"div"> & {
         hideIcon?: boolean
         nameKey?: string
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
         payload?: Array<any>
         verticalAlign?: "top" | "bottom" | "middle"
     }

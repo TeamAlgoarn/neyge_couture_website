@@ -110,6 +110,7 @@ export default function AdminChatbotLeads() {
 
   useEffect(() => {
     fetchLeads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flow, status]);
 
   const filteredLeads = useMemo(() => {

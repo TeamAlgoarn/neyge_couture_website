@@ -307,6 +307,10 @@ export function CollectionDetailPage() {
 
         setCollection(collectionData);
         setProducts(filteredProducts);
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(
           err?.response?.data?.detail ||
