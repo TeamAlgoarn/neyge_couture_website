@@ -277,7 +277,6 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
                                                 </span>
                                             )}
                                         </div>
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     </>
                                 )}
                             </div>

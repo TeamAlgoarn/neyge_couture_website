@@ -1406,10 +1406,9 @@ export function ProfilePage() {
  
  
  
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to fetch user orders:', err);
-        setOrdersError(err?.message || 'Failed to load orders');
+        setOrdersError((err instanceof Error ? err.message : String(err)) || 'Failed to load orders');
         setOrders([]);
       } finally {
         setOrdersLoading(false);
@@ -1483,8 +1482,7 @@ export function ProfilePage() {
     const updatedUser = {
  
       ...user,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-      addresses: (user.addresses || []).filter((addr: any) => addr.id !== addressId),
+      addresses: (user.addresses || []).filter((addr: { id: string }) => addr.id !== addressId),
     };
 
     localStorage.setItem('handloom_user', JSON.stringify(updatedUser));
@@ -1681,17 +1679,13 @@ export function ProfilePage() {
                     >
                       <X size={14} style={{ marginRight: 6 }} />
                       Cancel
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
                     </button>
                   </div>
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
                 </div>
               )}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 
               {user.addresses && user.addresses.length > 0 ? (
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-                user.addresses.map((addr: any) => (
+                user.addresses.map((addr: { id: string; name?: string; phone?: string; addressLine1?: string; addressLine2?: string; city?: string; state?: string; pincode?: string; country?: string; is_default?: boolean }) => (
                   <div key={addr.id} className="pf-row">
                     <div className="pf-row-name">{addr.name}</div>
                     <div className="pf-address-phone">{addr.phone}</div>
