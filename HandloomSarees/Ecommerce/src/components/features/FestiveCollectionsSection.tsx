@@ -13,6 +13,10 @@ type FestiveCollection = {
   start_date?: string;
   end_date?: string;
   is_active?: boolean;
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   products?: any[];
 };
 

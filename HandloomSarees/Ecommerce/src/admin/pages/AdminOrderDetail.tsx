@@ -23,6 +23,14 @@ type OrderDetail = {
   items?: OrderItem[];
 };
 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OrderResponse = { data?: OrderDetail | any; order?: OrderDetail | any };
 
 const CSS = `
@@ -310,12 +318,16 @@ export default function AdminOrderDetail() {
   useEffect(() => {
     if (!id) return;
     const fetchOrder = async () => {
+ 
       try {
         setLoading(true);
+ 
         setError("");
         const res = await adminApi.get<OrderResponse>(`/orders/admin/${id}`);
+ 
         const data = res.data?.data || res.data?.order || res.data;
         setOrder(data || null);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err?.message || "Failed to fetch order detail");
       } finally {

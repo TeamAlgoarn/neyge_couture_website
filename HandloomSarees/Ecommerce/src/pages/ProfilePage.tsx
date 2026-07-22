@@ -1403,9 +1403,12 @@ export function ProfilePage() {
         });
 
         setOrders(realOrders);
-      } catch (err: any) {
+ 
+ 
+ 
+      } catch (err: unknown) {
         console.error('Failed to fetch user orders:', err);
-        setOrdersError(err?.message || 'Failed to load orders');
+        setOrdersError((err instanceof Error ? err.message : String(err)) || 'Failed to load orders');
         setOrders([]);
       } finally {
         setOrdersLoading(false);
@@ -1473,10 +1476,13 @@ export function ProfilePage() {
     toast.success('Address added successfully');
   };
 
+ 
   const handleRemoveAddress = (addressId: string) => {
+ 
     const updatedUser = {
+ 
       ...user,
-      addresses: (user.addresses || []).filter((addr: any) => addr.id !== addressId),
+      addresses: (user.addresses || []).filter((addr: { id: string }) => addr.id !== addressId),
     };
 
     localStorage.setItem('handloom_user', JSON.stringify(updatedUser));
@@ -1679,7 +1685,7 @@ export function ProfilePage() {
               )}
 
               {user.addresses && user.addresses.length > 0 ? (
-                user.addresses.map((addr: any) => (
+                user.addresses.map((addr: { id: string; name?: string; phone?: string; addressLine1?: string; addressLine2?: string; city?: string; state?: string; pincode?: string; country?: string; is_default?: boolean }) => (
                   <div key={addr.id} className="pf-row">
                     <div className="pf-row-name">{addr.name}</div>
                     <div className="pf-address-phone">{addr.phone}</div>

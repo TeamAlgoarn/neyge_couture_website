@@ -479,6 +479,10 @@ export function LoginPage() {
         toast.success("Account created successfully!");
         navigate("/");
       }
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
 

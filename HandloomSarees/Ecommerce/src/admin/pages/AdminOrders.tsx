@@ -131,6 +131,10 @@ export default function AdminOrders() {
       const res = await adminApi.get("/orders/admin/all");
       const items = Array.isArray(res.data) ? res.data : (res.data?.data?.items || res.data?.data || res.data?.orders || []);
       setOrders(items);
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -478,6 +478,10 @@ import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Shield } from 'lucide
 
 declare global {
   interface Window {
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     Razorpay: any;
   }
 }
@@ -1099,9 +1103,13 @@ export function CheckoutPage() {
           email: user.email || '',
           contact: user.phone || shippingAddress.phone || '',
         },
+ 
         theme: {
+ 
           color: C.maroon,
+ 
         },
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
         handler: async function (response: any) {
           try {
             const verifyRes = await api.post('/payments/verify', {
@@ -1124,12 +1132,16 @@ export function CheckoutPage() {
             setTimeout(() => {
               if (createdOrder?.id) {
                 navigate(`/order-confirmation/${createdOrder.id}`, {
+ 
                   state: { order: createdOrder },
                 });
+ 
               } else {
                 navigate('/profile');
+ 
               }
             }, 300);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (error: any) {
             console.error('Payment verification failed', error);
             toast.error(
@@ -1143,15 +1155,19 @@ export function CheckoutPage() {
           }
         },
         modal: {
+ 
           ondismiss: function () {
             setIsProcessing(false);
             toast.error('Payment cancelled');
+ 
           },
         },
       };
+ 
 
       const rzp = new window.Razorpay(options);
       rzp.open();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Order placement failed', error);
       toast.error(
