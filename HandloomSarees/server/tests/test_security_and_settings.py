@@ -118,8 +118,7 @@ async def mock_upload_temp_collection_image(file):
 
 
 async def mock_upload_temp_festive_image(file):
-    return {"url": "http://example.com/festive.jpg"}  
-    
+    return {"url": "http://example.com/festive.jpg"}
 
 
 async def mock_send_whatsapp_message(to, message):
@@ -140,6 +139,53 @@ def test_cors_origins_parse_comma_separated_values():
     settings = Settings(
         **settings_kwargs(
             CORS_ORIGINS="http://localhost:5173,http://localhost:3000"
+        )
+    )
+
+    assert settings.CORS_ORIGINS == [
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
+
+
+def test_cors_origins_parse_json_style_list_string():
+    settings = Settings(
+        **settings_kwargs(
+            CORS_ORIGINS='["http://localhost:5173", "http://localhost:3000"]'
+        )
+    )
+
+    assert settings.CORS_ORIGINS == [
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
+
+
+def test_cors_origins_parse_actual_list_input():
+    settings = Settings(
+        **settings_kwargs(
+            CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
+        )
+    )
+
+    assert settings.CORS_ORIGINS == [
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
+
+
+def test_cors_origins_reject_empty_value():
+    with pytest.raises(ValidationError):
+        Settings(**settings_kwargs(CORS_ORIGINS=""))
+
+    with pytest.raises(ValidationError):
+        Settings(**settings_kwargs(CORS_ORIGINS=[]))
+
+
+def test_cors_origins_parse_whitespace_around_comma_separated_values():
+    settings = Settings(
+        **settings_kwargs(
+            CORS_ORIGINS=" http://localhost:5173 , http://localhost:3000 "
         )
     )
 
