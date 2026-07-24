@@ -97,6 +97,7 @@
 
 
 
+import json
 from functools import lru_cache
 from typing import Any
 from urllib.parse import urlparse
@@ -129,7 +130,7 @@ class Settings(BaseSettings):
     CLOUDINARY_API_SECRET: str
 
     FRONTEND_URL: str = "http://localhost:5173"
-    CORS_ORIGINS: list[str] = [
+    CORS_ORIGINS: str | list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
@@ -186,8 +187,25 @@ class Settings(BaseSettings):
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: Any) -> list[str]:
+        if not value:
+            raise ValueError("CORS_ORIGINS must include at least one origin")
+
         if isinstance(value, str):
-            origins = [item.strip() for item in value.split(",") if item.strip()]
+            value_str = value.strip()
+            if not value_str:
+                raise ValueError("CORS_ORIGINS must include at least one origin")
+
+            if value_str.startswith("[") and value_str.endswith("]"):
+                try:
+                    parsed_json = json.loads(value_str)
+                    if isinstance(parsed_json, list):
+                        origins = [str(item).strip() for item in parsed_json if str(item).strip()]
+                    else:
+                        origins = [item.strip() for item in value_str.split(",") if item.strip()]
+                except json.JSONDecodeError:
+                    origins = [item.strip() for item in value_str.split(",") if item.strip()]
+            else:
+                origins = [item.strip() for item in value_str.split(",") if item.strip()]
         elif isinstance(value, list):
             origins = [str(item).strip() for item in value if str(item).strip()]
         else:
