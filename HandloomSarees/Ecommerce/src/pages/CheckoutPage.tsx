@@ -474,7 +474,9 @@ import { authService } from '@/lib/auth';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import api from '@/api/client';
-import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Shield } from 'lucide-react';
+import { addressApi } from '@/api/address';
+import type { Address } from '@/types/address';
+import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Shield, Plus } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -945,17 +947,83 @@ type BackendCartResponse = {
 };
 
 export function CheckoutPage() {
-  // ✅ Force scroll to top whenever this page is loaded/opened
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   const navigate = useNavigate();
   const { cart, loading, getCartTotal, clearCart, refreshCart } = useCart();
   const user = authService.getCurrentUser();
 
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [addressesError, setAddressesError] = useState('');
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [newAddressForm, setNewAddressForm] = useState({
+    full_name: '',
+    phone: '',
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    postal_code: '',
+  });
+
+  const fetchAddresses = async () => {
+    try {
+      setAddressesLoading(true);
+      setAddressesError('');
+      let list = await addressApi.getAddresses();
+
+      if ((!list || list.length === 0) && user?.addresses && user.addresses.length > 0) {
+        list = user.addresses.map((addr: any) => ({
+          id: addr.id || `addr_${Date.now()}`,
+          full_name: addr.name || addr.full_name || '',
+          phone: addr.phone || '',
+          line1: addr.addressLine1 || addr.line1 || '',
+          line2: addr.addressLine2 || addr.line2 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          postal_code: addr.pincode || addr.postal_code || '',
+          country: 'India',
+          is_default: true,
+        }));
+      }
+
+      setAddresses(list);
+      if (list.length > 0) {
+        const defaultAddr = list.find((a) => a.is_default) || list[0];
+        setSelectedAddressId(defaultAddr.id);
+      }
+    } catch (err: any) {
+      console.error('Failed to load addresses:', err);
+      if (user?.addresses && user.addresses.length > 0) {
+        const fallbackList = user.addresses.map((addr: any) => ({
+          id: addr.id || `addr_${Date.now()}`,
+          full_name: addr.name || addr.full_name || '',
+          phone: addr.phone || '',
+          line1: addr.addressLine1 || addr.line1 || '',
+          line2: addr.addressLine2 || addr.line2 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          postal_code: addr.pincode || addr.postal_code || '',
+          country: 'India',
+          is_default: true,
+        }));
+        setAddresses(fallbackList);
+        setSelectedAddressId(fallbackList[0].id);
+      } else {
+        setAddressesError(err?.response?.data?.message || err?.message || 'Failed to load delivery addresses');
+      }
+    } finally {
+      setAddressesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchAddresses();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (!loading && cart.length === 0) {
@@ -967,7 +1035,7 @@ export function CheckoutPage() {
     if (!user) {
       navigate('/login');
     }
-  }, [user, navigate]);
+  }, [user?.id, navigate]);
 
   if (loading) {
     return (
@@ -1011,11 +1079,9 @@ export function CheckoutPage() {
   };
 
   const syncFrontendCartToBackend = async () => {
-    // 1) read existing backend cart
     const backendCartRes = await api.get<BackendCartResponse>('/cart');
     const backendItems = backendCartRes.data?.data?.items || [];
 
-    // 2) clear backend cart
     for (const item of backendItems) {
       const productId = item.product_id || item.product?.id;
       if (productId) {
@@ -1023,7 +1089,6 @@ export function CheckoutPage() {
       }
     }
 
-    // 3) push current frontend cart to backend
     for (const item of cart) {
       await api.post('/cart/add', {
         product_id: item.saree.id,
@@ -1031,8 +1096,52 @@ export function CheckoutPage() {
       });
     }
 
-    // 4) refresh shared cart state
     await refreshCart();
+  };
+
+  const handleAddNewAddress = async () => {
+    if (
+      !newAddressForm.full_name.trim() ||
+      !newAddressForm.phone.trim() ||
+      !newAddressForm.line1.trim() ||
+      !newAddressForm.city.trim() ||
+      !newAddressForm.state.trim() ||
+      !newAddressForm.postal_code.trim()
+    ) {
+      toast.error('Please fill all required address fields');
+      return;
+    }
+
+    try {
+      const created = await addressApi.createAddress({
+        full_name: newAddressForm.full_name.trim(),
+        phone: newAddressForm.phone.trim(),
+        line1: newAddressForm.line1.trim(),
+        line2: newAddressForm.line2.trim() || undefined,
+        city: newAddressForm.city.trim(),
+        state: newAddressForm.state.trim(),
+        postal_code: newAddressForm.postal_code.trim(),
+        country: 'India',
+      });
+      toast.success('New address saved');
+      setNewAddressForm({
+        full_name: '',
+        phone: '',
+        line1: '',
+        line2: '',
+        city: '',
+        state: '',
+        postal_code: '',
+      });
+      setShowNewAddressForm(false);
+      await fetchAddresses();
+      if (created?.id) {
+        setSelectedAddressId(created.id);
+      }
+    } catch (err: any) {
+      console.error('Failed to create address:', err);
+      toast.error(err?.response?.data?.message || 'Failed to save address');
+    }
   };
 
   const handlePlaceOrder = async () => {
@@ -1042,8 +1151,10 @@ export function CheckoutPage() {
       return;
     }
 
-    if (!user.addresses || user.addresses.length === 0) {
-      toast.error('Please add a delivery address');
+    const selectedAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0];
+
+    if (!selectedAddress) {
+      toast.error('Please select or add a delivery address');
       return;
     }
 
@@ -1063,17 +1174,16 @@ export function CheckoutPage() {
       }
 
       const shippingAddress = {
-        full_name: user.addresses[0].name,
-        phone: user.addresses[0].phone,
-        line1: user.addresses[0].addressLine1,
-        line2: user.addresses[0].addressLine2 || '',
-        city: user.addresses[0].city,
-        state: user.addresses[0].state,
-        postal_code: user.addresses[0].pincode,
-        country: 'India',
+        full_name: selectedAddress.full_name,
+        phone: selectedAddress.phone,
+        line1: selectedAddress.line1,
+        line2: selectedAddress.line2 || '',
+        city: selectedAddress.city,
+        state: selectedAddress.state,
+        postal_code: selectedAddress.postal_code,
+        country: selectedAddress.country || 'India',
       };
 
-      // IMPORTANT: sync UI cart to backend cart before order creation
       await syncFrontendCartToBackend();
 
       const createRes = await api.post<CheckoutCreateResponse>('/orders/create', {
@@ -1092,52 +1202,38 @@ export function CheckoutPage() {
         amount: checkoutData.amount,
         currency: checkoutData.currency,
         name: 'Neyge Couture',
-        description: 'Order Payment',
+        description: 'Handloom Saree Order',
         order_id: checkoutData.razorpay_order_id,
         prefill: {
-          name: user.name || '',
+          name: user.name || selectedAddress.full_name || '',
           email: user.email || '',
-          contact: user.phone || shippingAddress.phone || '',
+          contact: user.phone || selectedAddress.phone || '',
         },
         theme: {
-          color: C.maroon,
+          color: '#800020',
         },
         handler: async function (response: any) {
           try {
-            const verifyRes = await api.post('/payments/verify', {
+            await api.post('/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
 
-            console.log('VERIFY RESPONSE:', verifyRes.data);
-
-            const createdOrder =
-              verifyRes.data?.data ||
-              verifyRes.data?.order ||
-              verifyRes.data;
-
             await clearCart();
+            toast.success('Payment successful!');
 
-            toast.success('Order placed successfully!');
-
-            setTimeout(() => {
-              if (createdOrder?.id) {
-                navigate(`/order-confirmation/${createdOrder.id}`, {
-                  state: { order: createdOrder },
-                });
-              } else {
-                navigate('/profile');
-              }
-            }, 300);
-          } catch (error: any) {
-            console.error('Payment verification failed', error);
-            toast.error(
-              error?.response?.data?.detail ||
-              error?.response?.data?.message ||
-              error?.message ||
-              'Payment verification failed'
-            );
+            navigate('/order-confirmation', {
+              state: {
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                amount: total,
+                shippingAddress,
+              },
+            });
+          } catch (err: any) {
+            console.error('Payment verification failed:', err);
+            toast.error(err?.response?.data?.message || 'Payment verification failed');
           } finally {
             setIsProcessing(false);
           }
@@ -1145,21 +1241,22 @@ export function CheckoutPage() {
         modal: {
           ondismiss: function () {
             setIsProcessing(false);
-            toast.error('Payment cancelled');
+            toast.info('Payment cancelled');
           },
         },
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        console.error('Payment failed:', response.error);
+        toast.error(response.error?.description || 'Payment failed');
+        setIsProcessing(false);
+      });
+
       rzp.open();
-    } catch (error: any) {
-      console.error('Order placement failed', error);
-      toast.error(
-        error?.response?.data?.detail ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to place order'
-      );
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to initialize payment');
       setIsProcessing(false);
     }
   };
@@ -1199,46 +1296,195 @@ export function CheckoutPage() {
       <style>{CSS}</style>
       <div className="co-root">
         <div className="co-wrap co-page-top">
-          <div className="co-header co-fadein">
-            <div className="co-header-badge">
-              <Shield size={13} color={C.gold} />
-              <span className="ey">Secure Checkout</span>
-            </div>
-            <h1 className="co-header-title">Complete Your Order</h1>
-            <div className="gd" style={{ marginTop: 16 }} />
+          <div className="co-hero co-fadein">
+            <div className="co-hero-title">Checkout</div>
+            <div className="co-hero-sub">Complete your handloom saree purchase securely</div>
           </div>
 
-          <div className="co-layout">
+          <div className="co-grid">
             <div>
               <div className="co-card co-fadeup">
-                <div className="co-card-head">
-                  <div className="co-card-icon">
-                    <MapPin size={18} color="white" />
+                <div className="co-card-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div className="co-card-icon">
+                      <MapPin size={18} color="white" />
+                    </div>
+                    <h2 className="co-card-title">Delivery Address</h2>
                   </div>
-                  <h2 className="co-card-title">Delivery Address</h2>
+                  {addresses && addresses.length > 0 && !showNewAddressForm && (
+                    <button
+                      type="button"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #C4980A',
+                        color: '#800020',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: '6px 12px',
+                        borderRadius: 20,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                      onClick={() => setShowNewAddressForm(true)}
+                    >
+                      <Plus size={14} /> Add New
+                    </button>
+                  )}
                 </div>
 
-                {user.addresses.length > 0 ? (
-                  <div className="co-address-block">
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <div className="co-address-dot" />
-                      <div>
-                        <div className="co-address-name">{user.addresses[0].name}</div>
-                        <div className="co-address-phone">{user.addresses[0].phone}</div>
-                        <div className="co-address-line">
-                          {user.addresses[0].addressLine1}
-                          {user.addresses[0].addressLine2 && `, ${user.addresses[0].addressLine2}`}
-                        </div>
-                        <div className="co-address-line">
-                          {user.addresses[0].city}, {user.addresses[0].state} – {user.addresses[0].pincode}
-                        </div>
-                      </div>
+                {addressesLoading ? (
+                  <p style={{ fontFamily: "'Josefin Sans'", fontSize: 13, color: '#9a8070', padding: '12px 0' }}>
+                    Loading saved addresses...
+                  </p>
+                ) : addressesError ? (
+                  <div style={{ padding: '12px 0' }}>
+                    <p style={{ fontFamily: "'Josefin Sans'", fontSize: 13, color: '#c0392b' }}>{addressesError}</p>
+                    <button
+                      type="button"
+                      onClick={fetchAddresses}
+                      style={{
+                        marginTop: 8,
+                        background: '#800020',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 14px',
+                        borderRadius: 6,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : showNewAddressForm ? (
+                  <div style={{ background: '#FFF9F0', padding: 16, borderRadius: 12, border: '1px solid rgba(196,152,10,.3)', marginTop: 12 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, color: '#800020', marginBottom: 12 }}>Add New Delivery Address</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <input
+                        placeholder="Full Name *"
+                        value={newAddressForm.full_name}
+                        onChange={(e) => setNewAddressForm({ ...newAddressForm, full_name: e.target.value })}
+                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
+                      />
+                      <input
+                        placeholder="Phone Number *"
+                        value={newAddressForm.phone}
+                        onChange={(e) => setNewAddressForm({ ...newAddressForm, phone: e.target.value })}
+                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
+                      />
+                      <input
+                        placeholder="Address Line 1 *"
+                        value={newAddressForm.line1}
+                        onChange={(e) => setNewAddressForm({ ...newAddressForm, line1: e.target.value })}
+                        style={{ gridColumn: 'span 2', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
+                      />
+                      <input
+                        placeholder="Address Line 2 (Optional)"
+                        value={newAddressForm.line2}
+                        onChange={(e) => setNewAddressForm({ ...newAddressForm, line2: e.target.value })}
+                        style={{ gridColumn: 'span 2', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
+                      />
+                      <input
+                        placeholder="City *"
+                        value={newAddressForm.city}
+                        onChange={(e) => setNewAddressForm({ ...newAddressForm, city: e.target.value })}
+                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
+                      />
+                      <input
+                        placeholder="State *"
+                        value={newAddressForm.state}
+                        onChange={(e) => setNewAddressForm({ ...newAddressForm, state: e.target.value })}
+                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
+                      />
+                      <input
+                        placeholder="Pincode *"
+                        value={newAddressForm.postal_code}
+                        onChange={(e) => setNewAddressForm({ ...newAddressForm, postal_code: e.target.value })}
+                        style={{ gridColumn: 'span 2', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                      <button
+                        type="button"
+                        onClick={handleAddNewAddress}
+                        style={{ background: '#800020', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Save & Select Address
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowNewAddressForm(false)}
+                        style={{ background: 'transparent', border: '1px solid #ccc', padding: '8px 16px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
+                ) : addresses && addresses.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {addresses.map((addr) => {
+                      const isSelected = selectedAddressId === addr.id;
+                      return (
+                        <div
+                          key={addr.id}
+                          onClick={() => setSelectedAddressId(addr.id)}
+                          style={{
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            border: isSelected ? '2px solid #800020' : '1px solid rgba(196,152,10,.3)',
+                            background: isSelected ? '#FFF9F0' : 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            gap: 12,
+                            alignItems: 'flex-start',
+                            transition: 'all .2s ease',
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="delivery_address"
+                            checked={isSelected}
+                            onChange={() => setSelectedAddressId(addr.id)}
+                            style={{ marginTop: 4, accentColor: '#800020' }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontFamily: "'Cormorant Garamond'", fontSize: 17, fontWeight: 600, color: '#800020' }}>
+                                {addr.full_name}
+                              </span>
+                              <span style={{ fontSize: 12, color: '#4a3828', fontWeight: 500 }}>
+                                {addr.phone}
+                              </span>
+                              {addr.is_default && (
+                                <span style={{ fontSize: 10, background: 'rgba(128,0,32,.1)', border: '1px solid #800020', color: '#800020', padding: '1px 6px', borderRadius: 10, textTransform: 'uppercase', fontWeight: 600 }}>
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 13, color: '#4a3828', marginTop: 4 }}>
+                              {addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#9a8070', marginTop: 2 }}>
+                              {addr.city}, {addr.state} – {addr.postal_code}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  <div className="co-no-address">
-                    <MapPin size={36} color={C.gold} style={{ margin: '0 auto' }} />
-                    <p className="co-no-address-text">No address added. Please add a delivery address.</p>
+                  <div className="co-no-address" style={{ textAlign: 'center', padding: '24px 16px' }}>
+                    <MapPin size={36} color={C.gold} style={{ margin: '0 auto 8px auto' }} />
+                    <p className="co-no-address-text" style={{ marginBottom: 12 }}>No address saved. Please add a delivery address to proceed.</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewAddressForm(true)}
+                      style={{ background: '#800020', color: 'white', border: 'none', padding: '8px 20px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      + Add Delivery Address
+                    </button>
                   </div>
                 )}
               </div>

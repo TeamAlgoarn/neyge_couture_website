@@ -1000,6 +1000,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/api/client';
+import { addressApi } from '@/api/address';
+import type { Address } from '@/types/address';
 import { authService } from '@/lib/auth';
 import { User, MapPin, Package, LogOut, Video, Sparkles, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -1364,14 +1366,40 @@ export function ProfilePage() {
   const [orders, setOrders] = useState<UserOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState('');
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [addressesError, setAddressesError] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressForm, setAddressForm] = useState<AddressFormState>(initialForm);
+
   const { bookings, loading: bookingsLoading } = useVideoBooking();
 
   useEffect(() => {
     const refreshedUser = authService.getCurrentUser();
     setUser(refreshedUser);
   }, []);
+
+  const fetchAddresses = async () => {
+    try {
+      setAddressesLoading(true);
+      setAddressesError('');
+      const data = await addressApi.getAddresses();
+      setAddresses(data);
+    } catch (err: any) {
+      console.error('Failed to fetch addresses:', err);
+      setAddressesError(err?.response?.data?.message || err?.message || 'Failed to load addresses');
+    } finally {
+      setAddressesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchAddresses();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchUserOrders = async () => {
@@ -1412,10 +1440,10 @@ export function ProfilePage() {
       }
     };
 
-    if (user) {
+    if (user?.id) {
       fetchUserOrders();
     }
-  }, [user]);
+  }, [user?.id]);
 
   if (!user) {
     navigate('/login', { replace: true });
@@ -1435,7 +1463,21 @@ export function ProfilePage() {
     }));
   };
 
-  const handleSaveAddress = () => {
+  const handleEditClick = (addr: Address) => {
+    setEditingAddressId(addr.id);
+    setAddressForm({
+      name: addr.full_name,
+      phone: addr.phone,
+      addressLine1: addr.line1,
+      addressLine2: addr.line2 || '',
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.postal_code,
+    });
+    setShowAddressForm(true);
+  };
+
+  const handleSaveAddress = async () => {
     if (
       !addressForm.name.trim() ||
       !addressForm.phone.trim() ||
@@ -1448,40 +1490,56 @@ export function ProfilePage() {
       return;
     }
 
-    const updatedUser = {
-      ...user,
-      addresses: [
-        ...(user.addresses || []),
-        {
-          id: `addr_${Date.now()}`,
-          name: addressForm.name.trim(),
-          phone: addressForm.phone.trim(),
-          addressLine1: addressForm.addressLine1.trim(),
-          addressLine2: addressForm.addressLine2.trim(),
-          city: addressForm.city.trim(),
-          state: addressForm.state.trim(),
-          pincode: addressForm.pincode.trim(),
-          isDefault: (user.addresses?.length || 0) === 0,
-        },
-      ],
-    };
+    try {
+      const payload = {
+        full_name: addressForm.name.trim(),
+        phone: addressForm.phone.trim(),
+        line1: addressForm.addressLine1.trim(),
+        line2: addressForm.addressLine2.trim() || undefined,
+        city: addressForm.city.trim(),
+        state: addressForm.state.trim(),
+        postal_code: addressForm.pincode.trim(),
+        country: 'India',
+      };
 
-    localStorage.setItem('handloom_user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    setAddressForm(initialForm);
-    setShowAddressForm(false);
-    toast.success('Address added successfully');
+      if (editingAddressId) {
+        await addressApi.updateAddress(editingAddressId, payload);
+        toast.success('Address updated successfully');
+      } else {
+        await addressApi.createAddress(payload);
+        toast.success('Address added successfully');
+      }
+
+      setAddressForm(initialForm);
+      setEditingAddressId(null);
+      setShowAddressForm(false);
+      await fetchAddresses();
+    } catch (err: any) {
+      console.error('Failed to save address:', err);
+      toast.error(err?.response?.data?.message || 'Failed to save address');
+    }
   };
 
-  const handleRemoveAddress = (addressId: string) => {
-    const updatedUser = {
-      ...user,
-      addresses: (user.addresses || []).filter((addr: any) => addr.id !== addressId),
-    };
+  const handleRemoveAddress = async (addressId: string) => {
+    try {
+      await addressApi.deleteAddress(addressId);
+      toast.success('Address removed successfully');
+      await fetchAddresses();
+    } catch (err: any) {
+      console.error('Failed to delete address:', err);
+      toast.error(err?.response?.data?.message || 'Failed to delete address');
+    }
+  };
 
-    localStorage.setItem('handloom_user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    toast.success('Address removed successfully');
+  const handleSetDefaultAddress = async (addressId: string) => {
+    try {
+      await addressApi.setDefaultAddress(addressId);
+      toast.success('Default address set');
+      await fetchAddresses();
+    } catch (err: any) {
+      console.error('Failed to set default address:', err);
+      toast.error(err?.response?.data?.message || 'Failed to set default address');
+    }
   };
 
   return (
@@ -1511,7 +1569,7 @@ export function ProfilePage() {
                   {[
                     [String(orders.length), 'Orders'],
                     [String(bookings.length), 'Sessions'],
-                    [String(user.addresses?.length || 0), 'Addresses'],
+                    [String(addresses.length), 'Addresses'],
                   ].map(([n, l]) => (
                     <div key={l} className="pf-stat-cell">
                       <div className="pf-stat-n">{n}</div>
@@ -1578,7 +1636,11 @@ export function ProfilePage() {
 
                 <button
                   className="pf-add-btn"
-                  onClick={() => setShowAddressForm(true)}
+                  onClick={() => {
+                    setEditingAddressId(null);
+                    setAddressForm(initialForm);
+                    setShowAddressForm(true);
+                  }}
                   type="button"
                 >
                   <Plus size={14} /> Add Address
@@ -1587,9 +1649,12 @@ export function ProfilePage() {
 
               {showAddressForm && (
                 <div className="pf-form">
+                  <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: C.maroon }}>
+                    {editingAddressId ? 'Edit Address' : 'New Address'}
+                  </h3>
                   <div className="pf-form-grid">
                     <div>
-                      <label className="pf-label">Full Name</label>
+                      <label className="pf-label">Full Name *</label>
                       <input
                         className="pf-input"
                         value={addressForm.name}
@@ -1599,7 +1664,7 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">Phone</label>
+                      <label className="pf-label">Phone *</label>
                       <input
                         className="pf-input"
                         value={addressForm.phone}
@@ -1609,7 +1674,7 @@ export function ProfilePage() {
                     </div>
 
                     <div className="pf-field-full">
-                      <label className="pf-label">Address Line 1</label>
+                      <label className="pf-label">Address Line 1 *</label>
                       <input
                         className="pf-input"
                         value={addressForm.addressLine1}
@@ -1629,7 +1694,7 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">City</label>
+                      <label className="pf-label">City *</label>
                       <input
                         className="pf-input"
                         value={addressForm.city}
@@ -1639,7 +1704,7 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">State</label>
+                      <label className="pf-label">State *</label>
                       <input
                         className="pf-input"
                         value={addressForm.state}
@@ -1649,7 +1714,7 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">Pincode</label>
+                      <label className="pf-label">Pincode *</label>
                       <input
                         className="pf-input"
                         value={addressForm.pincode}
@@ -1661,13 +1726,14 @@ export function ProfilePage() {
 
                   <div className="pf-form-actions">
                     <button type="button" className="pf-save-btn" onClick={handleSaveAddress}>
-                      Save Address
+                      {editingAddressId ? 'Update Address' : 'Save Address'}
                     </button>
                     <button
                       type="button"
                       className="pf-cancel-btn"
                       onClick={() => {
                         setShowAddressForm(false);
+                        setEditingAddressId(null);
                         setAddressForm(initialForm);
                       }}
                     >
@@ -1678,30 +1744,68 @@ export function ProfilePage() {
                 </div>
               )}
 
-              {user.addresses && user.addresses.length > 0 ? (
-                user.addresses.map((addr: any) => (
+              {addressesLoading ? (
+                <p className="pf-empty">Loading addresses...</p>
+              ) : addressesError ? (
+                <div style={{ padding: '12px 0' }}>
+                  <p className="pf-empty" style={{ color: '#c0392b' }}>{addressesError}</p>
+                  <button type="button" className="pf-add-btn" onClick={fetchAddresses} style={{ marginTop: 8 }}>
+                    Retry
+                  </button>
+                </div>
+              ) : addresses && addresses.length > 0 ? (
+                addresses.map((addr) => (
                   <div key={addr.id} className="pf-row">
-                    <div className="pf-row-name">{addr.name}</div>
-                    <div className="pf-address-phone">{addr.phone}</div>
-                    <div className="pf-address-line">
-                      {addr.addressLine1}
-                      {addr.addressLine2 && `, ${addr.addressLine2}`}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div className="pf-row-name">{addr.full_name}</div>
+                        <div className="pf-address-phone">{addr.phone}</div>
+                      </div>
+                      {addr.is_default && (
+                        <span className="pf-tag" style={{ background: 'rgba(128,0,32,.1)', borderColor: '#800020' }}>
+                          Default
+                        </span>
+                      )}
                     </div>
                     <div className="pf-address-line">
-                      {addr.city}, {addr.state} – {addr.pincode}
+                      {addr.line1}
+                      {addr.line2 && `, ${addr.line2}`}
+                    </div>
+                    <div className="pf-address-line">
+                      {addr.city}, {addr.state} – {addr.postal_code}
                     </div>
 
-                    <button
-                      type="button"
-                      className="pf-remove-address-btn"
-                      onClick={() => handleRemoveAddress(addr.id)}
-                    >
-                      Remove Address
-                    </button>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
+                      {!addr.is_default && (
+                        <button
+                          type="button"
+                          className="pf-remove-address-btn"
+                          style={{ color: '#800020', borderColor: 'rgba(128,0,32,.25)' }}
+                          onClick={() => handleSetDefaultAddress(addr.id)}
+                        >
+                          Set as Default
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="pf-remove-address-btn"
+                        style={{ color: '#4a3828', borderColor: 'rgba(74,56,40,.25)' }}
+                        onClick={() => handleEditClick(addr)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="pf-remove-address-btn"
+                        onClick={() => handleRemoveAddress(addr.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="pf-empty">No saved addresses</p>
+                <p className="pf-empty">No saved addresses. Add a delivery address to speed up checkout.</p>
               )}
             </div>
 
