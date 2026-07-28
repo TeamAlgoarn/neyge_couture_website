@@ -14,3 +14,8 @@ export async function removeFromCart(product_id: string) {
   const res = await api.post("/cart/remove", { product_id });
   return res.data;
 }
+
+export async function updateCartQuantity(product_id: string, quantity: number) {
+  const res = await api.post("/cart/update", { product_id, quantity });
+  return res.data;
+}

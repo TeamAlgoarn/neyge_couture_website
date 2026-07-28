@@ -265,13 +265,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Safe workaround:
-        // remove old line item first, then add again with exact new quantity
-        await api.post("/cart/remove", {
-          product_id: sareeId,
-        });
-
-        await api.post("/cart/add", {
+        await api.post("/cart/update", {
           product_id: sareeId,
           quantity,
         });
