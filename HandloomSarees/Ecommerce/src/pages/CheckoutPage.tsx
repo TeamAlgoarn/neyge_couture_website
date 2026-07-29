@@ -1,472 +1,3 @@
-// import { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { useCart } from '@/hooks/useCarts';
-// import { authService } from '@/lib/auth';
-// import { formatCurrency } from '@/lib/utils';
-// import { toast } from 'sonner';
-// import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Shield } from 'lucide-react';
-
-// const C = {
-//   maroon: '#800020', maroonDk: '#5a0016',
-//   gold: '#C4980A', goldV: '#D4AF37',
-//   cream: '#F5E6D3', creamLt: '#FFF9F0',
-//   warmGrey: '#4a3828', indigo: '#4B0082',
-// };
-
-// const CSS = `
-// @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
-// *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-
-// .co-root {
-//   font-family: 'Jost', sans-serif;
-//   background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
-//   min-height: 100vh; color: #1a1010; line-height: 1;
-// }
-// .co-wrap {
-//   max-width: 1200px; margin: 0 auto; padding: 0 56px;
-// }
-// @media(max-width:900px){.co-wrap{padding:0 24px;}}
-// @media(max-width:480px){.co-wrap{padding:0 16px;}}
-
-// .co-ey {
-//   font-family:'Jost';font-size:11px;letter-spacing:.25em;
-//   text-transform:uppercase;color:#C4980A;font-weight:600;
-// }
-
-// /* PAGE TOP */
-// .co-page-top { padding-top: 140px; padding-bottom: 80px; }
-// @media(max-width:640px){.co-page-top{padding-top:110px;padding-bottom:60px;}}
-
-// /* ANIMATIONS */
-// @keyframes coFadeUp  {from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
-// @keyframes coFadeIn  {from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-// @keyframes coShimmer {0%{left:-80%}100%{left:120%}}
-// @keyframes coSpin    {to{transform:rotate(360deg)}}
-
-// .co-fadein {animation:coFadeIn  .8s cubic-bezier(.4,0,.2,1) both;}
-// .co-fadeup {animation:coFadeUp  .8s cubic-bezier(.4,0,.2,1) both;}
-// .co-d1{animation-delay:.1s} .co-d2{animation-delay:.2s}
-
-// /* HEADER */
-// .co-header { margin-bottom: 44px; }
-// .co-header-badge {
-//   display:inline-flex;align-items:center;gap:8px;
-//   background:rgba(196,152,10,.12);border:1px solid rgba(196,152,10,.35);
-//   padding:7px 18px;border-radius:100px;margin-bottom:16px;
-// }
-// .co-header-title {
-//   font-family:'Cormorant Garamond',serif;
-//   font-size:clamp(34px,5.5vw,58px);font-weight:400;color:#800020;line-height:1.06;
-// }
-
-// /* LAYOUT */
-// .co-layout {
-//   display:grid;grid-template-columns:1fr 360px;gap:32px;align-items:start;
-// }
-// @media(max-width:1024px){.co-layout{grid-template-columns:1fr;}}
-
-// /* SECTION CARDS */
-// .co-card {
-//   background:rgba(255,249,240,.95);backdrop-filter:blur(10px);
-//   border:1px solid rgba(196,152,10,.22);border-radius:24px;
-//   padding:32px 36px;margin-bottom:20px;
-//   box-shadow:0 8px 36px rgba(0,0,0,.06);
-// }
-// @media(max-width:600px){.co-card{padding:22px 18px;border-radius:18px;}}
-
-// .co-card-head {
-//   display:flex;align-items:center;gap:14px;
-//   padding-bottom:20px;margin-bottom:24px;
-//   border-bottom:1px solid rgba(196,152,10,.18);
-// }
-// .co-card-icon {
-//   width:42px;height:42px;border-radius:50%;flex-shrink:0;
-//   background:linear-gradient(135deg,#800020,#4B0082);
-//   display:flex;align-items:center;justify-content:center;
-//   box-shadow:0 4px 14px rgba(128,0,32,.25);
-// }
-// .co-card-title {
-//   font-family:'Cormorant Garamond',serif;
-//   font-size:clamp(20px,3vw,24px);font-weight:500;color:#800020;
-// }
-
-// /* ADDRESS BLOCK */
-// .co-address-block {
-//   background:rgba(196,152,10,.06);border:1px solid rgba(196,152,10,.28);
-//   border-radius:18px;padding:20px 22px;
-// }
-// .co-address-name {
-//   font-family:'Cormorant Garamond',serif;
-//   font-size:19px;font-weight:500;color:#800020;margin-bottom:5px;
-// }
-// .co-address-phone {
-//   font-family:'Jost';font-size:13px;color:#4a3828;font-weight:500;margin-bottom:8px;
-// }
-// .co-address-line {
-//   font-family:'Jost';font-size:13px;color:#9a8070;font-weight:300;line-height:1.65;
-// }
-// .co-address-dot {
-//   width:8px;height:8px;border-radius:50%;background:#C4980A;
-//   flex-shrink:0;margin-top:5px;
-// }
-
-// .co-no-address {
-//   text-align:center;padding:36px 20px;
-//   border:1.5px dashed rgba(196,152,10,.3);border-radius:16px;
-// }
-// .co-no-address-text {
-//   font-family:'Jost';font-size:13px;color:#9a8070;font-weight:300;margin-top:12px;
-// }
-
-// /* PAYMENT OPTIONS */
-// .co-pay-option {
-//   display:flex;align-items:center;gap:14px;
-//   padding:16px 18px;border-radius:18px;
-//   border:1.5px solid rgba(196,152,10,.25);
-//   cursor:pointer;margin-bottom:12px;
-//   background:white;
-//   transition:border-color .25s,background .25s,box-shadow .25s,transform .25s;
-// }
-// .co-pay-option:hover {
-//   border-color:rgba(196,152,10,.5);
-//   background:rgba(255,249,240,.9);
-//   box-shadow:0 6px 24px rgba(128,0,32,.08);
-// }
-// .co-pay-option.selected {
-//   border-color:#C4980A;
-//   background:rgba(255,249,240,.95);
-//   box-shadow:0 8px 28px rgba(196,152,10,.18);
-//   transform:scale(1.01);
-// }
-// .co-pay-icon {
-//   width:40px;height:40px;border-radius:50%;flex-shrink:0;
-//   display:flex;align-items:center;justify-content:center;
-//   transition:transform .25s;
-// }
-// .co-pay-option.selected .co-pay-icon { transform:scale(1.1); }
-// .co-pay-title {
-//   font-family:'Jost';font-size:13px;font-weight:600;color:#800020;margin-bottom:2px;
-// }
-// .co-pay-sub {
-//   font-family:'Jost';font-size:11px;color:#9a8070;font-weight:300;
-// }
-// .co-pay-radio {
-//   width:20px;height:20px;border-radius:50%;flex-shrink:0;
-//   border:2px solid rgba(196,152,10,.4);
-//   display:flex;align-items:center;justify-content:center;
-//   transition:border-color .2s,background .2s;
-//   margin-left:auto;
-// }
-// .co-pay-option.selected .co-pay-radio {
-//   border-color:#C4980A;background:#C4980A;
-// }
-
-// /* ORDER SUMMARY SIDEBAR */
-// .co-summary {
-//   background:rgba(255,249,240,.97);backdrop-filter:blur(12px);
-//   border:1px solid rgba(196,152,10,.25);border-radius:24px;
-//   box-shadow:0 16px 60px rgba(0,0,0,.09);
-//   overflow:hidden;position:sticky;top:110px;
-// }
-// .co-summary-bar {
-//   background:linear-gradient(135deg,#800020 0%,#5a0016 55%,#4B0082 100%);
-//   padding:22px 28px;position:relative;overflow:hidden;
-// }
-// .co-summary-bar::after {
-//   content:'';position:absolute;top:-50px;right:-50px;
-//   width:160px;height:160px;border-radius:50%;
-//   border:1px solid rgba(212,175,55,.15);pointer-events:none;
-// }
-// .co-summary-bar-title {
-//   font-family:'Cormorant Garamond',serif;
-//   font-size:22px;font-weight:400;color:white;position:relative;z-index:1;
-// }
-// .co-summary-body { padding:24px 26px 28px; }
-
-// /* Cart items list */
-// .co-item-list {
-//   max-height:220px;overflow-y:auto;margin-bottom:20px;
-// }
-// .co-item-list::-webkit-scrollbar{width:4px;}
-// .co-item-list::-webkit-scrollbar-track{background:#F5E6D3;}
-// .co-item-list::-webkit-scrollbar-thumb{background:linear-gradient(to bottom,#C4980A,#800020);border-radius:2px;}
-
-// .co-item-row {
-//   display:flex;gap:12px;padding:12px 0;
-//   border-bottom:1px solid rgba(196,152,10,.14);
-// }
-// .co-item-row:last-child{border-bottom:none;}
-// .co-item-img {
-//   width:52px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;
-//   border:1px solid rgba(196,152,10,.25);
-// }
-// .co-item-name {
-//   font-family:'Jost';font-size:12px;font-weight:500;color:#800020;
-//   margin-bottom:3px;
-//   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-// }
-// .co-item-qty  {font-family:'Jost';font-size:11px;color:#9a8070;font-weight:300;}
-// .co-item-price{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:#800020;margin-top:2px;}
-
-// /* Summary rows */
-// .co-sum-row {
-//   display:flex;justify-content:space-between;align-items:center;
-//   padding:9px 0;border-bottom:1px solid rgba(196,152,10,.12);
-// }
-// .co-sum-row:last-of-type{border-bottom:none;}
-// .co-sum-key {font-family:'Jost';font-size:13px;color:#4a3828;font-weight:400;}
-// .co-sum-val {font-family:'Jost';font-size:13px;color:#800020;font-weight:600;}
-// .co-sum-free {
-//   display:flex;align-items:center;gap:5px;
-//   font-family:'Jost';font-size:13px;color:#059669;font-weight:600;
-// }
-
-// /* Total strip */
-// .co-total-strip {
-//   display:flex;justify-content:space-between;align-items:center;
-//   background:linear-gradient(135deg,#800020 0%,#4B0082 100%);
-//   border-radius:16px;padding:16px 20px;margin:16px 0 20px;
-// }
-// .co-total-label {
-//   font-family:'Jost';font-size:12px;letter-spacing:.1em;
-//   text-transform:uppercase;color:rgba(255,255,255,.65);font-weight:500;
-// }
-// .co-total-val {
-//   font-family:'Cormorant Garamond',serif;
-//   font-size:28px;font-weight:600;color:#D4AF37;
-// }
-
-// /* Place order button */
-// .co-place-btn {
-//   width:100%;padding:16px;border:none;border-radius:100px;
-//   background:linear-gradient(135deg,#D4AF37 0%,#b8960f 100%);
-//   color:#800020;
-//   font-family:'Jost';font-size:13px;letter-spacing:.12em;
-//   font-weight:600;text-transform:uppercase;cursor:pointer;
-//   transition:transform .35s,box-shadow .35s;
-//   box-shadow:0 6px 24px rgba(212,175,55,.38);
-//   position:relative;overflow:hidden;margin-bottom:10px;
-// }
-// .co-place-btn::after {
-//   content:'';position:absolute;top:0;left:-80%;width:60%;height:100%;
-//   background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
-//   animation:coShimmer 3s ease infinite;
-// }
-// .co-place-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(212,175,55,.52);}
-// .co-place-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
-
-// .co-place-note {
-//   font-family:'Jost';font-size:11px;letter-spacing:.04em;
-//   color:#9a8070;text-align:center;font-weight:300;
-// }
-
-// /* Spinner */
-// .co-spinner {
-//   display:inline-block;width:16px;height:16px;border-radius:50%;
-//   border:2.5px solid rgba(128,0,32,.25);border-top-color:#800020;
-//   animation:coSpin .7s linear infinite;vertical-align:middle;margin-right:8px;
-// }
-
-// @media(max-width:480px){
-//   .co-header-title{font-size:32px;}
-//   .co-summary-body{padding:18px 18px 22px;}
-// }
-// `;
-
-// export function CheckoutPage() {
-//   const navigate = useNavigate();
-//   const { cart, getCartTotal, clearCart } = useCart();
-//   const user = authService.getCurrentUser();
-//   const [paymentMethod, setPaymentMethod] = useState('upi');
-//   const [isProcessing, setIsProcessing] = useState(false);
-
-//   const subtotal = getCartTotal();
-//   const shipping = subtotal > 2999 ? 0 : 150;
-//   const total    = subtotal + shipping;
-
-//   const handlePlaceOrder = async () => {
-//     if (!user) { toast.error('Please log in to continue'); navigate('/login'); return; }
-//     if (user.addresses.length === 0) { toast.error('Please add a delivery address'); return; }
-//     setIsProcessing(true);
-//     setTimeout(() => {
-//       const orderId = 'ORD' + Date.now();
-//       const mockOrder = {
-//         id: orderId, userId: user.id, items: cart,
-//         total: subtotal, discount: 0, finalTotal: total,
-//         status: 'confirmed', shippingAddress: user.addresses[0],
-//         paymentMethod, createdAt: new Date().toISOString(),
-//         estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-//       };
-//       const orders = JSON.parse(localStorage.getItem('handloom_orders') || '[]');
-//       orders.push(mockOrder);
-//       localStorage.setItem('handloom_orders', JSON.stringify(orders));
-//       clearCart(); setIsProcessing(false);
-//       toast.success('Order placed successfully!');
-//       navigate(`/order-confirmation/${orderId}`);
-//     }, 2000);
-//   };
-
-//   if (cart.length === 0) { navigate('/cart'); return null; }
-//   if (!user)             { navigate('/login'); return null; }
-
-//   const PAY_OPTIONS = [
-//     { value: 'upi',    Icon: Smartphone, title: 'UPI Payment',        sub: 'Pay via UPI apps',              bg: 'rgba(59,130,246,.12)',  border: 'rgba(59,130,246,.35)',  color: '#2563eb' },
-//     { value: 'card',   Icon: CreditCard, title: 'Credit / Debit Card', sub: 'Visa, Mastercard, Rupay',       bg: 'rgba(139,92,246,.12)',  border: 'rgba(139,92,246,.35)', color: '#7c3aed' },
-//     { value: 'wallet', Icon: Wallet,     title: 'Wallets',             sub: 'Paytm, PhonePe, Amazon Pay',   bg: 'rgba(16,185,129,.12)',  border: 'rgba(16,185,129,.35)', color: '#059669' },
-//   ];
-
-//   return (
-//     <>
-//       <style>{CSS}</style>
-//       <div className="co-root">
-//         <div className="co-wrap co-page-top">
-
-//           {/* Header */}
-//           <div className="co-header co-fadein">
-//             <div className="co-header-badge">
-//               <Shield size={13} color={C.gold} />
-//               <span className="co-ey">Secure Checkout</span>
-//             </div>
-//             <h1 className="co-header-title">Complete Your Order</h1>
-//           </div>
-
-//           <div className="co-layout">
-
-//             {/* Left column */}
-//             <div>
-
-//               {/* Delivery Address */}
-//               <div className="co-card co-fadeup">
-//                 <div className="co-card-head">
-//                   <div className="co-card-icon"><MapPin size={18} color="white" /></div>
-//                   <h2 className="co-card-title">Delivery Address</h2>
-//                 </div>
-//                 {user.addresses.length > 0 ? (
-//                   <div className="co-address-block">
-//                     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-//                       <div className="co-address-dot" />
-//                       <div>
-//                         <div className="co-address-name">{user.addresses[0].name}</div>
-//                         <div className="co-address-phone">{user.addresses[0].phone}</div>
-//                         <div className="co-address-line">
-//                           {user.addresses[0].addressLine1}
-//                           {user.addresses[0].addressLine2 && `, ${user.addresses[0].addressLine2}`}
-//                         </div>
-//                         <div className="co-address-line">
-//                           {user.addresses[0].city}, {user.addresses[0].state} – {user.addresses[0].pincode}
-//                         </div>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 ) : (
-//                   <div className="co-no-address">
-//                     <MapPin size={36} color={C.gold} style={{ margin: '0 auto' }} />
-//                     <p className="co-no-address-text">No address added. Please add a delivery address.</p>
-//                   </div>
-//                 )}
-//               </div>
-
-//               {/* Payment */}
-//               <div className="co-card co-fadeup co-d1">
-//                 <div className="co-card-head">
-//                   <div className="co-card-icon"><Shield size={18} color="white" /></div>
-//                   <h2 className="co-card-title">Payment Method</h2>
-//                 </div>
-//                 {PAY_OPTIONS.map(({ value, Icon, title, sub, bg, border, color }) => (
-//                   <label
-//                     key={value}
-//                     className={`co-pay-option${paymentMethod === value ? ' selected' : ''}`}
-//                     onClick={() => setPaymentMethod(value)}
-//                   >
-//                     <input type="radio" name="payment" value={value}
-//                       checked={paymentMethod === value} onChange={() => setPaymentMethod(value)}
-//                       style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} />
-//                     <div className="co-pay-icon" style={{ background: bg, border: `1px solid ${border}` }}>
-//                       <Icon size={18} color={color} />
-//                     </div>
-//                     <div style={{ flex: 1, minWidth: 0 }}>
-//                       <div className="co-pay-title">{title}</div>
-//                       <div className="co-pay-sub">{sub}</div>
-//                     </div>
-//                     <div className="co-pay-radio">
-//                       {paymentMethod === value && (
-//                         <svg width="10" height="10" viewBox="0 0 20 20" fill="white">
-//                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-//                         </svg>
-//                       )}
-//                     </div>
-//                   </label>
-//                 ))}
-//               </div>
-//             </div>
-
-//             {/* Order Summary */}
-//             <div className="co-summary co-fadein co-d2">
-//               <div className="co-summary-bar">
-//                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, position: 'relative', zIndex: 1 }}>
-//                   <Sparkles size={13} color="rgba(212,175,55,.75)" />
-//                   <span style={{ fontFamily: "'Jost'", fontSize: 10, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.45)' }}>Neyge Couture</span>
-//                 </div>
-//                 <div className="co-summary-bar-title">Order Summary</div>
-//               </div>
-
-//               <div className="co-summary-body">
-
-//                 {/* Items */}
-//                 <div className="co-item-list">
-//                   {cart.map(item => (
-//                     <div key={item.saree.id} className="co-item-row">
-//                       <img src={item.saree.images[0]} alt={item.saree.name} className="co-item-img" />
-//                       <div style={{ flex: 1, minWidth: 0 }}>
-//                         <div className="co-item-name">{item.saree.name}</div>
-//                         <div className="co-item-qty">Qty: {item.quantity}</div>
-//                         <div className="co-item-price">{formatCurrency(item.saree.price * item.quantity)}</div>
-//                       </div>
-//                     </div>
-//                   ))}
-//                 </div>
-
-//                 {/* Price rows */}
-//                 <div className="co-sum-row">
-//                   <span className="co-sum-key">Subtotal</span>
-//                   <span className="co-sum-val">{formatCurrency(subtotal)}</span>
-//                 </div>
-//                 <div className="co-sum-row">
-//                   <span className="co-sum-key">Shipping</span>
-//                   {shipping === 0
-//                     ? <span className="co-sum-free"><Sparkles size={12} /> FREE</span>
-//                     : <span className="co-sum-val">{formatCurrency(shipping)}</span>
-//                   }
-//                 </div>
-
-//                 {/* Total */}
-//                 <div className="co-total-strip">
-//                   <span className="co-total-label">Total Amount</span>
-//                   <span className="co-total-val">{formatCurrency(total)}</span>
-//                 </div>
-
-//                 <button className="co-place-btn" onClick={handlePlaceOrder} disabled={isProcessing}>
-//                   {isProcessing
-//                     ? <><span className="co-spinner" />Processing…</>
-//                     : 'Place Order ✦'
-//                   }
-//                 </button>
-//                 <p className="co-place-note">By placing this order, you agree to our Terms & Conditions</p>
-//               </div>
-//             </div>
-
-//           </div>
-//         </div>
-//       </div>
-//     </>
-//   );
-// }
-
-
-
-
-//below is the mock implementation for wishlist, replace with actual API integration when ready to connect to backend
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCarts';
@@ -476,15 +7,8 @@ import { toast } from 'sonner';
 import api from '@/api/client';
 import { addressApi } from '@/api/address';
 import type { Address } from '@/types/address';
-import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Shield, Plus } from 'lucide-react';
+import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Plus } from 'lucide-react';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
-// ─── Brand palette ────────────────────────────────────────────────────────────
 const C = {
   maroon: '#800020',
   maroonDk: '#5a0016',
@@ -492,15 +16,10 @@ const C = {
   goldV: '#D4AF37',
   cream: '#F5E6D3',
   creamLt: '#FFF9F0',
-  creamMid: '#F8EEE2',
-  creamDk: '#EDD8C4',
   warmGrey: '#4a3828',
-  navy: '#1B2A6B',
-  forest: '#14402A',
-  blush: '#F2C4CE',
+  indigo: '#4B0082',
 };
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
@@ -508,422 +27,438 @@ const CSS = `
 
 .co-root {
   font-family: 'Josefin Sans', sans-serif;
-  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 45%, #F5E6D3 100%);
+  background: linear-gradient(170deg, #FFF9F0 0%, #F8EEE2 50%, #F5E6D3 100%);
   min-height: 100vh;
   color: #1a1010;
   line-height: 1;
 }
 .co-wrap {
-  max-width: 1320px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 64px;
+  padding: 0 56px;
 }
-@media(max-width:900px){.co-wrap{padding:0 24px;}}
-@media(max-width:480px){.co-wrap{padding:0 16px;}}
+@media(max-width:900px){ .co-wrap { padding: 0 24px; } }
+@media(max-width:480px){ .co-wrap { padding: 0 16px; } }
 
-.ey {
+.co-ey {
   font-family: 'Josefin Sans', sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.30em;
+  font-size: 11px;
+  letter-spacing: .25em;
   text-transform: uppercase;
   color: #C4980A;
   font-weight: 600;
 }
-.gd { width: 44px; height: 1px; background: #C4980A; margin: 0 auto; }
 
-.co-page-top {
-  padding-top: 140px;
-  padding-bottom: 80px;
-}
-@media(max-width:640px){.co-page-top{padding-top:110px;padding-bottom:60px;}}
+/* PAGE TOP */
+.co-page-top { padding-top: 140px; padding-bottom: 80px; }
+@media(max-width:640px){ .co-page-top { padding-top: 110px; padding-bottom: 60px; } }
 
+/* ANIMATIONS */
 @keyframes coFadeUp  {from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 @keyframes coFadeIn  {from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 @keyframes coSpin    {to{transform:rotate(360deg)}}
 
-.co-fadein {animation:coFadeIn .8s cubic-bezier(.4,0,.2,1) both;}
-.co-fadeup {animation:coFadeUp .8s cubic-bezier(.4,0,.2,1) both;}
-.co-d1{animation-delay:.1s}
-.co-d2{animation-delay:.2s}
+.co-fadein { animation: coFadeIn .8s cubic-bezier(.4,0,.2,1) both; }
+.co-fadeup { animation: coFadeUp .8s cubic-bezier(.4,0,.2,1) both; }
+.co-d1 { animation-delay: .1s; }
+.co-d2 { animation-delay: .2s; }
 
-.co-header {
-  margin-bottom: 44px;
+/* HERO */
+.co-hero {
+  text-align: center;
+  margin-bottom: 40px;
 }
-.co-header-badge {
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  background:rgba(196,152,10,.12);
-  border:1px solid rgba(196,152,10,.35);
-  padding:7px 18px;
-  border-radius:100px;
-  margin-bottom:16px;
-}
-.co-header-title {
+.co-hero-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(34px, 5.5vw, 58px);
-  font-weight: 400;
+  font-size: clamp(32px, 5vw, 48px);
   color: #800020;
-  line-height: 1.06;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.co-hero-sub {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 14px;
+  color: #6b5344;
+  letter-spacing: .05em;
 }
 
-.co-layout {
-  display:grid;
-  grid-template-columns:1fr 360px;
-  gap:32px;
-  align-items:start;
+/* LAYOUT GRID */
+.co-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  align-items: start;
 }
-@media(max-width:1024px){.co-layout{grid-template-columns:1fr;}}
+@media(max-width: 1024px){ .co-grid { grid-template-columns: 1fr; } }
 
+/* CARDS */
 .co-card {
-  background:rgba(255,249,240,.95);
-  backdrop-filter:blur(10px);
-  border:1px solid rgba(196,152,10,.22);
-  border-radius:24px;
-  padding:32px 36px;
-  margin-bottom:20px;
-  box-shadow:0 8px 36px rgba(0,0,0,.06);
+  background: rgba(255, 249, 240, .95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(196,152,10,.25);
+  border-radius: 24px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.05);
 }
-@media(max-width:600px){.co-card{padding:22px 18px;border-radius:18px;}}
+@media(max-width:600px){ .co-card { padding: 20px; border-radius: 18px; } }
 
 .co-card-head {
-  display:flex;
-  align-items:center;
-  gap:14px;
-  padding-bottom:20px;
-  margin-bottom:24px;
-  border-bottom:1px solid rgba(196,152,10,.18);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(196,152,10,.2);
 }
 .co-card-icon {
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  flex-shrink:0;
-  background: linear-gradient(135deg, #800020 0%, #1B2A6B 100%);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 4px 14px rgba(128,0,32,.25);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #800020, #4B0082);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(128,0,32,.25);
 }
 .co-card-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(20px, 3vw, 24px);
-  font-weight: 500;
+  font-size: 20px;
   color: #800020;
-  letter-spacing: 0.02em;
+  font-weight: 600;
 }
 
-.co-address-block {
-  background:rgba(196,152,10,.06);
-  border:1px solid rgba(196,152,10,.28);
-  border-radius:18px;
-  padding:20px 22px;
+/* ADDRESS OPTIONS */
+.co-address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.co-address-name {
-  font-family: 'Cinzel', serif;
-  font-size: 19px;
-  font-weight: 500;
-  color: #800020;
-  margin-bottom: 5px;
-  letter-spacing: 0.02em;
+.co-address-option {
+  position: relative;
+  background: rgba(255,255,255,.6);
+  border: 1.5px solid rgba(196,152,10,.25);
+  border-radius: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all .25s ease;
 }
-.co-address-phone {
-  font-family: 'Josefin Sans';
-  font-size: 13px;
-  color: #4a3828;
-  font-weight: 500;
-  margin-bottom: 8px;
+.co-address-option:hover {
+  border-color: rgba(196,152,10,.6);
+  background: rgba(255,255,255,.9);
 }
-.co-address-line {
-  font-family: 'Josefin Sans';
-  font-size: 13px;
-  color: #9a8070;
-  font-weight: 300;
-  line-height: 1.65;
-}
-.co-address-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #C4980A;
-  flex-shrink: 0;
-  margin-top: 5px;
+.co-address-option.selected {
+  border-color: #800020;
+  background: rgba(255, 249, 240, 1);
+  box-shadow: 0 4px 16px rgba(128,0,32,.12);
 }
 
-.co-no-address {
-  text-align:center;
-  padding:36px 20px;
-  border:1.5px dashed rgba(196,152,10,.3);
-  border-radius:16px;
+.co-addr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
-.co-no-address-text {
-  font-family: 'Josefin Sans';
-  font-size:13px;
-  color:#9a8070;
-  font-weight:300;
-  margin-top:12px;
-}
-
-.co-pay-option {
-  display:flex;
-  align-items:center;
-  gap:14px;
-  padding:16px 18px;
-  border-radius:18px;
-  border:1.5px solid rgba(196,152,10,.25);
-  cursor:pointer;
-  margin-bottom:12px;
-  background:white;
-  transition:border-color .25s,background .25s,box-shadow .25s,transform .25s;
-}
-.co-pay-option:hover {
-  border-color:rgba(196,152,10,.5);
-  background:rgba(255,249,240,.9);
-  box-shadow:0 6px 24px rgba(128,0,32,.08);
-}
-.co-pay-option.selected {
-  border-color:#C4980A;
-  background:rgba(255,249,240,.95);
-  box-shadow:0 8px 28px rgba(196,152,10,.18);
-  transform:scale(1.01);
-}
-.co-pay-icon {
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  flex-shrink:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  transition:transform .25s;
-}
-.co-pay-option.selected .co-pay-icon { transform:scale(1.1); }
-.co-pay-title {
-  font-family: 'Josefin Sans';
-  font-size: 13px;
+.co-addr-name {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 15px;
   font-weight: 600;
   color: #800020;
-  margin-bottom: 2px;
 }
-.co-pay-sub {
-  font-family: 'Josefin Sans';
-  font-size: 11px;
-  color: #9a8070;
-  font-weight: 300;
+.co-default-badge {
+  background: rgba(196,152,10,.15);
+  color: #C4980A;
+  border: 1px solid rgba(196,152,10,.4);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  padding: 2px 8px;
+  border-radius: 100px;
+  text-transform: uppercase;
 }
-.co-pay-radio {
-  width:20px;
-  height:20px;
-  border-radius:50%;
-  flex-shrink:0;
-  border:2px solid rgba(196,152,10,.4);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  transition:border-color .2s,background .2s;
-  margin-left:auto;
+.co-addr-text {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 13px;
+  color: #5a483a;
+  line-height: 1.4;
 }
-.co-pay-option.selected .co-pay-radio {
-  border-color:#C4980A;
-  background:#C4980A;
+.co-addr-phone {
+  font-size: 12px;
+  color: #800020;
+  margin-top: 4px;
 }
 
+/* NEW ADDRESS FORM */
+.co-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+@media(max-width:600px){ .co-form-grid { grid-template-columns: 1fr; } }
+
+.co-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.co-form-field.full {
+  grid-column: 1 / -1;
+}
+.co-label {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5a483a;
+  letter-spacing: .02em;
+}
+.co-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(196,152,10,.3);
+  background: rgba(255,255,255,.9);
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 13px;
+  color: #1a1010;
+  outline: none;
+  transition: border-color .2s;
+}
+.co-input:focus {
+  border-color: #800020;
+}
+
+.co-btn-primary {
+  background: linear-gradient(135deg, #800020, #5a0016);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 100px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+}
+.co-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(128,0,32,.3);
+}
+
+.co-btn-secondary {
+  background: transparent;
+  color: #6b5344;
+  border: 1px solid rgba(196,152,10,.3);
+  padding: 12px 24px;
+  border-radius: 100px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* PAYMENT OPTIONS */
+.co-pay-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.co-pay-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(196,152,10,.25);
+  background: rgba(255,255,255,.6);
+  cursor: pointer;
+  transition: all .25s ease;
+}
+.co-pay-option:hover {
+  background: rgba(255,255,255,.9);
+  border-color: rgba(196,152,10,.5);
+}
+.co-pay-option.selected {
+  border-color: #800020;
+  background: rgba(255, 249, 240, 1);
+  box-shadow: 0 4px 16px rgba(128,0,32,.1);
+}
+.co-pay-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.co-pay-title {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1010;
+}
+.co-pay-sub {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 11px;
+  color: #7a6555;
+  margin-top: 2px;
+}
+.co-pay-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(196,152,10,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.co-pay-option.selected .co-pay-radio {
+  border-color: #800020;
+  background: #800020;
+}
+
+/* ORDER SUMMARY SIDEBAR */
 .co-summary {
-  background:rgba(255,249,240,.97);
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(196,152,10,.25);
-  border-radius:24px;
-  box-shadow:0 16px 60px rgba(0,0,0,.09);
-  overflow:hidden;
-  position:sticky;
-  top:110px;
+  background: rgba(255, 249, 240, .98);
+  border: 1px solid rgba(196,152,10,.3);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.08);
+  position: sticky;
+  top: 100px;
 }
 .co-summary-bar {
-  background: linear-gradient(135deg, #800020 0%, #5a0016 55%, #1B2A6B 100%);
-  padding:22px 28px;
-  position:relative;
-  overflow:hidden;
-}
-.co-summary-bar::after {
-  content:'';
-  position:absolute;
-  top:-50px;
-  right:-50px;
-  width:160px;
-  height:160px;
-  border-radius:50%;
-  border:1px solid rgba(212,175,55,.15);
-  pointer-events:none;
+  background: linear-gradient(135deg, #800020, #4B0082);
+  padding: 24px 28px;
+  color: white;
 }
 .co-summary-bar-title {
   font-family: 'Cinzel', serif;
   font-size: 22px;
-  font-weight: 400;
-  color: white;
-  letter-spacing: 0.04em;
-  position:relative;
-  z-index:1;
+  font-weight: 600;
 }
 .co-summary-body {
-  padding:24px 26px 28px;
+  padding: 24px 28px;
 }
-
 .co-item-list {
-  max-height:220px;
-  overflow-y:auto;
-  margin-bottom:20px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
 }
 .co-item-row {
-  display:flex;
-  gap:12px;
-  padding:12px 0;
-  border-bottom:1px solid rgba(196,152,10,.14);
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.co-item-row:last-child{border-bottom:none;}
 .co-item-img {
-  width:52px;
-  height:64px;
-  border-radius:10px;
-  object-fit:cover;
-  flex-shrink:0;
-  border:1px solid rgba(196,152,10,.25);
-  background:#f4eadc;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(196,152,10,.25);
 }
 .co-item-name {
-  font-family: 'Josefin Sans';
-  font-size: 12px;
-  font-weight: 500;
-  color: #800020;
-  margin-bottom: 3px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1010;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.co-item-qty  {
-  font-family: 'Josefin Sans';
+.co-item-qty {
   font-size: 11px;
-  color: #9a8070;
-  font-weight: 300;
+  color: #7a6555;
 }
 .co-item-price {
-  font-family: 'Cinzel', serif;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 600;
   color: #800020;
-  margin-top: 2px;
 }
 
 .co-sum-row {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:9px 0;
-  border-bottom:1px solid rgba(196,152,10,.12);
-}
-.co-sum-key {
-  font-family: 'Josefin Sans';
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
   font-size: 13px;
-  color: #4a3828;
-  font-weight: 400;
 }
-.co-sum-val {
-  font-family: 'Josefin Sans';
-  font-size: 13px;
-  color: #800020;
-  font-weight: 600;
-}
-.co-sum-free {
-  display:flex;
-  align-items:center;
-  gap:5px;
-  font-family: 'Josefin Sans';
-  font-size: 13px;
-  color: #059669;
-  font-weight: 600;
-}
+.co-sum-key { color: #6b5344; }
+.co-sum-val { font-weight: 600; color: #1a1010; }
+.co-sum-free { color: #27ae60; font-weight: 600; display: flex; align-items: center; gap: 4px; }
 
 .co-total-strip {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background: linear-gradient(135deg, #800020 0%, #1B2A6B 100%);
-  border-radius:16px;
-  padding:16px 20px;
-  margin:16px 0 20px;
+  border-top: 1.5px dashed rgba(196,152,10,.3);
+  padding-top: 16px;
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 }
 .co-total-label {
-  font-family: 'Josefin Sans';
-  font-size: 12px;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:rgba(255,255,255,.65);
-  font-weight:500;
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #800020;
 }
 .co-total-val {
   font-family: 'Cinzel', serif;
-  font-size: 28px;
-  font-weight: 600;
-  color: #D4AF37;
-  letter-spacing: 0.02em;
+  font-size: 22px;
+  font-weight: 700;
+  color: #800020;
 }
 
 .co-place-btn {
-  width:100%;
-  padding:16px;
-  border:none;
-  border-radius:100px;
-  background: linear-gradient(135deg, #D4AF37 0%, #b8960f 100%);
-  color: #800020;
-  font-family: 'Josefin Sans';
-  font-size: 13px;
-  letter-spacing:.12em;
-  font-weight: 600;
+  width: 100%;
+  padding: 16px;
+  border-radius: 100px;
+  background: linear-gradient(135deg, #800020 0%, #C4980A 100%);
+  color: white;
+  border: none;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .08em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow:0 6px 24px rgba(212,175,55,.38);
-  margin-bottom:10px;
-  transition: transform .35s, box-shadow .35s;
-  position: relative;
-  overflow: hidden;
+  transition: transform .25s, box-shadow .25s;
+  box-shadow: 0 8px 24px rgba(128,0,32,.25);
+  margin-bottom: 12px;
 }
-.co-place-btn::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -80%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
-  animation: shimmer 3s ease infinite;
-}
-@keyframes shimmer { 0%{left:-80%} 100%{left:120%} }
-.co-place-btn:hover {
+.co-place-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(212,175,55,.52);
+  box-shadow: 0 12px 32px rgba(212,175,55,.4);
 }
-.co-place-btn:disabled{
-  opacity:.55;
-  cursor:not-allowed;
+.co-place-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
   transform: none;
 }
 
 .co-place-note {
-  font-family: 'Josefin Sans';
+  font-family: 'Josefin Sans', sans-serif;
   font-size: 11px;
-  letter-spacing:.04em;
-  color:#9a8070;
-  text-align:center;
-  font-weight:300;
+  color: #9a8070;
+  text-align: center;
 }
 
 .co-spinner {
-  display:inline-block;
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  border:2.5px solid rgba(128,0,32,.25);
-  border-top-color:#800020;
-  animation:coSpin .7s linear infinite;
-  vertical-align:middle;
-  margin-right:8px;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: white;
+  animation: coSpin .7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
 }
 `;
 
@@ -972,48 +507,16 @@ export function CheckoutPage() {
     try {
       setAddressesLoading(true);
       setAddressesError('');
-      let list = await addressApi.getAddresses();
+      const list = await addressApi.getAddresses();
+      setAddresses(list || []);
 
-      if ((!list || list.length === 0) && user?.addresses && user.addresses.length > 0) {
-        list = user.addresses.map((addr: any) => ({
-          id: addr.id || `addr_${Date.now()}`,
-          full_name: addr.name || addr.full_name || '',
-          phone: addr.phone || '',
-          line1: addr.addressLine1 || addr.line1 || '',
-          line2: addr.addressLine2 || addr.line2 || '',
-          city: addr.city || '',
-          state: addr.state || '',
-          postal_code: addr.pincode || addr.postal_code || '',
-          country: 'India',
-          is_default: true,
-        }));
-      }
-
-      setAddresses(list);
-      if (list.length > 0) {
+      if (list && list.length > 0) {
         const defaultAddr = list.find((a) => a.is_default) || list[0];
         setSelectedAddressId(defaultAddr.id);
       }
     } catch (err: any) {
-      console.error('Failed to load addresses:', err);
-      if (user?.addresses && user.addresses.length > 0) {
-        const fallbackList = user.addresses.map((addr: any) => ({
-          id: addr.id || `addr_${Date.now()}`,
-          full_name: addr.name || addr.full_name || '',
-          phone: addr.phone || '',
-          line1: addr.addressLine1 || addr.line1 || '',
-          line2: addr.addressLine2 || addr.line2 || '',
-          city: addr.city || '',
-          state: addr.state || '',
-          postal_code: addr.pincode || addr.postal_code || '',
-          country: 'India',
-          is_default: true,
-        }));
-        setAddresses(fallbackList);
-        setSelectedAddressId(fallbackList[0].id);
-      } else {
-        setAddressesError(err?.response?.data?.message || err?.message || 'Failed to load delivery addresses');
-      }
+      console.error('Failed to load backend addresses:', err);
+      setAddressesError(err?.response?.data?.message || err?.message || 'Failed to load delivery addresses');
     } finally {
       setAddressesLoading(false);
     }
@@ -1214,7 +717,7 @@ export function CheckoutPage() {
         },
         handler: async function (response: any) {
           try {
-            await api.post('/payments/verify', {
+            const verifyRes = await api.post('/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -1223,9 +726,13 @@ export function CheckoutPage() {
             await clearCart();
             toast.success('Payment successful!');
 
-            navigate('/order-confirmation', {
+            const orderData = verifyRes.data?.data?.order || verifyRes.data?.order || verifyRes.data?.data || verifyRes.data;
+            const orderId = orderData?.id || orderData?.order_number || response.razorpay_order_id;
+
+            navigate(`/order-confirmation/${orderId}`, {
               state: {
-                orderId: response.razorpay_order_id,
+                order: orderData,
+                orderId: orderId,
                 paymentId: response.razorpay_payment_id,
                 amount: total,
                 shippingAddress,
@@ -1246,7 +753,7 @@ export function CheckoutPage() {
         },
       };
 
-      const rzp = new window.Razorpay(options);
+      const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
         console.error('Payment failed:', response.error);
         toast.error(response.error?.description || 'Payment failed');
@@ -1266,7 +773,7 @@ export function CheckoutPage() {
       value: 'upi',
       Icon: Smartphone,
       title: 'UPI Payment',
-      sub: 'Pay via UPI apps',
+      sub: 'Pay via Google Pay, PhonePe, Paytm',
       bg: 'rgba(59,130,246,.12)',
       border: 'rgba(59,130,246,.35)',
       color: '#2563eb',
@@ -1275,7 +782,7 @@ export function CheckoutPage() {
       value: 'card',
       Icon: CreditCard,
       title: 'Credit / Debit Card',
-      sub: 'Visa, Mastercard, Rupay',
+      sub: 'Visa, Mastercard, RuPay',
       bg: 'rgba(139,92,246,.12)',
       border: 'rgba(139,92,246,.35)',
       color: '#7c3aed',
@@ -1283,8 +790,8 @@ export function CheckoutPage() {
     {
       value: 'wallet',
       Icon: Wallet,
-      title: 'Wallets',
-      sub: 'Paytm, PhonePe, Amazon Pay',
+      title: 'Net Banking & Wallets',
+      sub: 'All Indian banks & digital wallets',
       bg: 'rgba(16,185,129,.12)',
       border: 'rgba(16,185,129,.35)',
       color: '#059669',
@@ -1350,7 +857,7 @@ export function CheckoutPage() {
                         color: 'white',
                         border: 'none',
                         padding: '6px 14px',
-                        borderRadius: 6,
+                        borderRadius: 20,
                         fontSize: 12,
                         cursor: 'pointer',
                       }}
@@ -1359,132 +866,116 @@ export function CheckoutPage() {
                     </button>
                   </div>
                 ) : showNewAddressForm ? (
-                  <div style={{ background: '#FFF9F0', padding: 16, borderRadius: 12, border: '1px solid rgba(196,152,10,.3)', marginTop: 12 }}>
-                    <h3 style={{ fontSize: 14, fontWeight: 600, color: '#800020', marginBottom: 12 }}>Add New Delivery Address</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <input
-                        placeholder="Full Name *"
-                        value={newAddressForm.full_name}
-                        onChange={(e) => setNewAddressForm({ ...newAddressForm, full_name: e.target.value })}
-                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
-                      />
-                      <input
-                        placeholder="Phone Number *"
-                        value={newAddressForm.phone}
-                        onChange={(e) => setNewAddressForm({ ...newAddressForm, phone: e.target.value })}
-                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
-                      />
-                      <input
-                        placeholder="Address Line 1 *"
-                        value={newAddressForm.line1}
-                        onChange={(e) => setNewAddressForm({ ...newAddressForm, line1: e.target.value })}
-                        style={{ gridColumn: 'span 2', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
-                      />
-                      <input
-                        placeholder="Address Line 2 (Optional)"
-                        value={newAddressForm.line2}
-                        onChange={(e) => setNewAddressForm({ ...newAddressForm, line2: e.target.value })}
-                        style={{ gridColumn: 'span 2', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
-                      />
-                      <input
-                        placeholder="City *"
-                        value={newAddressForm.city}
-                        onChange={(e) => setNewAddressForm({ ...newAddressForm, city: e.target.value })}
-                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
-                      />
-                      <input
-                        placeholder="State *"
-                        value={newAddressForm.state}
-                        onChange={(e) => setNewAddressForm({ ...newAddressForm, state: e.target.value })}
-                        style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
-                      />
-                      <input
-                        placeholder="Pincode *"
-                        value={newAddressForm.postal_code}
-                        onChange={(e) => setNewAddressForm({ ...newAddressForm, postal_code: e.target.value })}
-                        style={{ gridColumn: 'span 2', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 13 }}
-                      />
+                  <div className="co-fadein">
+                    <div className="co-form-grid">
+                      <div className="co-form-field">
+                        <label className="co-label">Full Name *</label>
+                        <input
+                          className="co-input"
+                          value={newAddressForm.full_name}
+                          onChange={(e) => setNewAddressForm({ ...newAddressForm, full_name: e.target.value })}
+                          placeholder="Full Name"
+                        />
+                      </div>
+                      <div className="co-form-field">
+                        <label className="co-label">Phone Number *</label>
+                        <input
+                          className="co-input"
+                          value={newAddressForm.phone}
+                          onChange={(e) => setNewAddressForm({ ...newAddressForm, phone: e.target.value })}
+                          placeholder="10-digit Phone"
+                        />
+                      </div>
+                      <div className="co-form-field full">
+                        <label className="co-label">Address Line 1 *</label>
+                        <input
+                          className="co-input"
+                          value={newAddressForm.line1}
+                          onChange={(e) => setNewAddressForm({ ...newAddressForm, line1: e.target.value })}
+                          placeholder="House No, Building, Street"
+                        />
+                      </div>
+                      <div className="co-form-field full">
+                        <label className="co-label">Address Line 2 (Optional)</label>
+                        <input
+                          className="co-input"
+                          value={newAddressForm.line2}
+                          onChange={(e) => setNewAddressForm({ ...newAddressForm, line2: e.target.value })}
+                          placeholder="Landmark, Area"
+                        />
+                      </div>
+                      <div className="co-form-field">
+                        <label className="co-label">City *</label>
+                        <input
+                          className="co-input"
+                          value={newAddressForm.city}
+                          onChange={(e) => setNewAddressForm({ ...newAddressForm, city: e.target.value })}
+                          placeholder="City"
+                        />
+                      </div>
+                      <div className="co-form-field">
+                        <label className="co-label">State *</label>
+                        <input
+                          className="co-input"
+                          value={newAddressForm.state}
+                          onChange={(e) => setNewAddressForm({ ...newAddressForm, state: e.target.value })}
+                          placeholder="State"
+                        />
+                      </div>
+                      <div className="co-form-field">
+                        <label className="co-label">Pincode *</label>
+                        <input
+                          className="co-input"
+                          value={newAddressForm.postal_code}
+                          onChange={(e) => setNewAddressForm({ ...newAddressForm, postal_code: e.target.value })}
+                          placeholder="6-digit Pincode"
+                        />
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                      <button
-                        type="button"
-                        onClick={handleAddNewAddress}
-                        style={{ background: '#800020', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        Save & Select Address
+                    <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+                      <button type="button" className="co-btn-primary" onClick={handleAddNewAddress}>
+                        Save & Use Address
                       </button>
                       <button
                         type="button"
+                        className="co-btn-secondary"
                         onClick={() => setShowNewAddressForm(false)}
-                        style={{ background: 'transparent', border: '1px solid #ccc', padding: '8px 16px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
                       >
                         Cancel
                       </button>
                     </div>
                   </div>
-                ) : addresses && addresses.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                ) : addresses.length === 0 ? (
+                  <div style={{ padding: '16px 0', textAlign: 'center' }}>
+                    <p style={{ fontFamily: "'Josefin Sans'", fontSize: 14, color: '#6b5344', marginBottom: 16 }}>
+                      No saved addresses found. Please add a delivery address.
+                    </p>
+                    <button type="button" className="co-btn-primary" onClick={() => setShowNewAddressForm(true)}>
+                      Add Delivery Address
+                    </button>
+                  </div>
+                ) : (
+                  <div className="co-address-list">
                     {addresses.map((addr) => {
                       const isSelected = selectedAddressId === addr.id;
                       return (
                         <div
                           key={addr.id}
+                          className={`co-address-option${isSelected ? ' selected' : ''}`}
                           onClick={() => setSelectedAddressId(addr.id)}
-                          style={{
-                            padding: '14px 16px',
-                            borderRadius: 12,
-                            border: isSelected ? '2px solid #800020' : '1px solid rgba(196,152,10,.3)',
-                            background: isSelected ? '#FFF9F0' : 'white',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            gap: 12,
-                            alignItems: 'flex-start',
-                            transition: 'all .2s ease',
-                          }}
                         >
-                          <input
-                            type="radio"
-                            name="delivery_address"
-                            checked={isSelected}
-                            onChange={() => setSelectedAddressId(addr.id)}
-                            style={{ marginTop: 4, accentColor: '#800020' }}
-                          />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontFamily: "'Cormorant Garamond'", fontSize: 17, fontWeight: 600, color: '#800020' }}>
-                                {addr.full_name}
-                              </span>
-                              <span style={{ fontSize: 12, color: '#4a3828', fontWeight: 500 }}>
-                                {addr.phone}
-                              </span>
-                              {addr.is_default && (
-                                <span style={{ fontSize: 10, background: 'rgba(128,0,32,.1)', border: '1px solid #800020', color: '#800020', padding: '1px 6px', borderRadius: 10, textTransform: 'uppercase', fontWeight: 600 }}>
-                                  Default
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: 13, color: '#4a3828', marginTop: 4 }}>
-                              {addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}
-                            </div>
-                            <div style={{ fontSize: 12, color: '#9a8070', marginTop: 2 }}>
-                              {addr.city}, {addr.state} – {addr.postal_code}
-                            </div>
+                          <div className="co-addr-header">
+                            <span className="co-addr-name">{addr.full_name}</span>
+                            {addr.is_default && <span className="co-default-badge">DEFAULT</span>}
                           </div>
+                          <div className="co-addr-text">
+                            {addr.line1}
+                            {addr.line2 ? `, ${addr.line2}` : ''}, {addr.city}, {addr.state} - {addr.postal_code}
+                          </div>
+                          <div className="co-addr-phone">Phone: {addr.phone}</div>
                         </div>
                       );
                     })}
-                  </div>
-                ) : (
-                  <div className="co-no-address" style={{ textAlign: 'center', padding: '24px 16px' }}>
-                    <MapPin size={36} color={C.gold} style={{ margin: '0 auto 8px auto' }} />
-                    <p className="co-no-address-text" style={{ marginBottom: 12 }}>No address saved. Please add a delivery address to proceed.</p>
-                    <button
-                      type="button"
-                      onClick={() => setShowNewAddressForm(true)}
-                      style={{ background: '#800020', color: 'white', border: 'none', padding: '8px 20px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      + Add Delivery Address
-                    </button>
                   </div>
                 )}
               </div>
@@ -1492,45 +983,47 @@ export function CheckoutPage() {
               <div className="co-card co-fadeup co-d1">
                 <div className="co-card-head">
                   <div className="co-card-icon">
-                    <Shield size={18} color="white" />
+                    <CreditCard size={18} color="white" />
                   </div>
                   <h2 className="co-card-title">Payment Method</h2>
                 </div>
 
-                {PAY_OPTIONS.map(({ value, Icon, title, sub, bg, border, color }) => (
-                  <label
-                    key={value}
-                    className={`co-pay-option${paymentMethod === value ? ' selected' : ''}`}
-                    onClick={() => setPaymentMethod(value)}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={value}
-                      checked={paymentMethod === value}
-                      onChange={() => setPaymentMethod(value)}
-                      style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
-                    />
-                    <div className="co-pay-icon" style={{ background: bg, border: `1px solid ${border}` }}>
-                      <Icon size={18} color={color} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="co-pay-title">{title}</div>
-                      <div className="co-pay-sub">{sub}</div>
-                    </div>
-                    <div className="co-pay-radio">
-                      {paymentMethod === value && (
-                        <svg width="10" height="10" viewBox="0 0 20 20" fill="white">
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </label>
-                ))}
+                <div className="co-pay-list">
+                  {PAY_OPTIONS.map(({ value, Icon, title, sub, bg, border, color }) => (
+                    <label
+                      key={value}
+                      className={`co-pay-option${paymentMethod === value ? ' selected' : ''}`}
+                      onClick={() => setPaymentMethod(value)}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={value}
+                        checked={paymentMethod === value}
+                        onChange={() => setPaymentMethod(value)}
+                        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+                      />
+                      <div className="co-pay-icon" style={{ background: bg, border: `1px solid ${border}` }}>
+                        <Icon size={18} color={color} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="co-pay-title">{title}</div>
+                        <div className="co-pay-sub">{sub}</div>
+                      </div>
+                      <div className="co-pay-radio">
+                        {paymentMethod === value && (
+                          <svg width="10" height="10" viewBox="0 0 20 20" fill="white">
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
 

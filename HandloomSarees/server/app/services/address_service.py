@@ -27,9 +27,8 @@ class AddressService:
 
     @staticmethod
     def update_address(address_id: str, user_id: str, payload: AddressUpdateRequest) -> dict:
-        # Check existence and ownership first
         AddressService.get_address(address_id, user_id)
-        
+
         data = payload.model_dump(exclude_unset=True)
         if not data:
             return AddressService.get_address(address_id, user_id)
@@ -44,9 +43,8 @@ class AddressService:
 
     @staticmethod
     def delete_address(address_id: str, user_id: str) -> bool:
-        # Check existence and ownership first
         AddressService.get_address(address_id, user_id)
-        
+
         success = AddressRepository.delete(address_id, user_id)
         if not success:
             raise HTTPException(
@@ -57,9 +55,8 @@ class AddressService:
 
     @staticmethod
     def set_default_address(address_id: str, user_id: str) -> dict:
-        # Check existence and ownership first
         AddressService.get_address(address_id, user_id)
-        
+
         updated = AddressRepository.set_default(address_id, user_id)
         if not updated:
             raise HTTPException(
