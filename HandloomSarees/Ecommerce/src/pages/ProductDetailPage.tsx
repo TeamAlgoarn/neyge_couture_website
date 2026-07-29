@@ -721,6 +721,8 @@ import {
   Star,
   Truck,
   RotateCcw,
+  Phone,
+  MessageCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -848,6 +850,14 @@ const CSS = `
   .pd-main-image-wrap { max-width: 260px; max-height: 340px; }
   .pd-thumbs { max-width: 260px; }
 }
+.pd-enquiry-box{margin-top:24px;padding:16px;border-radius:16px;background:rgba(255,249,240,.9);border:1px dashed rgba(128,0,32,.2)}
+.pd-enquiry-title{font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:700;color:${C.maroon};margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pd-enquiry-actions{display:flex;gap:12px}
+.pd-btn-call, .pd-btn-wa{flex:1;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s}
+.pd-btn-call{background:#fff;border:1px solid rgba(128,0,32,.2);color:${C.maroon}}
+.pd-btn-wa{background:#25D366;border:none;color:#fff}
+.pd-btn-call:hover{background:rgba(128,0,32,.04)}
+.pd-btn-wa:hover{background:#20ba5a}
 `;
 
 type BackendProduct = {
@@ -1361,6 +1371,27 @@ export function ProductDetailPage() {
                     fill={inWishlist ? C.maroon : 'none'}
                   />
                 </button>
+              </div>
+
+              <div className="pd-enquiry-box">
+                <div className="pd-enquiry-title">
+                  <Sparkles size={16} /> Blouse Stitching Enquiry
+                </div>
+                <div className="pd-enquiry-actions">
+                  <a href="tel:+919113991711" className="pd-btn-call">
+                    <Phone size={16} /> Call
+                  </a>
+                  <a
+                    href={`https://wa.me/919113991711?text=${encodeURIComponent(
+                      `Hi, I would like to enquire about blouse stitching for the following product:\n\nProduct: ${saree.name}${saree.id ? `\nSKU/ID: ${saree.id}` : ''}${saree.color ? `\nColor: ${saree.color}` : ''}\nURL: ${window.location.origin}${getProductUrl(saree)}\n\nPlease let me know the details.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pd-btn-wa"
+                  >
+                    <MessageCircle size={16} /> WhatsApp
+                  </a>
+                </div>
               </div>
 
               <div className="pd-trust">
