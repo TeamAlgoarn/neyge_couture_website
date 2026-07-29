@@ -114,7 +114,9 @@ function mapProductToSaree(product: BackendCartProduct): Saree {
 
 function getCurrentToken(): string {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof (tokenStorage as any).get === "function") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (tokenStorage as any).get() || "";
     }
 
@@ -156,6 +158,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }));
 
       setCart(mappedItems);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error?.response?.status === 401) {
         setCart([]);
@@ -183,7 +186,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (currentToken !== lastTokenRef.current) {
         lastTokenRef.current = currentToken;
 
-        // clear only frontend memory cart
         setCart([]);
 
         if (currentToken) {
@@ -215,6 +217,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         await loadCart();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to add to cart", error);
         if (error?.response?.data) {
@@ -238,6 +241,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         await loadCart();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to remove from cart", error);
         if (error?.response?.data) {
@@ -271,6 +275,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         await loadCart();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to update cart quantity", error);
         if (error?.response?.data) {
@@ -297,6 +302,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
 
       await loadCart();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Failed to clear cart", error);
       if (error?.response?.data) {

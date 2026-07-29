@@ -9,6 +9,20 @@ import { addressApi } from '@/api/address';
 import type { Address } from '@/types/address';
 import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Plus } from 'lucide-react';
 
+<<<<<<< HEAD
+=======
+declare global {
+  interface Window {
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: any;
+  }
+}
+
+// ─── Brand palette ────────────────────────────────────────────────────────────
+>>>>>>> origin/integration/neyge-15-day-sprint
 const C = {
   maroon: '#800020',
   maroonDk: '#5a0016',
@@ -712,9 +726,17 @@ export function CheckoutPage() {
           email: user.email || '',
           contact: user.phone || selectedAddress.phone || '',
         },
+ 
         theme: {
+<<<<<<< HEAD
           color: '#800020',
+=======
+ 
+          color: C.maroon,
+ 
+>>>>>>> origin/integration/neyge-15-day-sprint
         },
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
         handler: async function (response: any) {
           try {
             const verifyRes = await api.post('/payments/verify', {
@@ -729,6 +751,7 @@ export function CheckoutPage() {
             const orderData = verifyRes.data?.data?.order || verifyRes.data?.order || verifyRes.data?.data || verifyRes.data;
             const orderId = orderData?.id || orderData?.order_number || response.razorpay_order_id;
 
+<<<<<<< HEAD
             navigate(`/order-confirmation/${orderId}`, {
               state: {
                 order: orderData,
@@ -741,17 +764,47 @@ export function CheckoutPage() {
           } catch (err: any) {
             console.error('Payment verification failed:', err);
             toast.error(err?.response?.data?.message || 'Payment verification failed');
+=======
+            setTimeout(() => {
+              if (createdOrder?.id) {
+                navigate(`/order-confirmation/${createdOrder.id}`, {
+ 
+                  state: { order: createdOrder },
+                });
+ 
+              } else {
+                navigate('/profile');
+ 
+              }
+            }, 300);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (error: any) {
+            console.error('Payment verification failed', error);
+            toast.error(
+              error?.response?.data?.detail ||
+              error?.response?.data?.message ||
+              error?.message ||
+              'Payment verification failed'
+            );
+>>>>>>> origin/integration/neyge-15-day-sprint
           } finally {
             setIsProcessing(false);
           }
         },
         modal: {
+ 
           ondismiss: function () {
             setIsProcessing(false);
+<<<<<<< HEAD
             toast.info('Payment cancelled');
+=======
+            toast.error('Payment cancelled');
+ 
+>>>>>>> origin/integration/neyge-15-day-sprint
           },
         },
       };
+ 
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
@@ -761,9 +814,21 @@ export function CheckoutPage() {
       });
 
       rzp.open();
+<<<<<<< HEAD
     } catch (err: any) {
       console.error('Checkout error:', err);
       toast.error(err?.response?.data?.message || err?.message || 'Failed to initialize payment');
+=======
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error('Order placement failed', error);
+      toast.error(
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to place order'
+      );
+>>>>>>> origin/integration/neyge-15-day-sprint
       setIsProcessing(false);
     }
   };

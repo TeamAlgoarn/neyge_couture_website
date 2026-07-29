@@ -716,7 +716,15 @@ type ProductPayload = {
 };
 
 type ProductResponse = {
+ 
+ 
+ 
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   product?: any;
 };
 
@@ -921,16 +929,24 @@ export default function ProductForm() {
       };
 
       if (isEdit && id) {
+ 
         await adminApi.put(`/products/${id}`, payload);
       } else {
+ 
         await adminApi.post("/products", payload);
+ 
       }
+ 
 
+ 
       navigate("/admin/products");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
+ 
       console.error("Failed to save product", error);
       const validationErrors = error?.response?.data?.data;
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
         alert(validationErrors.map((err: any) => err.msg).join("\n"));
       } else {
         alert(

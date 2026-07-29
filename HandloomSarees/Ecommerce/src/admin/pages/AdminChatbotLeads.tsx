@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   MessageCircle,
   Phone,
@@ -92,7 +92,7 @@ export default function AdminChatbotLeads() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getChatbotLeads({
@@ -106,11 +106,11 @@ export default function AdminChatbotLeads() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [flow, status]);
 
   useEffect(() => {
     fetchLeads();
-  }, [flow, status]);
+  }, [fetchLeads]);
 
   const filteredLeads = useMemo(() => {
     const q = search.toLowerCase().trim();

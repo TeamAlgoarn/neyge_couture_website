@@ -1515,7 +1515,7 @@ const CSS = `
 function GoldenThread({ className = "" }: { className?: string }) {
   const pA = "M0,28 C220,5 330,52 550,28 C770,5 880,52 1100,28 C1210,8 1260,38 1320,28";
   const pB = "M0,40 C180,16 400,58 660,36 C920,12 1100,54 1320,36";
-  const Half = () => (
+  const halfSvg = (
     <svg className="thread-svg-half" viewBox="0 0 1320 58" preserveAspectRatio="none" style={{ height: 52, display: "block" }}>
       <path d={pA} stroke="rgba(196,152,10,0.62)" strokeWidth="1.2" fill="none" />
       <path d={pB} stroke="rgba(196,152,10,0.38)" strokeWidth="0.8" fill="none" />
@@ -1523,7 +1523,7 @@ function GoldenThread({ className = "" }: { className?: string }) {
   );
   return (
     <div className={className} style={{ width: "100%", overflow: "hidden", lineHeight: 0, pointerEvents: "none", background: "var(--cream-lt)" }}>
-      <div className="thread-track"><Half /><Half /></div>
+      <div className="thread-track">{halfSvg}{halfSvg}</div>
     </div>
   );
 }
@@ -2041,6 +2041,10 @@ const IG_IMGS = [IMG.ig1, IMG.ig2, IMG.ig3, IMG.ig4, IMG.ig5, IMG.ig6];
 
 function InstagramGrid() {
   const [ref, on] = useInView(0.08);
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [igPosts, setIgPosts] = useState<any[]>([]);
 
   useEffect(() => {
