@@ -452,12 +452,9 @@ export function ProfilePage() {
         });
 
         setOrders(realOrders);
- 
- 
- 
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error('Failed to fetch user orders:', err);
-        setOrdersError((err instanceof Error ? err.message : String(err)) || 'Failed to load orders');
+        setOrdersError(err?.message || 'Failed to load orders');
         setOrders([]);
       } finally {
         setOrdersLoading(false);
@@ -544,7 +541,6 @@ export function ProfilePage() {
     }
   };
 
-<<<<<<< HEAD
   const handleRemoveAddress = async (addressId: string) => {
     try {
       await addressApi.deleteAddress(addressId);
@@ -555,16 +551,6 @@ export function ProfilePage() {
       toast.error(err?.response?.data?.message || 'Failed to delete address');
     }
   };
-=======
- 
-  const handleRemoveAddress = (addressId: string) => {
- 
-    const updatedUser = {
- 
-      ...user,
-      addresses: (user.addresses || []).filter((addr: { id: string }) => addr.id !== addressId),
-    };
->>>>>>> origin/integration/neyge-15-day-sprint
 
   const handleSetDefaultAddress = async (addressId: string) => {
     try {
@@ -779,7 +765,6 @@ export function ProfilePage() {
                 </div>
               )}
 
-<<<<<<< HEAD
               {addressesLoading ? (
                 <p className="pf-empty">Loading addresses...</p>
               ) : addressesError ? (
@@ -791,10 +776,6 @@ export function ProfilePage() {
                 </div>
               ) : addresses && addresses.length > 0 ? (
                 addresses.map((addr) => (
-=======
-              {user.addresses && user.addresses.length > 0 ? (
-                user.addresses.map((addr: { id: string; name?: string; phone?: string; addressLine1?: string; addressLine2?: string; city?: string; state?: string; pincode?: string; country?: string; is_default?: boolean }) => (
->>>>>>> origin/integration/neyge-15-day-sprint
                   <div key={addr.id} className="pf-row">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
