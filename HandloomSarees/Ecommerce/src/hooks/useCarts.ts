@@ -269,7 +269,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        await api.post("/cart/update", {
+        await api.post("/cart/remove", {
+          product_id: sareeId,
+        });
+
+        await api.post("/cart/add", {
           product_id: sareeId,
           quantity,
         });

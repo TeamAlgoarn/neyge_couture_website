@@ -93,13 +93,10 @@ class AddressRepository:
         if not existing:
             return None
 
-        AddressRepository._unset_other_defaults(user_id, exclude_address_id=address_id)
+        try:
+            client.rpc("set_default_address", {"target_user_id": user_id, "target_address_id": address_id}).execute()
+        except Exception:
+            client.table("addresses").update({"is_default": False}).eq("user_id", user_id).execute()
+            client.table("addresses").update({"is_default": True}).eq("id", address_id).eq("user_id", user_id).execute()
 
-        result = (
-            client.table("addresses")
-            .update({"is_default": True})
-            .eq("id", address_id)
-            .eq("user_id", user_id)
-            .execute()
-        )
-        return result.data[0] if result.data else None
+        return AddressRepository.get_by_id_and_user(address_id, user_id)

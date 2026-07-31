@@ -1,9 +1,11 @@
 import pytest
 from fastapi.testclient import TestClient
+from unittest.mock import MagicMock
 
 from app.core.dependencies import get_current_user
 from app.main import app
-from app.repositories.address_repository import AddressRepository
+from app.repositories import address_repository
+from app.services.address_service import AddressService
 
 client = TestClient(app)
 
@@ -45,6 +47,109 @@ def sample_address_payload():
     }
 
 
+class FakeSupabaseClient:
+    def __init__(self, data_store):
+        self.data_store = data_store
+
+    def table(self, name):
+        return FakeTableQuery(self.data_store)
+
+    def rpc(self, name, params):
+        target_user_id = params.get("target_user_id")
+        target_address_id = params.get("target_address_id")
+        for addr in self.data_store:
+            if addr.get("user_id") == target_user_id:
+                addr["is_default"] = (addr.get("id") == target_address_id)
+        mock = MagicMock()
+        mock.execute.return_value = MagicMock(data=None)
+        return mock
+
+
+class FakeTableQuery:
+    def __init__(self, data_store):
+        self.data_store = data_store
+        self._action = None
+        self._filters = []
+        self._payload = None
+        self._order_by = []
+        self._limit_num = None
+
+    def select(self, columns="*"):
+        self._action = "select"
+        return self
+
+    def insert(self, payload):
+        self._action = "insert"
+        self._payload = payload
+        return self
+
+    def update(self, payload):
+        self._action = "update"
+        self._payload = payload
+        return self
+
+    def delete(self):
+        self._action = "delete"
+        return self
+
+    def eq(self, column, value):
+        self._filters.append((column, "eq", value))
+        return self
+
+    def neq(self, column, value):
+        self._filters.append((column, "neq", value))
+        return self
+
+    def order(self, column, desc=False):
+        self._order_by.append((column, desc))
+        return self
+
+    def limit(self, count):
+        self._limit_num = count
+        return self
+
+    def _matches_filters(self, item):
+        for col, op, val in self._filters:
+            item_val = item.get(col)
+            if op == "eq" and item_val != val:
+                return False
+            if op == "neq" and item_val == val:
+                return False
+        return True
+
+    def execute(self):
+        if self._action == "select":
+            matched = [item for item in self.data_store if self._matches_filters(item)]
+            for col, desc in reversed(self._order_by):
+                matched.sort(key=lambda x: x.get(col, ""), reverse=desc)
+            if self._limit_num:
+                matched = matched[:self._limit_num]
+            return MagicMock(data=matched)
+
+        elif self._action == "insert":
+            new_item = dict(self._payload)
+            if "id" not in new_item:
+                new_item["id"] = f"addr-{len(self.data_store) + 1}"
+            self.data_store.append(new_item)
+            return MagicMock(data=[new_item])
+
+        elif self._action == "update":
+            updated = []
+            for item in self.data_store:
+                if self._matches_filters(item):
+                    item.update(self._payload)
+                    updated.append(item)
+            return MagicMock(data=updated)
+
+        elif self._action == "delete":
+            to_remove = [item for item in self.data_store if self._matches_filters(item)]
+            for item in to_remove:
+                self.data_store.remove(item)
+            return MagicMock(data=to_remove)
+
+        return MagicMock(data=[])
+
+
 def test_unauthenticated_requests_reject_no_token():
     assert client.get("/api/v1/addresses").status_code == 401
     assert client.get("/api/v1/addresses/addr-1").status_code == 401
@@ -62,7 +167,7 @@ def test_create_address_validates_payload_whitespace_and_formats():
     bad_payload["full_name"] = "   "
     assert client.post("/api/v1/addresses", json=bad_payload).status_code == 422
 
-    # Invalid phone (letters, too short, too long)
+    # Invalid phone (letters, too short)
     bad_payload = sample_address_payload()
     bad_payload["phone"] = "abc1234567"
     assert client.post("/api/v1/addresses", json=bad_payload).status_code == 422
@@ -81,164 +186,103 @@ def test_create_address_validates_payload_whitespace_and_formats():
 
 def test_user_id_injection_prevented(monkeypatch):
     app.dependency_overrides[get_current_user] = customer_user
-
-    created_payloads = []
-
-    def mock_create(payload):
-        created_payloads.append(payload)
-        return {"id": "addr-101", **payload}
-
-    monkeypatch.setattr(AddressRepository, "list_by_user", staticmethod(lambda uid: []))
-    monkeypatch.setattr(AddressRepository, "create", staticmethod(mock_create))
+    db_store = []
+    fake_client = FakeSupabaseClient(db_store)
+    monkeypatch.setattr(address_repository, "get_supabase_admin", lambda: fake_client)
 
     injection_payload = sample_address_payload()
     injection_payload["user_id"] = "hacker-user-id"
 
     response = client.post("/api/v1/addresses", json=injection_payload)
     assert response.status_code == 201
-    # Check that service assigned customer-1, ignoring user_id from injection
-    assert created_payloads[0]["user_id"] == "customer-1"
+    assert db_store[0]["user_id"] == "customer-1"
+
+
+def test_list_and_get_user_addresses(monkeypatch):
+    app.dependency_overrides[get_current_user] = customer_user
+    db_store = [
+        {"id": "addr-1", "user_id": "customer-1", "full_name": "User 1", "phone": "9876543210", "line1": "L1", "city": "Bengaluru", "state": "KA", "postal_code": "560001", "country": "India", "is_default": True},
+        {"id": "addr-2", "user_id": "customer-1", "full_name": "User 1", "phone": "9876543210", "line1": "L2", "city": "Bengaluru", "state": "KA", "postal_code": "560002", "country": "India", "is_default": False},
+    ]
+    fake_client = FakeSupabaseClient(db_store)
+    monkeypatch.setattr(address_repository, "get_supabase_admin", lambda: fake_client)
+
+    # Test GET list addresses
+    list_res = client.get("/api/v1/addresses")
+    assert list_res.status_code == 200
+    assert len(list_res.json()["data"]) == 2
+
+    # Test GET single address
+    get_res = client.get("/api/v1/addresses/addr-1")
+    assert get_res.status_code == 200
+    assert get_res.json()["data"]["id"] == "addr-1"
+
+
+def test_update_address_fields(monkeypatch):
+    app.dependency_overrides[get_current_user] = customer_user
+    db_store = [
+        {"id": "addr-1", "user_id": "customer-1", "full_name": "User 1", "phone": "9876543210", "line1": "Old Street", "city": "Bengaluru", "state": "KA", "postal_code": "560001", "country": "India", "is_default": True},
+    ]
+    fake_client = FakeSupabaseClient(db_store)
+    monkeypatch.setattr(address_repository, "get_supabase_admin", lambda: fake_client)
+
+    # Test PUT update address
+    update_res = client.put("/api/v1/addresses/addr-1", json={"line1": "New Street 456", "phone": "9123456789"})
+    assert update_res.status_code == 200
+    assert db_store[0]["line1"] == "New Street 456"
+    assert db_store[0]["phone"] == "9123456789"
 
 
 def test_first_address_automatically_set_as_default(monkeypatch):
-    user_addresses = []
-
-    def mock_list(uid):
-        return [a for a in user_addresses if a["user_id"] == uid]
-
-    def mock_create(payload):
-        user_id = payload["user_id"]
-        existing = mock_list(user_id)
-        if not existing:
-            payload["is_default"] = True
-        addr = {"id": f"addr-{len(user_addresses)+1}", **payload}
-        user_addresses.append(addr)
-        return addr
-
-    monkeypatch.setattr(AddressRepository, "list_by_user", staticmethod(mock_list))
-    monkeypatch.setattr(AddressRepository, "create", staticmethod(mock_create))
-
     app.dependency_overrides[get_current_user] = customer_user
+    db_store = []
+    fake_client = FakeSupabaseClient(db_store)
+    monkeypatch.setattr(address_repository, "get_supabase_admin", lambda: fake_client)
 
-    # First address has is_default = False in payload, but should be forced to True
     res1 = client.post("/api/v1/addresses", json=sample_address_payload())
     assert res1.status_code == 201
     assert res1.json()["data"]["is_default"] is True
+    assert db_store[0]["is_default"] is True
 
 
 def test_only_one_default_address(monkeypatch):
-    mock_addresses = [
-        {
-            "id": "addr-1",
-            "user_id": "customer-1",
-            "full_name": "User 1",
-            "phone": "9876543210",
-            "line1": "Address 1",
-            "city": "Bengaluru",
-            "state": "Karnataka",
-            "postal_code": "560001",
-            "country": "India",
-            "is_default": True,
-        },
-        {
-            "id": "addr-2",
-            "user_id": "customer-1",
-            "full_name": "User 2",
-            "phone": "9876543210",
-            "line1": "Address 2",
-            "city": "Bengaluru",
-            "state": "Karnataka",
-            "postal_code": "560002",
-            "country": "India",
-            "is_default": False,
-        },
-    ]
-
-    def mock_get(aid, uid):
-        for a in mock_addresses:
-            if a["id"] == aid and a["user_id"] == uid:
-                return a
-        return None
-
-    def mock_set_default(aid, uid):
-        target = mock_get(aid, uid)
-        if not target:
-            return None
-        for a in mock_addresses:
-            if a["user_id"] == uid:
-                a["is_default"] = (a["id"] == aid)
-        return target
-
-    monkeypatch.setattr(AddressRepository, "get_by_id_and_user", staticmethod(mock_get))
-    monkeypatch.setattr(AddressRepository, "set_default", staticmethod(mock_set_default))
-
     app.dependency_overrides[get_current_user] = customer_user
+    db_store = [
+        {"id": "addr-1", "user_id": "customer-1", "full_name": "U1", "phone": "9876543210", "line1": "A1", "city": "C", "state": "S", "postal_code": "560001", "country": "India", "is_default": True},
+        {"id": "addr-2", "user_id": "customer-1", "full_name": "U2", "phone": "9876543210", "line1": "A2", "city": "C", "state": "S", "postal_code": "560002", "country": "India", "is_default": False},
+    ]
+    fake_client = FakeSupabaseClient(db_store)
+    monkeypatch.setattr(address_repository, "get_supabase_admin", lambda: fake_client)
 
     response = client.post("/api/v1/addresses/addr-2/default")
     assert response.status_code == 200
-    assert mock_addresses[0]["is_default"] is False
-    assert mock_addresses[1]["is_default"] is True
+    assert db_store[0]["is_default"] is False
+    assert db_store[1]["is_default"] is True
 
 
 def test_delete_default_address_promotes_remaining(monkeypatch):
-    mock_addresses = [
-        {
-            "id": "addr-1",
-            "user_id": "customer-1",
-            "full_name": "Addr 1",
-            "phone": "9876543210",
-            "line1": "Line 1",
-            "city": "City",
-            "state": "State",
-            "postal_code": "560001",
-            "country": "India",
-            "is_default": True,
-        },
-        {
-            "id": "addr-2",
-            "user_id": "customer-1",
-            "full_name": "Addr 2",
-            "phone": "9876543210",
-            "line1": "Line 2",
-            "city": "City",
-            "state": "State",
-            "postal_code": "560002",
-            "country": "India",
-            "is_default": False,
-        },
-    ]
-
-    def mock_get(aid, uid):
-        for a in mock_addresses:
-            if a["id"] == aid and a["user_id"] == uid:
-                return a
-        return None
-
-    def mock_delete(aid, uid):
-        target = mock_get(aid, uid)
-        if not target:
-            return False
-        was_default = target["is_default"]
-        mock_addresses.remove(target)
-        if was_default and mock_addresses:
-            mock_addresses[0]["is_default"] = True
-        return True
-
-    monkeypatch.setattr(AddressRepository, "get_by_id_and_user", staticmethod(mock_get))
-    monkeypatch.setattr(AddressRepository, "delete", staticmethod(mock_delete))
-
     app.dependency_overrides[get_current_user] = customer_user
+    db_store = [
+        {"id": "addr-1", "user_id": "customer-1", "full_name": "U1", "phone": "9876543210", "line1": "A1", "city": "C", "state": "S", "postal_code": "560001", "country": "India", "is_default": True},
+        {"id": "addr-2", "user_id": "customer-1", "full_name": "U2", "phone": "9876543210", "line1": "A2", "city": "C", "state": "S", "postal_code": "560002", "country": "India", "is_default": False},
+    ]
+    fake_client = FakeSupabaseClient(db_store)
+    monkeypatch.setattr(address_repository, "get_supabase_admin", lambda: fake_client)
 
     res = client.delete("/api/v1/addresses/addr-1")
     assert res.status_code == 200
-    assert len(mock_addresses) == 1
-    assert mock_addresses[0]["is_default"] is True
+    assert len(db_store) == 1
+    assert db_store[0]["id"] == "addr-2"
+    assert db_store[0]["is_default"] is True
 
 
 def test_address_ownership_isolation(monkeypatch):
     app.dependency_overrides[get_current_user] = second_customer_user
-
-    monkeypatch.setattr(AddressRepository, "get_by_id_and_user", staticmethod(lambda aid, uid: None))
+    db_store = [
+        {"id": "addr-101", "user_id": "customer-1", "full_name": "U1", "phone": "9876543210", "line1": "A1", "city": "C", "state": "S", "postal_code": "560001", "country": "India", "is_default": True},
+    ]
+    fake_client = FakeSupabaseClient(db_store)
+    monkeypatch.setattr(address_repository, "get_supabase_admin", lambda: fake_client)
 
     assert client.get("/api/v1/addresses/addr-101").status_code == 404
     assert client.put("/api/v1/addresses/addr-101", json={"full_name": "Attacker"}).status_code == 404

@@ -203,7 +203,15 @@ def test_cors_origins_reject_wildcard():
 
 def test_production_requires_integration_secrets():
     with pytest.raises(ValidationError) as exc:
-        Settings(_env_file=None, **settings_kwargs(APP_ENV="production"))
+        Settings(**settings_kwargs(
+            APP_ENV="production",
+            SUPABASE_URL="",
+            SUPABASE_SERVICE_ROLE_KEY="",
+            SUPABASE_ANON_KEY="",
+            JWT_SECRET="",
+            RAZORPAY_KEY_ID="",
+            RAZORPAY_KEY_SECRET="",
+        ))
 
     assert "Missing required production environment variables" in str(exc.value)
 

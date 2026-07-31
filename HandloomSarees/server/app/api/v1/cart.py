@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.core.dependencies import get_current_user
-from app.schemas.cart import CartAddRequest, CartRemoveRequest, CartQuantityUpdateRequest
+from app.schemas.cart import CartAddRequest, CartRemoveRequest
 from app.services.cart_service import CartService
 from app.utils.response import success_response
 
@@ -23,16 +23,6 @@ async def add_to_cart(
     user_id = current_user["profile"]["id"]
     data = CartService.add_item(user_id, payload)
     return success_response("Item added to cart successfully", data)
-
-
-@router.post("/update", response_model=dict)
-async def update_cart_quantity(
-    payload: CartQuantityUpdateRequest,
-    current_user: dict = Depends(get_current_user),
-):
-    user_id = current_user["profile"]["id"]
-    data = CartService.update_item_quantity(user_id, payload)
-    return success_response("Cart item quantity updated successfully", data)
 
 
 @router.post("/remove", response_model=dict)
