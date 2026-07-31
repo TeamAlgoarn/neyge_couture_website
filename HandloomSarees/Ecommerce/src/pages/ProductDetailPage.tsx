@@ -721,6 +721,8 @@ import {
   Star,
   Truck,
   RotateCcw,
+  Phone,
+  MessageCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -818,6 +820,15 @@ const CSS = `
 .pd-btn-cart:disabled{opacity:.55;cursor:not-allowed}
 .pd-btn-wish{width:52px;height:52px;border-radius:16px;border:1px solid rgba(196,152,10,.35);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .pd-btn-wish.active{background:rgba(128,0,32,.06);border-color:rgba(128,0,32,.22)}
+
+.pd-enquiry-box{margin-bottom:22px;padding:16px;border-radius:18px;background:rgba(196,152,10,.06);border:1px dashed rgba(196,152,10,.3)}
+.pd-enquiry-title{font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:700;color:${C.maroon};margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pd-enquiry-row{display:flex;gap:12px}
+.pd-btn-call,.pd-btn-wa{flex:1;min-height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:transform 0.2s}
+.pd-btn-call:hover,.pd-btn-wa:hover{transform:scale(1.02)}
+.pd-btn-call{background:#fff;border:1px solid ${C.maroon};color:${C.maroon}}
+.pd-btn-wa{background:#25D366;border:none;color:#fff}
+
 .pd-trust{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:12px}
 @media(max-width:560px){.pd-trust{grid-template-columns:1fr}}
 .pd-trust-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;background:rgba(255,249,240,.9)}
@@ -1113,6 +1124,14 @@ export function ProductDetailPage() {
     ? saree.originalPrice! - saree.price
     : 0;
 
+  const enquiryMessage = saree ? `Hi, I want to enquire about blouse stitching for:
+*Product*: ${saree.name}
+*ID/SKU*: ${saree.id}
+*Colour*: ${saree.color || 'N/A'}
+*URL*: ${window.location.origin}/product/${saree.slug || saree.id}` : '';
+
+  const whatsappUrl = `https://wa.me/919113991711?text=${encodeURIComponent(enquiryMessage)}`;
+
   const handleAddToCart = async () => {
     if (!saree || adding) return;
 
@@ -1361,6 +1380,26 @@ export function ProductDetailPage() {
                     fill={inWishlist ? C.maroon : 'none'}
                   />
                 </button>
+              </div>
+
+              <div className="pd-enquiry-box">
+                <div className="pd-enquiry-title">
+                  <Sparkles size={16} color={C.gold} />
+                  Want Blouse Stitching?
+                </div>
+                <div className="pd-enquiry-row">
+                  <a href="tel:+919113991711" className="pd-btn-call">
+                    <Phone size={16} /> Call Us
+                  </a>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pd-btn-wa"
+                  >
+                    <MessageCircle size={16} /> WhatsApp
+                  </a>
+                </div>
               </div>
 
               <div className="pd-trust">
