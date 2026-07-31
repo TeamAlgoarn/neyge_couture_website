@@ -282,25 +282,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
           });
 
           await loadCart();
- 
           return;
         }
 
-        // Safe workaround:
-        // remove old line item first, then add again with exact new quantity
- 
-        await api.post("/cart/remove", {
-          product_id: sareeId,
-        });
-
-        await api.post("/cart/add", {
- 
+        // Single API call to update quantity directly
+        await api.post("/cart/update", {
           product_id: sareeId,
           quantity,
         });
 
         await loadCart();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to update cart quantity", error);
         if (error?.response?.data) {
@@ -309,10 +301,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         throw error;
       }
- 
     },
     [loadCart]
   );
+
 
   const clearCart = useCallback(async () => {
     if (!tokenStorage.has()) return;
