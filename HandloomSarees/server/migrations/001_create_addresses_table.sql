@@ -1,5 +1,5 @@
 -- Migration: 001_create_addresses_table.sql
--- Description: Create addresses table for customer address management with atomic default toggling and RLS.
+-- Description: Create addresses table for customer address management with atomic default toggling, partial unique index, and RLS.
 
 CREATE TABLE IF NOT EXISTS public.addresses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS public.addresses (
 -- Index for user lookup performance
 CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON public.addresses (user_id);
 CREATE INDEX IF NOT EXISTS idx_addresses_user_default ON public.addresses (user_id, is_default);
+
+-- Partial Unique Index: Strictly enforce at PostgreSQL engine level that a user can have at most ONE default address.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_default_address_per_user
+ON public.addresses (user_id)
+WHERE is_default = true;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.addresses ENABLE ROW LEVEL SECURITY;
@@ -56,5 +61,28 @@ BEGIN
     UPDATE public.addresses
     SET is_default = true, updated_at = NOW()
     WHERE id = target_address_id AND user_id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Stored Procedure: Atomic Address Deletion & Promotion
+-- Deletes target address and promotes remaining address atomically in one single database procedure.
+CREATE OR REPLACE FUNCTION delete_address_and_promote(
+    target_user_id TEXT,
+    target_address_id UUID
+) RETURNS VOID AS $$
+DECLARE
+    was_def BOOLEAN;
+    next_id UUID;
+BEGIN
+    SELECT is_default INTO was_def FROM public.addresses WHERE id = target_address_id AND user_id = target_user_id;
+    
+    DELETE FROM public.addresses WHERE id = target_address_id AND user_id = target_user_id;
+    
+    IF was_def THEN
+        SELECT id INTO next_id FROM public.addresses WHERE user_id = target_user_id ORDER BY created_at DESC LIMIT 1;
+        IF next_id IS NOT NULL THEN
+            UPDATE public.addresses SET is_default = true, updated_at = NOW() WHERE id = next_id;
+        END IF;
+    END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -96,3 +96,21 @@ class AddressResponse(BaseModel):
     is_default: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+class AddressDataResponse(BaseModel):
+    success: bool = True
+    message: str
+    data: AddressResponse
+
+
+class AddressListDataResponse(BaseModel):
+    success: bool = True
+    message: str
+    data: list[AddressResponse]
+
+
+class AddressDeleteResponse(BaseModel):
+    success: bool = True
+    message: str
+    data: Optional[dict] = None

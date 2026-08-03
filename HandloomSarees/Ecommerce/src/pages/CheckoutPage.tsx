@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCarts';
 import { authService } from '@/lib/auth';
@@ -9,10 +9,69 @@ import { addressApi } from '@/api/address';
 import type { Address } from '@/types/address';
 import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Plus } from 'lucide-react';
 
+interface BackendCartItem {
+  id: string;
+  product_id?: string;
+  product?: { id: string };
+  quantity: number;
+}
+
+interface BackendCartResponse {
+  data?: {
+    items?: BackendCartItem[];
+  };
+}
+
+interface CheckoutCreateResponse {
+  data?: {
+    key: string;
+    amount: number;
+    currency: string;
+    razorpay_order_id: string;
+  };
+}
+
+interface RazorpaySuccessResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayFailedResponse {
+  error?: {
+    description?: string;
+  };
+}
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  theme: {
+    color: string;
+  };
+  handler: (response: RazorpaySuccessResponse) => Promise<void>;
+  modal?: {
+    ondismiss?: () => void;
+  };
+}
+
+interface RazorpayInstance {
+  open: () => void;
+  on: (event: string, callback: (response: RazorpayFailedResponse) => void) => void;
+}
+
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Razorpay: any;
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
   }
 }
 
@@ -469,25 +528,6 @@ const CSS = `
 }
 `;
 
-type CheckoutCreateResponse = {
-  data?: {
-    razorpay_order_id: string;
-    amount: number;
-    currency: string;
-    key: string;
-  };
-};
-
-type BackendCartResponse = {
-  data?: {
-    items?: Array<{
-      product_id?: string;
-      quantity?: number;
-      product?: { id?: string };
-    }>;
-  };
-};
-
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, loading, getCartTotal, clearCart, refreshCart } = useCart();
@@ -510,7 +550,7 @@ export function CheckoutPage() {
     postal_code: '',
   });
 
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     try {
       setAddressesLoading(true);
       setAddressesError('');
@@ -521,19 +561,20 @@ export function CheckoutPage() {
         const defaultAddr = list.find((a) => a.is_default) || list[0];
         setSelectedAddressId(defaultAddr.id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load backend addresses:', err);
-      setAddressesError(err?.response?.data?.message || err?.message || 'Failed to load delivery addresses');
+      const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setAddressesError(apiErr?.response?.data?.message || apiErr?.message || 'Failed to load delivery addresses');
     } finally {
       setAddressesLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (user?.id) {
       fetchAddresses();
     }
-  }, [user?.id]);
+  }, [user?.id, fetchAddresses]);
 
   useEffect(() => {
     if (!loading && cart.length === 0) {
@@ -545,7 +586,7 @@ export function CheckoutPage() {
     if (!user) {
       navigate('/login');
     }
-  }, [user?.id, navigate]);
+  }, [user, navigate]);
 
   if (loading) {
     return (
@@ -648,9 +689,10 @@ export function CheckoutPage() {
       if (created?.id) {
         setSelectedAddressId(created.id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to create address:', err);
-      toast.error(err?.response?.data?.message || 'Failed to save address');
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      toast.error(apiErr?.response?.data?.message || 'Failed to save address');
     }
   };
 
@@ -707,7 +749,7 @@ export function CheckoutPage() {
         throw new Error('Invalid checkout response');
       }
 
-      const options = {
+      const options: RazorpayOptions = {
         key: checkoutData.key,
         amount: checkoutData.amount,
         currency: checkoutData.currency,
@@ -722,7 +764,7 @@ export function CheckoutPage() {
         theme: {
           color: '#800020',
         },
-        handler: async function (response: any) {
+        handler: async function (response: RazorpaySuccessResponse) {
           try {
             const verifyRes = await api.post('/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
@@ -745,9 +787,10 @@ export function CheckoutPage() {
                 shippingAddress,
               },
             });
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error('Payment verification failed:', err);
-            toast.error(err?.response?.data?.message || 'Payment verification failed');
+            const apiErr = err as { response?: { data?: { message?: string } } };
+            toast.error(apiErr?.response?.data?.message || 'Payment verification failed');
           } finally {
             setIsProcessing(false);
           }
@@ -760,17 +803,18 @@ export function CheckoutPage() {
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: RazorpayFailedResponse) {
         console.error('Payment failed:', response.error);
         toast.error(response.error?.description || 'Payment failed');
         setIsProcessing(false);
       });
 
       rzp.open();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Checkout error:', err);
-      toast.error(err?.response?.data?.message || err?.message || 'Failed to initialize payment');
+      const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(apiErr?.response?.data?.message || apiErr?.message || 'Failed to initialize payment');
       setIsProcessing(false);
     }
   };

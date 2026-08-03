@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import get_current_user
-from app.schemas.address import AddressCreateRequest, AddressUpdateRequest
+from app.schemas.address import (
+    AddressCreateRequest,
+    AddressDataResponse,
+    AddressDeleteResponse,
+    AddressListDataResponse,
+    AddressUpdateRequest,
+)
 from app.services.address_service import AddressService
 from app.utils.response import success_response
 
@@ -24,14 +30,14 @@ def resolve_user_id(current_user: dict) -> str:
     return str(user_id)
 
 
-@router.get("", response_model=dict)
+@router.get("", response_model=AddressListDataResponse)
 async def list_addresses(current_user: dict = Depends(get_current_user)):
     user_id = resolve_user_id(current_user)
     data = AddressService.list_addresses(user_id)
     return success_response("Addresses fetched successfully", data)
 
 
-@router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AddressDataResponse, status_code=status.HTTP_201_CREATED)
 async def create_address(
     payload: AddressCreateRequest,
     current_user: dict = Depends(get_current_user),
@@ -41,7 +47,7 @@ async def create_address(
     return success_response("Address created successfully", data)
 
 
-@router.get("/{address_id}", response_model=dict)
+@router.get("/{address_id}", response_model=AddressDataResponse)
 async def get_address(
     address_id: str,
     current_user: dict = Depends(get_current_user),
@@ -51,7 +57,7 @@ async def get_address(
     return success_response("Address fetched successfully", data)
 
 
-@router.put("/{address_id}", response_model=dict)
+@router.put("/{address_id}", response_model=AddressDataResponse)
 async def update_address(
     address_id: str,
     payload: AddressUpdateRequest,
@@ -62,7 +68,7 @@ async def update_address(
     return success_response("Address updated successfully", data)
 
 
-@router.delete("/{address_id}", response_model=dict)
+@router.delete("/{address_id}", response_model=AddressDeleteResponse)
 async def delete_address(
     address_id: str,
     current_user: dict = Depends(get_current_user),
@@ -72,7 +78,7 @@ async def delete_address(
     return success_response("Address deleted successfully", None)
 
 
-@router.post("/{address_id}/default", response_model=dict)
+@router.post("/{address_id}/default", response_model=AddressDataResponse)
 async def set_default_address(
     address_id: str,
     current_user: dict = Depends(get_current_user),

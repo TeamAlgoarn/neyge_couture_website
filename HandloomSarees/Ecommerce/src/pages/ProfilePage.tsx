@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/api/client';
 import { addressApi } from '@/api/address';
@@ -403,25 +403,26 @@ export function ProfilePage() {
     setUser(refreshedUser);
   }, []);
 
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     try {
       setAddressesLoading(true);
       setAddressesError('');
       const data = await addressApi.getAddresses();
       setAddresses(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch addresses:', err);
-      setAddressesError(err?.response?.data?.message || err?.message || 'Failed to load addresses');
+      const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setAddressesError(apiErr?.response?.data?.message || apiErr?.message || 'Failed to load addresses');
     } finally {
       setAddressesLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (user?.id) {
       fetchAddresses();
     }
-  }, [user?.id]);
+  }, [user?.id, fetchAddresses]);
 
   useEffect(() => {
     const fetchUserOrders = async () => {
@@ -452,9 +453,10 @@ export function ProfilePage() {
         });
 
         setOrders(realOrders);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to fetch user orders:', err);
-        setOrdersError(err?.message || 'Failed to load orders');
+        const apiErr = err as { message?: string };
+        setOrdersError(apiErr?.message || 'Failed to load orders');
         setOrders([]);
       } finally {
         setOrdersLoading(false);
@@ -535,9 +537,10 @@ export function ProfilePage() {
       setEditingAddressId(null);
       setShowAddressForm(false);
       await fetchAddresses();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save address:', err);
-      toast.error(err?.response?.data?.message || 'Failed to save address');
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      toast.error(apiErr?.response?.data?.message || 'Failed to save address');
     }
   };
 
@@ -546,9 +549,10 @@ export function ProfilePage() {
       await addressApi.deleteAddress(addressId);
       toast.success('Address removed successfully');
       await fetchAddresses();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to delete address:', err);
-      toast.error(err?.response?.data?.message || 'Failed to delete address');
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      toast.error(apiErr?.response?.data?.message || 'Failed to delete address');
     }
   };
 
@@ -557,9 +561,10 @@ export function ProfilePage() {
       await addressApi.setDefaultAddress(addressId);
       toast.success('Default address set');
       await fetchAddresses();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to set default address:', err);
-      toast.error(err?.response?.data?.message || 'Failed to set default address');
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      toast.error(apiErr?.response?.data?.message || 'Failed to set default address');
     }
   };
 
