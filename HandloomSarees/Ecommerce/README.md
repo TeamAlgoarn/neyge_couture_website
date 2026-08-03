@@ -6,6 +6,26 @@ A full-stack luxury handloom saree e-commerce platform built with **React + Type
 
 ---
 
+## 🚦 Project Status & MVP Scope
+
+**Current Status**: Beta / Minimum Viable Product (MVP)  
+*Please note that this project is currently in active development and is not yet ready for production deployment.*
+
+### 🎯 What is Complete (MVP Scope)
+- Responsive frontend UI with complete shopping flows (Home, Shop, Product Detail).
+- Cart and Wishlist management (local state/hooks).
+- Static data integration for products and artisans.
+- AI Chatbot UI (frontend implementation).
+- Basic SEO and accessibility tagging.
+
+### 🚧 What is Pending / Known Limitations
+- **Payments**: Razorpay, Stripe, and Meta integrations are **NOT** production-ready. The current checkout flow is for demonstration purposes only. Do not process real transactions.
+- **Backend APIs**: The Node.js backend is partially implemented. Many frontend features currently rely on static mock data.
+- **Authentication**: Complete secure authentication (JWT/OAuth) is pending integration with a live database.
+- **Database**: Database schema and live DB connection (PostgreSQL/MongoDB) are not yet finalized.
+
+---
+
 ## 📁 Project Structure
 
 ```
