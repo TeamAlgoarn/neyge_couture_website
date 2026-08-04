@@ -57,9 +57,21 @@ class FakeSupabaseClient:
     def rpc(self, name, params):
         target_user_id = params.get("target_user_id")
         target_address_id = params.get("target_address_id")
-        for addr in self.data_store:
-            if addr.get("user_id") == target_user_id:
-                addr["is_default"] = (addr.get("id") == target_address_id)
+        if name == "delete_address_and_promote":
+            was_def = False
+            for addr in list(self.data_store):
+                if addr.get("id") == target_address_id and addr.get("user_id") == target_user_id:
+                    was_def = addr.get("is_default", False)
+                    self.data_store.remove(addr)
+                    break
+            if was_def:
+                remaining = [a for a in self.data_store if a.get("user_id") == target_user_id]
+                if remaining:
+                    remaining[0]["is_default"] = True
+        else:
+            for addr in self.data_store:
+                if addr.get("user_id") == target_user_id:
+                    addr["is_default"] = (addr.get("id") == target_address_id)
         mock = MagicMock()
         mock.execute.return_value = MagicMock(data=None)
         return mock
