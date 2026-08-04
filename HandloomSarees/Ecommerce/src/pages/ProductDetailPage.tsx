@@ -947,10 +947,10 @@ function mapProductToSaree(product: BackendProduct): Saree {
     length: '5.5 meters',
     newArrival: false,
     bestSeller: false,
-    has_fall: product.has_fall || false,
-    fall_price: product.fall_price || 0,
-    has_in_skirt: product.has_in_skirt || false,
-    in_skirt_price: product.in_skirt_price || 0,
+    has_fall: product.has_fall ?? true,
+    fall_price: product.fall_price ?? 350,
+    has_in_skirt: product.has_in_skirt ?? true,
+    in_skirt_price: product.in_skirt_price ?? 600,
   };
 }
 
