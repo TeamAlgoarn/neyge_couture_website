@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import api from "@/api/client";
+import { updateCartQuantity as updateCartQuantityApi, removeFromCart as removeFromCartApi, addToCart as addToCartApi } from "@/api/cart";
 import { tokenStorage } from "@/lib/token";
 import type { CartItem, Saree } from "@/types";
 
@@ -223,11 +224,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
  
-        await api.post("/cart/add", {
-          product_id: saree.id,
-          quantity,
- 
-        });
+        await addToCartApi(saree.id, quantity);
 
         await loadCart();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -251,10 +248,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       setLoading(true);
       try {
-        await api.post("/cart/remove", {
- 
-          product_id: sareeId,
-        });
+        await removeFromCartApi(sareeId);
 
         await loadCart();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -277,19 +271,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         if (quantity <= 0) {
-          await api.post("/cart/remove", {
-            product_id: sareeId,
-          });
+          await removeFromCartApi(sareeId);
 
           await loadCart();
           return;
         }
 
-        // Single API call to update quantity directly
-        await api.post("/cart/update", {
-          product_id: sareeId,
-          quantity,
-        });
+        // Single API call to update quantity directly using helper
+        await updateCartQuantityApi(sareeId, quantity);
 
         await loadCart();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -313,12 +302,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       await Promise.all(
-        cart.map((item) =>
-          api.post("/cart/remove", {
- 
-            product_id: item.saree.id,
-          })
-        )
+        cart.map((item) => removeFromCartApi(item.saree.id))
       );
 
       await loadCart();
