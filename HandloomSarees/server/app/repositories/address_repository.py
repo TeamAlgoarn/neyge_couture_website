@@ -29,26 +29,34 @@ class AddressRepository:
         return result.data[0] if result.data else None
 
     @staticmethod
-    def _unset_other_defaults(user_id: str, exclude_address_id: str | None = None) -> None:
-        client = get_supabase_admin()
-        query = client.table("addresses").update({"is_default": False}).eq("user_id", user_id).eq("is_default", True)
-        if exclude_address_id:
-            query = query.neq("id", exclude_address_id)
-        query.execute()
-
-    @staticmethod
     def create(payload: dict) -> dict:
         user_id = payload["user_id"]
         client = get_supabase_admin()
 
         existing_addresses = AddressRepository.list_by_user(user_id)
-        if not existing_addresses:
+        is_first_address = not existing_addresses
+        wants_default = payload.get("is_default", False)
+
+        # For first address, always set as default
+        if is_first_address:
             payload["is_default"] = True
-        elif payload.get("is_default"):
-            AddressRepository._unset_other_defaults(user_id)
+
+        # Insert the address (without is_default if not first, to avoid partial-unique conflict)
+        if not is_first_address and wants_default:
+            payload["is_default"] = False  # insert as non-default first
 
         result = client.table("addresses").insert(payload).execute()
-        return result.data[0]
+        new_address = result.data[0]
+
+        # Then atomically set as default via RPC if needed
+        if not is_first_address and wants_default:
+            client.rpc(
+                "set_default_address",
+                {"target_user_id": user_id, "target_address_id": new_address["id"]},
+            ).execute()
+            new_address = AddressRepository.get_by_id_and_user(new_address["id"], user_id) or new_address
+
+        return new_address
 
     @staticmethod
     def update(address_id: str, user_id: str, payload: dict) -> dict | None:
@@ -76,16 +84,10 @@ class AddressRepository:
         if not existing:
             return False
 
-        try:
-            client.rpc("delete_address_and_promote", {"target_user_id": user_id, "target_address_id": address_id}).execute()
-        except Exception:
-            was_default = existing.get("is_default", False)
-            client.table("addresses").delete().eq("id", address_id).eq("user_id", user_id).execute()
-
-            if was_default:
-                remaining = AddressRepository.list_by_user(user_id)
-                if remaining:
-                    AddressRepository.set_default(remaining[0]["id"], user_id)
+        client.rpc(
+            "delete_address_and_promote",
+            {"target_user_id": user_id, "target_address_id": address_id},
+        ).execute()
 
         return True
 
