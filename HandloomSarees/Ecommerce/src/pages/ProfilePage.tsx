@@ -1650,8 +1650,9 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">State</label>
+                      <label htmlFor="pf-state" className="pf-label">State</label>
                       <input
+                        id="pf-state"
                         className="pf-input"
                         value={addressForm.state}
                         onChange={(e) => handleInputChange('state', e.target.value)}
@@ -1660,8 +1661,9 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">Pincode</label>
+                      <label htmlFor="pf-pincode" className="pf-label">Pincode</label>
                       <input
+                        id="pf-pincode"
                         className="pf-input"
                         value={addressForm.pincode}
                         onChange={(e) => handleInputChange('pincode', e.target.value)}
