@@ -8,7 +8,7 @@ A full-stack luxury handloom saree e-commerce platform built with **React + Type
 
 ## 🚦 Project Status & MVP Scope
 
-**Current Status**: Beta / Minimum Viable Product (MVP)  
+**Current Status**: Beta / Minimum Viable Product (MVP)
 *Please note that this project is currently in active development and is not yet ready for production deployment.*
 
 ### 🎯 What is Complete (MVP Scope)
