@@ -975,10 +975,10 @@ async function getProductBySlugOrId(identifier: string): Promise<BackendProduct 
   try {
     const response = (await getProductBySlug(identifier)) as ProductApiResponse;
     if (response?.data) return response.data;
- 
- 
- 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error?.response?.status !== 404) {
       throw error;
@@ -1148,13 +1148,13 @@ export function ProductDetailPage() {
     if (!saree || adding) return;
 
     try {
- 
+
       setAdding(true);
- 
+
       await addToCart(saree, 1);
- 
+
       toast.success('Added to cart!');
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to add to cart');
     } finally {
@@ -1315,8 +1315,8 @@ export function ProductDetailPage() {
                   <span className="pd-price-main">
                     {formatCurrency(
                       saree.price +
-                        (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
-                        (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
+                      (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
+                      (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
                     )}
                   </span>
 
@@ -1325,8 +1325,8 @@ export function ProductDetailPage() {
                       <span className="pd-price-orig">
                         {formatCurrency(
                           saree.originalPrice! +
-                            (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
-                            (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
+                          (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
+                          (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
                         )}
                       </span>
                       <span className="pd-price-off-badge">
@@ -1464,7 +1464,7 @@ export function ProductDetailPage() {
                               cursor: 'pointer',
                             }}
                           />
-                          <span>Add In-skirt (Petticoat)</span>
+                          <span>Add In-skirt </span>
                         </div>
                         <span style={{ fontWeight: 600, color: C.maroon }}>
                           + {formatCurrency(saree.in_skirt_price || 0)}
@@ -1497,8 +1497,8 @@ export function ProductDetailPage() {
                       >
                         {formatCurrency(
                           saree.price +
-                            (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
-                            (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
+                          (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
+                          (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
                         )}
                       </span>
                     </div>
