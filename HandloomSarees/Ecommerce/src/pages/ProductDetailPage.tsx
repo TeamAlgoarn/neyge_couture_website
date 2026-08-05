@@ -947,10 +947,10 @@ function mapProductToSaree(product: BackendProduct): Saree {
     length: '5.5 meters',
     newArrival: false,
     bestSeller: false,
-    has_fall: product.has_fall ?? true,
-    fall_price: product.fall_price ?? 350,
-    has_in_skirt: product.has_in_skirt ?? true,
-    in_skirt_price: product.in_skirt_price ?? 600,
+    has_fall: product.has_fall ?? false,
+    fall_price: product.fall_price ?? 0,
+    has_in_skirt: product.has_in_skirt ?? false,
+    in_skirt_price: product.in_skirt_price ?? 0,
   };
 }
 
@@ -1313,21 +1313,13 @@ export function ProductDetailPage() {
               <div className="pd-price-box">
                 <div className="pd-price-row-main">
                   <span className="pd-price-main">
-                    {formatCurrency(
-                      saree.price +
-                      (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
-                      (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
-                    )}
+                    {formatCurrency(saree.price)}
                   </span>
 
                   {hasDiscount && (
                     <>
                       <span className="pd-price-orig">
-                        {formatCurrency(
-                          saree.originalPrice! +
-                          (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
-                          (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
-                        )}
+                        {formatCurrency(saree.originalPrice!)}
                       </span>
                       <span className="pd-price-off-badge">
                         {discountPct}% OFF
@@ -1404,7 +1396,7 @@ export function ProductDetailPage() {
                       gap: 6,
                     }}
                   >
-                    <Sparkles size={14} color={C.gold} /> Customization Add-ons
+                    <Sparkles size={14} color={C.gold} /> Customization Add-ons (Preview)
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1464,7 +1456,7 @@ export function ProductDetailPage() {
                               cursor: 'pointer',
                             }}
                           />
-                          <span>Add In-skirt </span>
+                          <span>Add In-skirt</span>
                         </div>
                         <span style={{ fontWeight: 600, color: C.maroon }}>
                           + {formatCurrency(saree.in_skirt_price || 0)}
@@ -1486,7 +1478,7 @@ export function ProductDetailPage() {
                         fontSize: 13,
                       }}
                     >
-                      <span>Total preview with add-ons:</span>
+                      <span>Estimated saree + add-ons total:</span>
                       <span
                         style={{
                           fontFamily: "'Cormorant Garamond', serif",
@@ -1503,6 +1495,20 @@ export function ProductDetailPage() {
                       </span>
                     </div>
                   )}
+
+                  <p
+                    style={{
+                      marginTop: 10,
+                      marginBottom: 0,
+                      fontFamily: "'Josefin Sans', sans-serif",
+                      fontSize: 11,
+                      color: '#8A6A32',
+                      lineHeight: 1.5,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    ✦ Add-on selections are preview-only. They will be confirmed and applied during checkout.
+                  </p>
                 </div>
               )}
 

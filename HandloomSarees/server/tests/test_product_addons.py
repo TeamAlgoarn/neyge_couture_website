@@ -110,3 +110,129 @@ def test_public_product_response_includes_addons():
     assert pub_res.fall_price == 400.0
     assert pub_res.has_in_skirt is False
     assert pub_res.in_skirt_price == 0.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API-Level Endpoint Tests (Create / Update / Get Add-ons)
+# ─────────────────────────────────────────────────────────────────────────────
+from fastapi.testclient import TestClient
+from app.main import app
+from app.core.dependencies import require_admin
+from app.repositories.product_repository import ProductRepository
+
+client = TestClient(app)
+
+
+def test_api_get_product_by_slug_includes_addons(monkeypatch):
+    sample_prod = {
+        "id": "prod-201",
+        "name": "Sambalpuri Silk Saree",
+        "slug": "sambalpuri-silk-saree",
+        "price": 12000.0,
+        "discount_price": None,
+        "thumbnail": "thumb.jpg",
+        "images": ["thumb.jpg"],
+        "short_description": "Beautiful handloom saree",
+        "fabric": "Silk",
+        "technique": "Ikat",
+        "origin": "Odisha",
+        "color": "Blue",
+        "occasion": ["Festive"],
+        "artisan": None,
+        "stock": 3,
+        "is_featured": True,
+        "is_active": True,
+        "tags": ["ikat"],
+        "has_fall": True,
+        "fall_price": 450.0,
+        "has_in_skirt": True,
+        "in_skirt_price": 700.0,
+        "collection_id": None,
+    }
+
+    monkeypatch.setattr(ProductRepository, "get_by_slug", staticmethod(lambda s: sample_prod))
+
+    response = client.get("/api/v1/products/slug/sambalpuri-silk-saree")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["has_fall"] is True
+    assert data["fall_price"] == 450.0
+    assert data["has_in_skirt"] is True
+    assert data["in_skirt_price"] == 700.0
+
+
+def test_api_create_product_with_addons(monkeypatch):
+    app.dependency_overrides[require_admin] = lambda: {"profile": {"role": "admin"}}
+
+    def mock_create(payload):
+        return {
+            "id": "prod-202",
+            **payload,
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z",
+        }
+
+    monkeypatch.setattr(ProductRepository, "exists_by_slug", staticmethod(lambda s, exclude_id=None: False))
+    monkeypatch.setattr(ProductRepository, "create", staticmethod(mock_create))
+
+    payload = {
+        "name": "Paithani Silk Saree",
+        "price": 25000.0,
+        "stock": 2,
+        "has_fall": True,
+        "fall_price": 500.0,
+        "has_in_skirt": True,
+        "in_skirt_price": 750.0,
+    }
+
+    response = client.post("/api/v1/products", json=payload)
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["has_fall"] is True
+    assert data["fall_price"] == 500.0
+    assert data["has_in_skirt"] is True
+    assert data["in_skirt_price"] == 750.0
+
+
+def test_api_update_product_addons(monkeypatch):
+    app.dependency_overrides[require_admin] = lambda: {"profile": {"role": "admin"}}
+
+    existing = {
+        "id": "prod-203",
+        "name": "Chanderi Cotton Saree",
+        "slug": "chanderi-cotton-saree",
+        "price": 6000.0,
+        "stock": 5,
+        "is_active": True,
+        "has_fall": False,
+        "fall_price": 0.0,
+        "has_in_skirt": False,
+        "in_skirt_price": 0.0,
+    }
+
+    def mock_update(pid, payload):
+        updated = {**existing, **payload}
+        return updated
+
+    monkeypatch.setattr(ProductRepository, "get_by_id", staticmethod(lambda pid: existing))
+    monkeypatch.setattr(ProductRepository, "exists_by_slug", staticmethod(lambda s, exclude_id=None: False))
+    monkeypatch.setattr(ProductRepository, "update", staticmethod(mock_update))
+
+    update_payload = {
+        "has_fall": True,
+        "fall_price": 300.0,
+        "has_in_skirt": True,
+        "in_skirt_price": 500.0,
+    }
+
+    response = client.put("/api/v1/products/prod-203", json=update_payload)
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["has_fall"] is True
+    assert data["fall_price"] == 300.0
+    assert data["has_in_skirt"] is True
+    assert data["in_skirt_price"] == 500.0
