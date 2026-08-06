@@ -920,8 +920,9 @@ export function CheckoutPage() {
                   <div className="co-fadein">
                     <div className="co-form-grid">
                       <div className="co-form-field">
-                        <label className="co-label">Full Name *</label>
+                        <label className="co-label" htmlFor="co-addr-full-name">Full Name *</label>
                         <input
+                          id="co-addr-full-name"
                           className="co-input"
                           value={newAddressForm.full_name}
                           onChange={(e) => setNewAddressForm({ ...newAddressForm, full_name: e.target.value })}
@@ -929,8 +930,9 @@ export function CheckoutPage() {
                         />
                       </div>
                       <div className="co-form-field">
-                        <label className="co-label">Phone Number *</label>
+                        <label className="co-label" htmlFor="co-addr-phone">Phone Number *</label>
                         <input
+                          id="co-addr-phone"
                           className="co-input"
                           value={newAddressForm.phone}
                           onChange={(e) => setNewAddressForm({ ...newAddressForm, phone: e.target.value })}
@@ -938,8 +940,9 @@ export function CheckoutPage() {
                         />
                       </div>
                       <div className="co-form-field full">
-                        <label className="co-label">Address Line 1 *</label>
+                        <label className="co-label" htmlFor="co-addr-line1">Address Line 1 *</label>
                         <input
+                          id="co-addr-line1"
                           className="co-input"
                           value={newAddressForm.line1}
                           onChange={(e) => setNewAddressForm({ ...newAddressForm, line1: e.target.value })}
@@ -947,8 +950,9 @@ export function CheckoutPage() {
                         />
                       </div>
                       <div className="co-form-field full">
-                        <label className="co-label">Address Line 2 (Optional)</label>
+                        <label className="co-label" htmlFor="co-addr-line2">Address Line 2 (Optional)</label>
                         <input
+                          id="co-addr-line2"
                           className="co-input"
                           value={newAddressForm.line2}
                           onChange={(e) => setNewAddressForm({ ...newAddressForm, line2: e.target.value })}
@@ -956,8 +960,9 @@ export function CheckoutPage() {
                         />
                       </div>
                       <div className="co-form-field">
-                        <label className="co-label">City *</label>
+                        <label className="co-label" htmlFor="co-addr-city">City *</label>
                         <input
+                          id="co-addr-city"
                           className="co-input"
                           value={newAddressForm.city}
                           onChange={(e) => setNewAddressForm({ ...newAddressForm, city: e.target.value })}
@@ -965,8 +970,9 @@ export function CheckoutPage() {
                         />
                       </div>
                       <div className="co-form-field">
-                        <label className="co-label">State *</label>
+                        <label className="co-label" htmlFor="co-addr-state">State *</label>
                         <input
+                          id="co-addr-state"
                           className="co-input"
                           value={newAddressForm.state}
                           onChange={(e) => setNewAddressForm({ ...newAddressForm, state: e.target.value })}
@@ -974,8 +980,9 @@ export function CheckoutPage() {
                         />
                       </div>
                       <div className="co-form-field">
-                        <label className="co-label">Pincode *</label>
+                        <label className="co-label" htmlFor="co-addr-pincode">Pincode *</label>
                         <input
+                          id="co-addr-pincode"
                           className="co-input"
                           value={newAddressForm.postal_code}
                           onChange={(e) => setNewAddressForm({ ...newAddressForm, postal_code: e.target.value })}

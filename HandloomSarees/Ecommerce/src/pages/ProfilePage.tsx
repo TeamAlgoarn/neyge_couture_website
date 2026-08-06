@@ -680,8 +680,9 @@ export function ProfilePage() {
                   </h3>
                   <div className="pf-form-grid">
                     <div>
-                      <label className="pf-label">Full Name *</label>
+                      <label className="pf-label" htmlFor="pf-addr-full-name">Full Name *</label>
                       <input
+                        id="pf-addr-full-name"
                         className="pf-input"
                         value={addressForm.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
@@ -690,8 +691,9 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">Phone *</label>
+                      <label className="pf-label" htmlFor="pf-addr-phone">Phone *</label>
                       <input
+                        id="pf-addr-phone"
                         className="pf-input"
                         value={addressForm.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
@@ -700,8 +702,9 @@ export function ProfilePage() {
                     </div>
 
                     <div className="pf-field-full">
-                      <label className="pf-label">Address Line 1 *</label>
+                      <label className="pf-label" htmlFor="pf-addr-line1">Address Line 1 *</label>
                       <input
+                        id="pf-addr-line1"
                         className="pf-input"
                         value={addressForm.addressLine1}
                         onChange={(e) => handleInputChange('addressLine1', e.target.value)}
@@ -710,8 +713,9 @@ export function ProfilePage() {
                     </div>
 
                     <div className="pf-field-full">
-                      <label className="pf-label">Address Line 2</label>
+                      <label className="pf-label" htmlFor="pf-addr-line2">Address Line 2</label>
                       <input
+                        id="pf-addr-line2"
                         className="pf-input"
                         value={addressForm.addressLine2}
                         onChange={(e) => handleInputChange('addressLine2', e.target.value)}
@@ -720,8 +724,9 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">City *</label>
+                      <label className="pf-label" htmlFor="pf-addr-city">City *</label>
                       <input
+                        id="pf-addr-city"
                         className="pf-input"
                         value={addressForm.city}
                         onChange={(e) => handleInputChange('city', e.target.value)}
@@ -730,8 +735,9 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">State *</label>
+                      <label className="pf-label" htmlFor="pf-addr-state">State *</label>
                       <input
+                        id="pf-addr-state"
                         className="pf-input"
                         value={addressForm.state}
                         onChange={(e) => handleInputChange('state', e.target.value)}
@@ -740,8 +746,9 @@ export function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="pf-label">Pincode *</label>
+                      <label className="pf-label" htmlFor="pf-addr-pincode">Pincode *</label>
                       <input
+                        id="pf-addr-pincode"
                         className="pf-input"
                         value={addressForm.pincode}
                         onChange={(e) => handleInputChange('pincode', e.target.value)}

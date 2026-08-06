@@ -62,7 +62,7 @@ BEGIN
     SET is_default = true, updated_at = NOW()
     WHERE id = target_address_id AND user_id = target_user_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Stored Procedure: Atomic Address Deletion & Promotion
 -- Deletes target address and promotes remaining address atomically in one single database procedure.
@@ -75,14 +75,14 @@ DECLARE
     next_id UUID;
 BEGIN
     SELECT is_default INTO was_def FROM public.addresses WHERE id = target_address_id AND user_id = target_user_id;
-    
+
     DELETE FROM public.addresses WHERE id = target_address_id AND user_id = target_user_id;
-    
+
     IF was_def THEN
         SELECT id INTO next_id FROM public.addresses WHERE user_id = target_user_id ORDER BY created_at DESC LIMIT 1;
         IF next_id IS NOT NULL THEN
-            UPDATE public.addresses SET is_default = true, updated_at = NOW() WHERE id = next_id;
+            UPDATE public.addresses SET is_default = true, updated_at = NOW() WHERE id = next_id AND user_id = target_user_id;
         END IF;
     END IF;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
