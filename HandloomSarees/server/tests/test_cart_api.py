@@ -136,10 +136,10 @@ def test_update_cart_quantity_cross_user_protection(monkeypatch):
     app.dependency_overrides[get_current_user] = customer_user
 
     monkeypatch.setattr(ProductRepository, "get_active_by_id", staticmethod(lambda pid: sample_product()))
-    
+
     # Current user gets their own cart (cart-1)
     monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: {"id": "cart-1", "user_id": uid}))
-    
+
     # We simulate a scenario where the cart item exists in someone ELSE's cart (cart-2)
     # The API will query get_cart_item with (cart-1, prod-1)
     # So it should return None because the item doesn't exist in cart-1
@@ -166,7 +166,7 @@ def test_update_cart_quantity_does_not_create_duplicate_rows(monkeypatch):
     monkeypatch.setattr(ProductRepository, "get_by_id", staticmethod(lambda pid: sample_product()))
     monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: mock_cart))
     monkeypatch.setattr(CartRepository, "get_cart_item", staticmethod(lambda cid, pid: mock_cart_item))
-    
+
     create_called = False
     def mock_create(*args, **kwargs):
         nonlocal create_called
@@ -178,14 +178,14 @@ def test_update_cart_quantity_does_not_create_duplicate_rows(monkeypatch):
 
     response = client.post("/api/v1/cart/update", json={"product_id": "prod-1", "quantity": 3})
     assert response.status_code == 200
-    
+
     # Verify create_cart_item was NEVER called during update
     assert create_called is False
 
 
 def test_add_and_remove_cart_regression(monkeypatch):
     app.dependency_overrides[get_current_user] = customer_user
-    
+
     monkeypatch.setattr(ProductRepository, "get_active_by_id", staticmethod(lambda pid: sample_product()))
     monkeypatch.setattr(ProductRepository, "get_by_id", staticmethod(lambda pid: sample_product()))
     monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: {"id": "cart-1", "user_id": uid}))
@@ -193,12 +193,12 @@ def test_add_and_remove_cart_regression(monkeypatch):
     monkeypatch.setattr(CartRepository, "create_cart_item", staticmethod(lambda payload: payload))
     monkeypatch.setattr(CartRepository, "delete_cart_item", staticmethod(lambda cid, pid: None))
     monkeypatch.setattr(CartRepository, "get_cart_items", staticmethod(lambda cid: []))
-    
+
     # Test ADD (new item)
     response = client.post("/api/v1/cart/add", json={"product_id": "prod-1", "quantity": 1})
     assert response.status_code == 200
     assert response.json()["success"] is True
-    
+
     # Test REMOVE
     response = client.post("/api/v1/cart/remove", json={"product_id": "prod-1"})
     assert response.status_code == 200
