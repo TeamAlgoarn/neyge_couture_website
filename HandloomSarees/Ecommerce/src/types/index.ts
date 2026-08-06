@@ -128,6 +128,12 @@ export interface Address {
   isDefault: boolean;
 }
 
+export interface AddOnSnapshot {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface Saree {
   id: string;
   name: string;
@@ -151,17 +157,39 @@ export interface Saree {
   featured?: boolean;
   newArrival?: boolean;
   bestSeller?: boolean;
+  has_fall?: boolean;
+  fall_price?: number;
+  has_in_skirt?: boolean;
+  in_skirt_price?: number;
 }
 
 export interface CartItem {
   saree: Saree;
   quantity: number;
+  selected_addons?: AddOnSnapshot[];
+  addons_total?: number;
+  product_price?: number;
+  unit_price?: number;
+  line_total?: number;
+}
+
+export interface OrderItem {
+  product_id?: string;
+  name?: string;
+  slug?: string;
+  price?: number;
+  quantity?: number;
+  thumbnail?: string;
+  selected_addons?: AddOnSnapshot[];
+  addons_total?: number;
+  unit_price?: number;
+  line_total?: number;
 }
 
 export interface Order {
   id: string;
   userId: string;
-  items: CartItem[];
+  items: (CartItem | OrderItem)[];
   total: number;
   discount?: number;
   finalTotal: number;

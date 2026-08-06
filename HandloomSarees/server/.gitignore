@@ -31,9 +31,10 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Cache
-.npm
-.eslintcache
-
-# PM2
-ecosystem.config.js.bak
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.pytest_cache/

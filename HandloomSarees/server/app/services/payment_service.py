@@ -64,17 +64,21 @@ class PaymentService:
                     detail=f"Insufficient stock for '{product.get('name', 'Unknown')}'",
                 )
 
-            unit_price = float(
+            product_price = float(
                 product.get("discount_price")
                 if product.get("discount_price") is not None
                 else product.get("price", 0)
             )
 
-            if unit_price <= 0:
+            if product_price <= 0:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid price for '{product.get('name', 'Unknown')}'",
                 )
+
+            selected_addons = item.get("selected_addons") or []
+            addons_total = sum(float(a.get("price", 0)) for a in selected_addons)
+            unit_price = product_price + addons_total
 
             line_total = unit_price * quantity
             total_amount += line_total
@@ -83,7 +87,10 @@ class PaymentService:
                 {
                     "name": product.get("name"),
                     "slug": product.get("slug"),
-                    "price": unit_price,
+                    "price": product_price,
+                    "selected_addons": selected_addons,
+                    "addons_total": addons_total,
+                    "unit_price": unit_price,
                     "quantity": quantity,
                     "thumbnail": product.get("thumbnail"),
                     "line_total": line_total,

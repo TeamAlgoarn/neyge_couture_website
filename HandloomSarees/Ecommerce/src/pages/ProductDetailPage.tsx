@@ -871,6 +871,10 @@ type BackendProduct = {
   occasion?: string[];
   care_instructions?: string | null;
   is_featured?: boolean;
+  has_fall?: boolean;
+  fall_price?: number;
+  has_in_skirt?: boolean;
+  in_skirt_price?: number;
 };
 
 type ProductApiResponse = {
@@ -932,6 +936,10 @@ function mapProductToSaree(product: BackendProduct): Saree {
     length: '5.5 meters',
     newArrival: false,
     bestSeller: false,
+    has_fall: product.has_fall ?? false,
+    fall_price: product.fall_price ?? 0,
+    has_in_skirt: product.has_in_skirt ?? false,
+    in_skirt_price: product.in_skirt_price ?? 0,
   };
 }
 
@@ -988,6 +996,7 @@ export function ProductDetailPage() {
   const [relatedSarees, setRelatedSarees] = useState<Saree[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
 
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -1109,15 +1118,31 @@ export function ProductDetailPage() {
     ? saree.originalPrice! - saree.price
     : 0;
 
+  const toggleAddon = (addonId: string) => {
+    setSelectedAddons((prev) =>
+      prev.includes(addonId)
+        ? prev.filter((a) => a !== addonId)
+        : [...prev, addonId]
+    );
+  };
+
+  const addonsPreviewTotal = useMemo(() => {
+    if (!saree) return 0;
+    let total = 0;
+    if (selectedAddons.includes('fall')) total += saree.fall_price ?? 0;
+    if (selectedAddons.includes('in_skirt')) total += saree.in_skirt_price ?? 0;
+    return total;
+  }, [saree, selectedAddons]);
+
   const handleAddToCart = async () => {
     if (!saree || adding) return;
 
     try {
       setAdding(true);
-      await addToCart(saree, 1);
+      await addToCart(saree, 1, selectedAddons);
       toast.success('Added to cart!');
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to add to cart');
+      toast.error(error?.response?.data?.message || error?.response?.data?.detail || 'Failed to add to cart');
     } finally {
       setAdding(false);
     }
@@ -1329,6 +1354,144 @@ export function ProductDetailPage() {
                   </div>
                 ))}
               </div>
+
+              {/* ── Add-on Selector ── */}
+              {(saree.has_fall || saree.has_in_skirt) && (
+                <div style={{
+                  background: 'rgba(255,249,240,.9)',
+                  border: '1px solid rgba(196,152,10,.22)',
+                  borderRadius: 18,
+                  padding: '18px 20px',
+                  marginBottom: 22,
+                }}>
+                  <div style={{
+                    fontFamily: "'Josefin Sans', sans-serif",
+                    fontSize: 12,
+                    letterSpacing: '.12em',
+                    textTransform: 'uppercase' as const,
+                    color: C.maroon,
+                    fontWeight: 700,
+                    marginBottom: 14,
+                  }}>Customise Your Saree</div>
+
+                  {saree.has_fall && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 14px',
+                      borderRadius: 14,
+                      border: selectedAddons.includes('fall')
+                        ? `1.5px solid ${C.gold}`
+                        : '1.5px solid rgba(196,152,10,.18)',
+                      background: selectedAddons.includes('fall')
+                        ? 'rgba(196,152,10,.08)'
+                        : 'white',
+                      cursor: 'pointer',
+                      marginBottom: 10,
+                      transition: 'all .25s',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedAddons.includes('fall')}
+                        onChange={() => toggleAddon('fall')}
+                        style={{ accentColor: C.maroon, width: 18, height: 18 }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontFamily: "'Josefin Sans', sans-serif",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: C.maroon,
+                        }}>Fall &amp; Pico Stitching</div>
+                        <div style={{
+                          fontFamily: "'Josefin Sans', sans-serif",
+                          fontSize: 12,
+                          color: '#7a6a5d',
+                          marginTop: 2,
+                        }}>Professional fall attachment for draping</div>
+                      </div>
+                      <span style={{
+                        fontFamily: "'Josefin Sans', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#059669',
+                      }}>+ ₹{saree.fall_price}</span>
+                    </label>
+                  )}
+
+                  {saree.has_in_skirt && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 14px',
+                      borderRadius: 14,
+                      border: selectedAddons.includes('in_skirt')
+                        ? `1.5px solid ${C.gold}`
+                        : '1.5px solid rgba(196,152,10,.18)',
+                      background: selectedAddons.includes('in_skirt')
+                        ? 'rgba(196,152,10,.08)'
+                        : 'white',
+                      cursor: 'pointer',
+                      transition: 'all .25s',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedAddons.includes('in_skirt')}
+                        onChange={() => toggleAddon('in_skirt')}
+                        style={{ accentColor: C.maroon, width: 18, height: 18 }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontFamily: "'Josefin Sans', sans-serif",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: C.maroon,
+                        }}>Matching In-Skirt (Petticoat)</div>
+                        <div style={{
+                          fontFamily: "'Josefin Sans', sans-serif",
+                          fontSize: 12,
+                          color: '#7a6a5d',
+                          marginTop: 2,
+                        }}>Colour-matched cotton petticoat</div>
+                      </div>
+                      <span style={{
+                        fontFamily: "'Josefin Sans', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#059669',
+                      }}>+ ₹{saree.in_skirt_price}</span>
+                    </label>
+                  )}
+
+                  {addonsPreviewTotal > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginTop: 14,
+                      padding: '10px 14px',
+                      borderRadius: 12,
+                      background: 'rgba(128,0,32,.04)',
+                      border: '1px solid rgba(128,0,32,.08)',
+                    }}>
+                      <span style={{
+                        fontFamily: "'Josefin Sans', sans-serif",
+                        fontSize: 12,
+                        color: '#7a6a5d',
+                        fontWeight: 500,
+                      }}>Effective Price with Add-ons</span>
+                      <span style={{
+                        fontFamily: "'Cinzel', serif",
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: C.maroon,
+                      }}>₹{(saree.price + addonsPreviewTotal).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="pd-cta-row">
                 <button

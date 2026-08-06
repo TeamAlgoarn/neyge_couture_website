@@ -67,6 +67,10 @@ class ProductCreateRequest(BaseModel):
     is_active: bool = True
     care_instructions: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
+    has_fall: bool = True
+    fall_price: float = Field(default=150.0, ge=0)
+    has_in_skirt: bool = True
+    in_skirt_price: float = Field(default=350.0, ge=0)
 
     # validators: normalise whatever arrives into a plain string for DB
     @field_validator("color", "fabric", mode="before")
@@ -107,6 +111,10 @@ class ProductUpdateRequest(BaseModel):
     is_active: Optional[bool] = None
     care_instructions: Optional[str] = None
     tags: Optional[List[str]] = None
+    has_fall: Optional[bool] = None
+    fall_price: Optional[float] = Field(default=None, ge=0)
+    has_in_skirt: Optional[bool] = None
+    in_skirt_price: Optional[float] = Field(default=None, ge=0)
 
     @field_validator("color", "fabric", mode="before")
     @classmethod
@@ -136,6 +144,10 @@ class ProductResponse(BaseModel):
     is_active: bool
     care_instructions: Optional[str] = None
     tags: List[str]
+    has_fall: bool = False
+    fall_price: float = 0.0
+    has_in_skirt: bool = False
+    in_skirt_price: float = 0.0
     created_at: datetime
     updated_at: datetime
 
@@ -184,6 +196,10 @@ class PublicProductResponse(BaseModel):
     stock: int | None = None
     is_featured: bool = False
     tags: list[str] = []
+    has_fall: bool = False
+    fall_price: float = 0.0
+    has_in_skirt: bool = False
+    in_skirt_price: float = 0.0
     collection: PublicCollectionSummary | None = None
 
 

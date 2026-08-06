@@ -17,6 +17,61 @@ class CartService:
         return product
 
     @staticmethod
+    def _process_addons(product: dict, requested_addons: list[str]) -> tuple[list[dict], float]:
+        """
+        Validates selected add-ons against product availability (has_fall, has_in_skirt)
+        and calculates add-on prices strictly from product record (fall_price, in_skirt_price).
+        Rejects frontend-supplied price overrides or unavailable add-ons.
+        """
+        if not requested_addons:
+            return [], 0.0
+
+        cleaned_addons = [str(a).strip().lower() for a in requested_addons if isinstance(a, str)]
+        unique_addons = sorted(list(set(cleaned_addons)))
+
+        has_fall = bool(product.get("has_fall", True))
+        fall_price = float(product.get("fall_price") if product.get("fall_price") is not None else 150.0)
+
+        has_in_skirt = bool(product.get("has_in_skirt", True))
+        in_skirt_price = float(product.get("in_skirt_price") if product.get("in_skirt_price") is not None else 350.0)
+
+        addons_snapshot = []
+        addons_total = 0.0
+
+        for addon_id in unique_addons:
+            if addon_id == "fall":
+                if not has_fall:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Fall add-on is not available for this product",
+                    )
+                addons_snapshot.append({
+                    "id": "fall",
+                    "name": "Fall & Pico",
+                    "price": fall_price,
+                })
+                addons_total += fall_price
+            elif addon_id == "in_skirt":
+                if not has_in_skirt:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="In-skirt add-on is not available for this product",
+                    )
+                addons_snapshot.append({
+                    "id": "in_skirt",
+                    "name": "Matching In-Skirt",
+                    "price": in_skirt_price,
+                })
+                addons_total += in_skirt_price
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unavailable add-on selected: '{addon_id}'",
+                )
+
+        return addons_snapshot, addons_total
+
+    @staticmethod
     def get_cart(user_id: str) -> dict:
         cart = CartRepository.get_or_create_cart(user_id)
         items = CartRepository.get_cart_items(cart["id"])
@@ -27,13 +82,31 @@ class CartService:
 
         for item in items:
             product = ProductRepository.get_by_id(item["product_id"])
-            line_total = float(item["unit_price"]) * int(item["quantity"])
+            if not product:
+                product_price = float(item.get("product_price", item.get("unit_price", 0)))
+            else:
+                product_price = float(
+                    product.get("discount_price")
+                    if product.get("discount_price") is not None
+                    else product.get("price", 0)
+                )
+
+            addons_snapshot = item.get("selected_addons") or []
+            addons_total = sum(float(a.get("price", 0)) for a in addons_snapshot)
+            unit_price = product_price + addons_total
+            quantity = int(item["quantity"])
+            line_total = unit_price * quantity
+
             subtotal += line_total
-            total_items += int(item["quantity"])
+            total_items += quantity
 
             enriched_items.append(
                 {
                     **item,
+                    "product_price": product_price,
+                    "selected_addons": addons_snapshot,
+                    "addons_total": addons_total,
+                    "unit_price": unit_price,
                     "line_total": line_total,
                     "product": product,
                 }
@@ -57,10 +130,30 @@ class CartService:
                 detail="Insufficient stock",
             )
 
-        cart = CartRepository.get_or_create_cart(user_id)
-        existing = CartRepository.get_cart_item(cart["id"], payload.product_id)
+        addons_snapshot, addons_total = CartService._process_addons(
+            product=product,
+            requested_addons=payload.selected_addons,
+        )
 
-        unit_price = float(product.get("discount_price") or product["price"])
+        cart = CartRepository.get_or_create_cart(user_id)
+        existing_items = CartRepository.get_cart_items(cart["id"])
+
+        # Find existing line item with matching product_id and identical selected_addons
+        target_addon_ids = set(a["id"] for a in addons_snapshot)
+        existing = None
+        for item in existing_items:
+            if item.get("product_id") == payload.product_id:
+                item_addon_ids = set(a.get("id") for a in (item.get("selected_addons") or []))
+                if item_addon_ids == target_addon_ids:
+                    existing = item
+                    break
+
+        product_price = float(
+            product.get("discount_price")
+            if product.get("discount_price") is not None
+            else product.get("price", 0)
+        )
+        unit_price = product_price + addons_total
 
         if existing:
             new_qty = int(existing["quantity"]) + payload.quantity
@@ -76,6 +169,9 @@ class CartService:
                 {
                     "quantity": new_qty,
                     "unit_price": unit_price,
+                    "product_price": product_price,
+                    "selected_addons": addons_snapshot,
+                    "addons_total": addons_total,
                 },
             )
         else:
@@ -84,7 +180,10 @@ class CartService:
                     "cart_id": cart["id"],
                     "product_id": payload.product_id,
                     "quantity": payload.quantity,
+                    "product_price": product_price,
                     "unit_price": unit_price,
+                    "selected_addons": addons_snapshot,
+                    "addons_total": addons_total,
                 }
             )
 

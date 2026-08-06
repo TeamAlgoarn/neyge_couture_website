@@ -34,12 +34,19 @@ type BackendCartProduct = {
   occasion?: string[] | string | null;
   care_instructions?: string | null;
   is_featured?: boolean;
+  has_fall?: boolean;
+  fall_price?: number;
+  has_in_skirt?: boolean;
+  in_skirt_price?: number;
 };
 
 type BackendCartItem = {
   id: string;
   product_id: string;
   quantity: number;
+  product_price?: number;
+  selected_addons?: Array<{ id: string; name: string; price: number }>;
+  addons_total?: number;
   unit_price: number;
   line_total: number;
   product: BackendCartProduct;
@@ -62,7 +69,7 @@ type CartContextType = {
   loading: boolean;
   initialized: boolean;
   refreshCart: () => Promise<void>;
-  addToCart: (saree: Saree, quantity?: number) => Promise<void>;
+  addToCart: (saree: Saree, quantity?: number, selectedAddons?: string[]) => Promise<void>;
   removeFromCart: (sareeId: string) => Promise<void>;
   updateQuantity: (sareeId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -109,6 +116,10 @@ function mapProductToSaree(product: BackendCartProduct): Saree {
     featured: product.is_featured || false,
     blousePiece: false,
     length: "",
+    has_fall: product.has_fall ?? false,
+    fall_price: product.fall_price ?? 0,
+    has_in_skirt: product.has_in_skirt ?? false,
+    in_skirt_price: product.in_skirt_price ?? 0,
   };
 }
 
@@ -153,6 +164,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const mappedItems: CartItem[] = backendItems.map((item) => ({
         saree: mapProductToSaree(item.product),
         quantity: item.quantity,
+        selected_addons: item.selected_addons || [],
+        addons_total: item.addons_total || 0,
+        product_price: item.product_price || item.unit_price,
+        unit_price: item.unit_price,
+        line_total: item.line_total,
       }));
 
       setCart(mappedItems);
@@ -204,7 +220,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [loadCart]);
 
   const addToCart = useCallback(
-    async (saree: Saree, quantity: number = 1) => {
+    async (saree: Saree, quantity: number = 1, selectedAddons: string[] = []) => {
       if (!tokenStorage.has()) return;
 
       setLoading(true);
@@ -212,6 +228,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         await api.post("/cart/add", {
           product_id: saree.id,
           quantity,
+          selected_addons: selectedAddons,
         });
 
         await loadCart();
@@ -315,7 +332,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCartTotal = useCallback(() => {
     return cart.reduce(
-      (total, item) => total + item.saree.price * item.quantity,
+      (total, item) =>
+        total +
+        (item.line_total ??
+          (item.unit_price ?? item.saree.price) * item.quantity),
       0
     );
   }, [cart]);
