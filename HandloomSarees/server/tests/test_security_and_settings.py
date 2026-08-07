@@ -791,3 +791,52 @@ def test_admin_instagram_send_message_allows_admin_token(monkeypatch):
         "message": "Hello",
     })
     assert response.status_code == 200
+
+
+# ── Order Status Update Tests ────────────────────────────────────────────────
+
+def test_admin_update_order_status_requires_token():
+    response = client.patch("/api/v1/orders/admin/order-123/status", json={"order_status": "processing"})
+    assert response.status_code == 401
+
+
+def test_admin_update_order_status_rejects_customer_token():
+    app.dependency_overrides[get_current_user] = customer_user
+    response = client.patch("/api/v1/orders/admin/order-123/status", json={"order_status": "processing"})
+    assert response.status_code == 403
+
+
+def test_admin_update_order_status_allows_admin_token(monkeypatch):
+    app.dependency_overrides[get_current_user] = admin_user
+    monkeypatch.setattr(
+        OrderService,
+        "update_order_status",
+        staticmethod(lambda order_id, payload: {"id": order_id, "order_status": payload.order_status}),
+    )
+    response = client.patch("/api/v1/orders/admin/order-123/status", json={"order_status": "processing"})
+    assert response.status_code == 200
+    assert response.json()["data"]["id"] == "order-123"
+    assert response.json()["data"]["order_status"] == "processing"
+
+
+def test_admin_update_order_status_with_tracking(monkeypatch):
+    app.dependency_overrides[get_current_user] = admin_user
+    monkeypatch.setattr(
+        OrderService,
+        "update_order_status",
+        staticmethod(lambda order_id, payload: {
+            "id": order_id,
+            "order_status": payload.order_status,
+            "courier_name": payload.courier_name,
+            "tracking_number": payload.tracking_number,
+        }),
+    )
+    response = client.patch("/api/v1/orders/admin/order-123/status", json={
+        "order_status": "shipped",
+        "courier_name": "FedEx",
+        "tracking_number": "1234567890",
+    })
+    assert response.status_code == 200
+    assert response.json()["data"]["order_status"] == "shipped"
+    assert response.json()["data"]["courier_name"] == "FedEx"
+    assert response.json()["data"]["tracking_number"] == "1234567890"
