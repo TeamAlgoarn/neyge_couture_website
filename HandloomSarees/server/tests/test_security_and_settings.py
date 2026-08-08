@@ -130,13 +130,14 @@ async def mock_send_instagram_reply(recipient_id, message):
 
 
 def test_debug_release_string_is_parsed_as_false():
-    settings = Settings(**settings_kwargs())
+    settings = Settings(_env_file=None, **settings_kwargs())
 
     assert settings.DEBUG is False
 
 
 def test_cors_origins_parse_comma_separated_values():
     settings = Settings(
+        _env_file=None,
         **settings_kwargs(
             CORS_ORIGINS="http://localhost:5173,http://localhost:3000"
         )
@@ -197,7 +198,7 @@ def test_cors_origins_parse_whitespace_around_comma_separated_values():
 
 def test_cors_origins_reject_wildcard():
     with pytest.raises(ValidationError):
-        Settings(**settings_kwargs(CORS_ORIGINS="*"))
+        Settings(_env_file=None, **settings_kwargs(CORS_ORIGINS="*"))
 
 
 def test_production_requires_integration_secrets():
