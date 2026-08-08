@@ -713,6 +713,10 @@ type ProductPayload = {
   collection_slug: string;
   is_featured: boolean;
   is_active: boolean;
+  has_fall: boolean;
+  fall_price: number;
+  has_in_skirt: boolean;
+  in_skirt_price: number;
 };
 
 type ProductResponse = {
@@ -750,6 +754,10 @@ const initialForm: ProductPayload = {
   collection_slug: "",
   is_featured: false,
   is_active: true,
+  has_fall: false,
+  fall_price: 0,
+  has_in_skirt: false,
+  in_skirt_price: 0,
 };
 
 // Helper: parse "Red,Gold" string from API → ["Red","Gold"] array
@@ -833,6 +841,10 @@ export default function ProductForm() {
               product.collection_slug || product.collection?.slug || "",
             is_featured: !!product.is_featured,
             is_active: product.is_active ?? true,
+            has_fall: !!product.has_fall,
+            fall_price: Number(product.fall_price || 0),
+            has_in_skirt: !!product.has_in_skirt,
+            in_skirt_price: Number(product.in_skirt_price || 0),
           });
         }
       } catch (error) {
@@ -1230,6 +1242,77 @@ export default function ProductForm() {
                       }
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Add-ons Configuration ── */}
+            <div className="form-card" style={{ marginTop: 28 }}>
+              <div className="form-title">
+                <Layers size={20} color={C.gold} />
+                Product Add-ons (Fall & In-skirt)
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                {/* Fall Config */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <label className="form-checkbox-label">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox"
+                      checked={form.has_fall}
+                      onChange={(e) => updateField("has_fall", e.target.checked)}
+                    />
+                    Enable Fall Add-on
+                  </label>
+                  {form.has_fall && (
+                    <div style={{ paddingLeft: 28 }}>
+                      <label className="form-label">Fall Price (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="form-input"
+                        value={form.fall_price}
+                        onChange={(e) =>
+                          updateField(
+                            "fall_price",
+                            Math.max(0, parseFloat(e.target.value) || 0)
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* In-skirt Config */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <label className="form-checkbox-label">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox"
+                      checked={form.has_in_skirt}
+                      onChange={(e) => updateField("has_in_skirt", e.target.checked)}
+                    />
+                    Enable In-skirt Add-on
+                  </label>
+                  {form.has_in_skirt && (
+                    <div style={{ paddingLeft: 28 }}>
+                      <label className="form-label">In-skirt Price (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="form-input"
+                        value={form.in_skirt_price}
+                        onChange={(e) =>
+                          updateField(
+                            "in_skirt_price",
+                            Math.max(0, parseFloat(e.target.value) || 0)
+                          )
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
