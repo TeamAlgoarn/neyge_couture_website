@@ -151,6 +151,10 @@ export interface Saree {
   featured?: boolean;
   newArrival?: boolean;
   bestSeller?: boolean;
+  has_fall?: boolean;
+  fall_price?: number;
+  has_in_skirt?: boolean;
+  in_skirt_price?: number;
 }
 
 export interface CartItem {

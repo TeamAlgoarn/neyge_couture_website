@@ -882,6 +882,10 @@ type BackendProduct = {
   occasion?: string[];
   care_instructions?: string | null;
   is_featured?: boolean;
+  has_fall?: boolean;
+  fall_price?: number;
+  has_in_skirt?: boolean;
+  in_skirt_price?: number;
 };
 
 type ProductApiResponse = {
@@ -943,6 +947,10 @@ function mapProductToSaree(product: BackendProduct): Saree {
     length: '5.5 meters',
     newArrival: false,
     bestSeller: false,
+    has_fall: product.has_fall ?? false,
+    fall_price: product.fall_price ?? 0,
+    has_in_skirt: product.has_in_skirt ?? false,
+    in_skirt_price: product.in_skirt_price ?? 0,
   };
 }
 
@@ -967,10 +975,10 @@ async function getProductBySlugOrId(identifier: string): Promise<BackendProduct 
   try {
     const response = (await getProductBySlug(identifier)) as ProductApiResponse;
     if (response?.data) return response.data;
- 
- 
- 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error?.response?.status !== 404) {
       throw error;
@@ -1003,6 +1011,8 @@ export function ProductDetailPage() {
   const [relatedSarees, setRelatedSarees] = useState<Saree[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [selectFall, setSelectFall] = useState(false);
+  const [selectInSkirt, setSelectInSkirt] = useState(false);
 
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -1053,6 +1063,8 @@ export function ProductDetailPage() {
         setSaree(mapped);
         setSelectedImage(0);
         setAdding(false);
+        setSelectFall(false);
+        setSelectInSkirt(false);
 
         try {
           const relatedResponse = (await getProducts({
@@ -1136,13 +1148,13 @@ export function ProductDetailPage() {
     if (!saree || adding) return;
 
     try {
- 
+
       setAdding(true);
- 
+
       await addToCart(saree, 1);
- 
+
       toast.success('Added to cart!');
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to add to cart');
     } finally {
@@ -1300,7 +1312,9 @@ export function ProductDetailPage() {
 
               <div className="pd-price-box">
                 <div className="pd-price-row-main">
-                  <span className="pd-price-main">{formatCurrency(saree.price)}</span>
+                  <span className="pd-price-main">
+                    {formatCurrency(saree.price)}
+                  </span>
 
                   {hasDiscount && (
                     <>
@@ -1356,6 +1370,147 @@ export function ProductDetailPage() {
                   </div>
                 ))}
               </div>
+
+              {(saree.has_fall || saree.has_in_skirt) && (
+                <div
+                  className="pd-addons-box"
+                  style={{
+                    marginBottom: 20,
+                    padding: 16,
+                    borderRadius: 16,
+                    background: 'rgba(255, 249, 240, 0.85)',
+                    border: '1px solid rgba(196, 152, 10, 0.3)',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "'Josefin Sans', sans-serif",
+                      fontSize: 12,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: C.maroon,
+                      fontWeight: 700,
+                      marginBottom: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Sparkles size={14} color={C.gold} /> Customization Add-ons (Preview)
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {saree.has_fall && (
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          fontFamily: "'Josefin Sans', sans-serif",
+                          color: C.warmGrey,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={selectFall}
+                            onChange={(e) => setSelectFall(e.target.checked)}
+                            style={{
+                              accentColor: C.maroon,
+                              width: 16,
+                              height: 16,
+                              cursor: 'pointer',
+                            }}
+                          />
+                          <span>Add Fall & Pico</span>
+                        </div>
+                        <span style={{ fontWeight: 600, color: C.maroon }}>
+                          + {formatCurrency(saree.fall_price || 0)}
+                        </span>
+                      </label>
+                    )}
+
+                    {saree.has_in_skirt && (
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          fontFamily: "'Josefin Sans', sans-serif",
+                          color: C.warmGrey,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={selectInSkirt}
+                            onChange={(e) => setSelectInSkirt(e.target.checked)}
+                            style={{
+                              accentColor: C.maroon,
+                              width: 16,
+                              height: 16,
+                              cursor: 'pointer',
+                            }}
+                          />
+                          <span>Add In-skirt</span>
+                        </div>
+                        <span style={{ fontWeight: 600, color: C.maroon }}>
+                          + {formatCurrency(saree.in_skirt_price || 0)}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+
+                  {(selectFall || selectInSkirt) && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        paddingTop: 10,
+                        borderTop: '1px dashed rgba(196, 152, 10, 0.3)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontFamily: "'Josefin Sans', sans-serif",
+                        fontSize: 13,
+                      }}
+                    >
+                      <span>Estimated saree + add-ons total:</span>
+                      <span
+                        style={{
+                          fontFamily: "'Cormorant Garamond', serif",
+                          fontSize: 22,
+                          fontWeight: 700,
+                          color: C.maroon,
+                        }}
+                      >
+                        {formatCurrency(
+                          saree.price +
+                          (saree.has_fall && selectFall ? saree.fall_price || 0 : 0) +
+                          (saree.has_in_skirt && selectInSkirt ? saree.in_skirt_price || 0 : 0)
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  <p
+                    style={{
+                      marginTop: 10,
+                      marginBottom: 0,
+                      fontFamily: "'Josefin Sans', sans-serif",
+                      fontSize: 11,
+                      color: '#8A6A32',
+                      lineHeight: 1.5,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    ✦ Add-on selections are preview-only. They will be confirmed and applied during checkout.
+                  </p>
+                </div>
+              )}
 
               <div className="pd-cta-row">
                 <button
