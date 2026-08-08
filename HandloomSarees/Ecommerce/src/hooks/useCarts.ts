@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import api from "@/api/client";
-import { updateCartQuantity as updateCartQuantityApi, removeFromCart as removeFromCartApi, addToCart as addToCartApi } from "@/api/cart";
+import { updateCartQuantity as updateCartQuantityApi, removeFromCart as removeFromCartApi } from "@/api/cart";
 import { tokenStorage } from "@/lib/token";
 import type { CartItem, Saree } from "@/types";
 

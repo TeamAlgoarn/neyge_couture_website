@@ -439,7 +439,7 @@ function sampleSkinPixels(imgEl: HTMLImageElement): { r: number; g: number; b: n
   }
 }
 
-export function analyzePixels(imgEl: HTMLImageElement): AnalysisResult {
+function analyzePixels(imgEl: HTMLImageElement): AnalysisResult {
   const rgb = sampleSkinPixels(imgEl);
 
   // Default fallback — medium warm (most common South Asian tone)

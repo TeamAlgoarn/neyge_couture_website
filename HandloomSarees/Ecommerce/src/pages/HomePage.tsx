@@ -2046,7 +2046,7 @@ function InstagramGrid() {
  
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [igPosts, setIgPosts] = useState<any[]>([]);
-  const [, setLoadingIg] = useState(true);
+
 
   useEffect(() => {
     const loadInstagram = async () => {
