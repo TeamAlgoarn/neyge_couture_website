@@ -1,7 +1,9 @@
 import httpx
-from fastapi import APIRouter, Request, HTTPException, Query
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from fastapi.responses import PlainTextResponse
+
 from app.core.config import settings
+from app.core.dependencies import require_admin
 
 router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
 
@@ -74,7 +76,7 @@ async def send_template_message(
     to: str,
     template_name: str,
     language: str = "en_US",
-    components: list = []
+    components: list | None = None
 ):
     url = f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
     headers = {
@@ -88,7 +90,7 @@ async def send_template_message(
         "template": {
             "name": template_name,
             "language": {"code": language},
-            "components": components,
+            "components": components or [],
         },
     }
     async with httpx.AsyncClient() as client:
@@ -103,6 +105,7 @@ async def send_order_confirmation(
     order_id: str,
     customer_name: str,
     amount: str,
+    _: dict = Depends(require_admin),
 ):
     message = f"""Hi {customer_name}! 🎉
 
@@ -126,6 +129,7 @@ async def send_shipping_notification(
     order_id: str,
     customer_name: str,
     tracking_id: str = "",
+    _: dict = Depends(require_admin),
 ):
     message = f"""Hi {customer_name}! 🚚
 

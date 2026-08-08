@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.addresses import router as addresses_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.cart import router as cart_router
 from app.api.v1.collections import router as collections_router
@@ -17,6 +18,7 @@ from app.api.v1 import instagram
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
+api_router.include_router(addresses_router)
 api_router.include_router(collections_router)
 api_router.include_router(products_router)
 api_router.include_router(cart_router)

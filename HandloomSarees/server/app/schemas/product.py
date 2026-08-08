@@ -72,6 +72,11 @@ class ProductCreateRequest(BaseModel):
     has_in_skirt: bool = True
     in_skirt_price: float = Field(default=350.0, ge=0)
 
+    has_fall: bool = False
+    fall_price: Optional[float] = Field(default=0.0, ge=0)
+    has_in_skirt: bool = False
+    in_skirt_price: Optional[float] = Field(default=0.0, ge=0)
+
     # validators: normalise whatever arrives into a plain string for DB
     @field_validator("color", "fabric", mode="before")
     @classmethod
@@ -111,6 +116,11 @@ class ProductUpdateRequest(BaseModel):
     is_active: Optional[bool] = None
     care_instructions: Optional[str] = None
     tags: Optional[List[str]] = None
+    has_fall: Optional[bool] = None
+    fall_price: Optional[float] = Field(default=None, ge=0)
+    has_in_skirt: Optional[bool] = None
+    in_skirt_price: Optional[float] = Field(default=None, ge=0)
+
     has_fall: Optional[bool] = None
     fall_price: Optional[float] = Field(default=None, ge=0)
     has_in_skirt: Optional[bool] = None

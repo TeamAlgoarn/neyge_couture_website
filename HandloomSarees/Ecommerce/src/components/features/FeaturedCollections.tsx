@@ -281,6 +281,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import api from '@/api/client';
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
@@ -520,8 +521,7 @@ export function FeaturedCollections() {
         setLoading(true);
         setError('');
 
-        const res = await fetch('http://127.0.0.1:8000/api/v1/collections');
-        const data: CollectionsResponse = await res.json();
+        const { data } = await api.get<CollectionsResponse>('/collections');
 
         const items = Array.isArray(data?.data) ? data.data : [];
         const activeItems = items.filter((item) => item.is_active !== false);

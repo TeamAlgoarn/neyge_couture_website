@@ -252,6 +252,10 @@ class ProductService:
             "stock": product.get("stock"),
             "is_featured": product.get("is_featured", False),
             "tags": product.get("tags") or [],
+            "has_fall": product.get("has_fall", False),
+            "fall_price": product.get("fall_price", 0),
+            "has_in_skirt": product.get("has_in_skirt", False),
+            "in_skirt_price": product.get("in_skirt_price", 0),
             "collection": collection_summary,
         }
 

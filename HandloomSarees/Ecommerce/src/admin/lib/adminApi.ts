@@ -2,7 +2,7 @@ import axios from "axios";
 import { adminAuth } from "./adminAuth";
 
 const adminApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
 });
 
 adminApi.interceptors.request.use((config) => {

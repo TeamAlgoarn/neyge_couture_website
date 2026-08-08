@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import api from "@/api/client";
+import { updateCartQuantity as updateCartQuantityApi, removeFromCart as removeFromCartApi, addToCart as addToCartApi } from "@/api/cart";
 import { tokenStorage } from "@/lib/token";
 import type { CartItem, Saree } from "@/types";
 
@@ -125,7 +126,15 @@ function mapProductToSaree(product: BackendCartProduct): Saree {
 
 function getCurrentToken(): string {
   try {
+ 
+ 
+ 
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof (tokenStorage as any).get === "function") {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (tokenStorage as any).get() || "";
     }
 
@@ -161,8 +170,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const res = await api.get<CartResponse>("/cart");
       const backendItems = res.data?.data?.items || [];
 
+ 
       const mappedItems: CartItem[] = backendItems.map((item) => ({
         saree: mapProductToSaree(item.product),
+ 
         quantity: item.quantity,
         selected_addons: item.selected_addons || [],
         addons_total: item.addons_total || 0,
@@ -170,8 +181,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         unit_price: item.unit_price,
         line_total: item.line_total,
       }));
+ 
 
       setCart(mappedItems);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error?.response?.status === 401) {
         setCart([]);
@@ -222,6 +235,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = useCallback(
     async (saree: Saree, quantity: number = 1, selectedAddons: string[] = []) => {
       if (!tokenStorage.has()) return;
+ 
 
       setLoading(true);
       try {
@@ -232,6 +246,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         await loadCart();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to add to cart", error);
         if (error?.response?.data) {
@@ -243,18 +258,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [loadCart]
   );
+ 
 
   const removeFromCart = useCallback(
     async (sareeId: string) => {
       if (!tokenStorage.has()) return;
+ 
 
       setLoading(true);
       try {
-        await api.post("/cart/remove", {
-          product_id: sareeId,
-        });
+        await removeFromCartApi(sareeId);
 
         await loadCart();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to remove from cart", error);
         if (error?.response?.data) {
@@ -274,26 +290,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         if (quantity <= 0) {
-          await api.post("/cart/remove", {
-            product_id: sareeId,
-          });
+          await removeFromCartApi(sareeId);
 
           await loadCart();
           return;
         }
 
-        // Safe workaround:
-        // remove old line item first, then add again with exact new quantity
-        await api.post("/cart/remove", {
-          product_id: sareeId,
-        });
-
-        await api.post("/cart/add", {
-          product_id: sareeId,
-          quantity,
-        });
+        // Single API call to update quantity directly using helper
+        await updateCartQuantityApi(sareeId, quantity);
 
         await loadCart();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to update cart quantity", error);
         if (error?.response?.data) {
@@ -306,20 +313,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [loadCart]
   );
 
+
   const clearCart = useCallback(async () => {
     if (!tokenStorage.has()) return;
+ 
 
     setLoading(true);
     try {
       await Promise.all(
-        cart.map((item) =>
-          api.post("/cart/remove", {
-            product_id: item.saree.id,
-          })
-        )
+        cart.map((item) => removeFromCartApi(item.saree.id))
       );
 
       await loadCart();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Failed to clear cart", error);
       if (error?.response?.data) {

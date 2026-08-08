@@ -138,8 +138,11 @@ export default function AdminVideoBookingsPage() {
     try {
       await updateStatus(bookingId, status);
       toast.success(`Booking marked as ${status}`);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update booking status");
+ 
+ 
+ 
+    } catch (error: unknown) {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to update booking status");
     }
   };
 
@@ -210,8 +213,9 @@ export default function AdminVideoBookingsPage() {
             <div style={{ position: "relative", minWidth: 140 }}>
               <SlidersHorizontal size={14} color={C.gold} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
               <select
+ 
                 value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
+                onChange={(e) => setFilter(e.target.value as BookingStatus)}
                 style={{
                   appearance: "none",
                   padding: "9px 36px 9px 34px",
@@ -241,9 +245,10 @@ export default function AdminVideoBookingsPage() {
           {/* Stats Cards */}
           <div className="vb-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
             {STAT_CARDS.map(({ key, filterKey, label, color, bg, border }) => (
+ 
               <div
                 key={key}
-                onClick={() => setFilter(filterKey as any)}
+                onClick={() => setFilter(filterKey as BookingStatus)}
                 style={{
                   background: "rgba(255,249,240,.97)",
                   backdropFilter: "blur(8px)",

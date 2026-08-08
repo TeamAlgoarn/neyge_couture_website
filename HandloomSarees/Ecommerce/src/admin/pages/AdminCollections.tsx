@@ -169,8 +169,12 @@ export default function AdminCollections() {
     try {
       setLoading(true);
       const res = await adminApi.get("/collections");
-      let items = Array.isArray(res.data) ? res.data : (res.data?.data?.items || res.data?.data || res.data?.collections || []);
+      const items = Array.isArray(res.data) ? res.data : (res.data?.data?.items || res.data?.data || res.data?.collections || []);
       setCollections(items);
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message);
     } finally {

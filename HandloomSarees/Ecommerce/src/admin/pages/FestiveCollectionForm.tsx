@@ -165,6 +165,10 @@ export default function FestiveCollectionForm() {
     }));
 
     toast.success("Banner uploaded successfully");
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     console.error("Festive banner upload failed", err);
     toast.error(
@@ -209,9 +213,13 @@ export default function FestiveCollectionForm() {
           popup_message: data.popup_message || '',
           start_date: data.start_date ? data.start_date.slice(0, 16) : '',
           end_date: data.end_date ? data.end_date.slice(0, 16) : '',
+ 
           is_active: !!data.is_active,
+ 
           product_ids: data.product_ids || [],
+ 
         });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error('Failed to load festive collection data', error);
         toast.error(
@@ -224,12 +232,16 @@ export default function FestiveCollectionForm() {
 
     loadInitial();
   }, [id, isEdit]);
+ 
 
   const title = useMemo(
+ 
     () => (isEdit ? 'Edit Festive Collection' : 'Create Festive Collection'),
     [isEdit]
+ 
   );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChange = (key: string, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -247,15 +259,19 @@ export default function FestiveCollectionForm() {
         product_ids: form.product_ids || [],
       };
 
+ 
       if (isEdit && id) {
         await updateFestiveCollection(id, payload);
         toast.success('Festive collection updated');
+ 
       } else {
         await createFestiveCollection(payload);
         toast.success('Festive collection created');
+ 
       }
 
       navigate('/admin/festive-collections');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error?.response?.data?.detail || 'Failed to save festive collection');
     } finally {

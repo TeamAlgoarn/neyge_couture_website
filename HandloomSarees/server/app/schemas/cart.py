@@ -14,6 +14,11 @@ class CartRemoveRequest(BaseModel):
     product_id: str = Field(..., min_length=1)
 
 
+class CartQuantityUpdateRequest(BaseModel):
+    product_id: str = Field(..., min_length=1)
+    quantity: int = Field(..., ge=1, description="Target quantity must be a positive integer")
+
+
 class CartItemResponse(BaseModel):
     id: str
     product_id: str

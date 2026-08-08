@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 
 from app.repositories.cart_repository import CartRepository
 from app.repositories.product_repository import ProductRepository
-from app.schemas.cart import CartAddRequest, CartRemoveRequest
+from app.schemas.cart import CartAddRequest, CartRemoveRequest, CartQuantityUpdateRequest
 
 
 class CartService:
@@ -186,6 +186,37 @@ class CartService:
                     "addons_total": addons_total,
                 }
             )
+
+        return CartService.get_cart(user_id)
+
+    @staticmethod
+    def update_item_quantity(user_id: str, payload: CartQuantityUpdateRequest) -> dict:
+        product = CartService._validate_product(payload.product_id)
+
+        if payload.quantity > int(product.get("stock", 0)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Insufficient stock",
+            )
+
+        cart = CartRepository.get_or_create_cart(user_id)
+        existing = CartRepository.get_cart_item(cart["id"], payload.product_id)
+
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Item not found in cart",
+            )
+
+        unit_price = float(product.get("discount_price") or product["price"])
+
+        CartRepository.update_cart_item(
+            existing["id"],
+            {
+                "quantity": payload.quantity,
+                "unit_price": unit_price,
+            },
+        )
 
         return CartService.get_cart(user_id)
 

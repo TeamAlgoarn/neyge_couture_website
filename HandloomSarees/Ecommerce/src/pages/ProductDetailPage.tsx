@@ -721,6 +721,8 @@ import {
   Star,
   Truck,
   RotateCcw,
+  Phone,
+  MessageCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -818,6 +820,15 @@ const CSS = `
 .pd-btn-cart:disabled{opacity:.55;cursor:not-allowed}
 .pd-btn-wish{width:52px;height:52px;border-radius:16px;border:1px solid rgba(196,152,10,.35);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .pd-btn-wish.active{background:rgba(128,0,32,.06);border-color:rgba(128,0,32,.22)}
+
+.pd-enquiry-box{margin-bottom:22px;padding:16px;border-radius:18px;background:rgba(196,152,10,.06);border:1px dashed rgba(196,152,10,.3)}
+.pd-enquiry-title{font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:700;color:${C.maroon};margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pd-enquiry-row{display:flex;gap:12px}
+.pd-btn-call,.pd-btn-wa{flex:1;min-height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:transform 0.2s}
+.pd-btn-call:hover,.pd-btn-wa:hover{transform:scale(1.02)}
+.pd-btn-call{background:#fff;border:1px solid ${C.maroon};color:${C.maroon}}
+.pd-btn-wa{background:#25D366;border:none;color:#fff}
+
 .pd-trust{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:12px}
 @media(max-width:560px){.pd-trust{grid-template-columns:1fr}}
 .pd-trust-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;background:rgba(255,249,240,.9)}
@@ -964,6 +975,10 @@ async function getProductBySlugOrId(identifier: string): Promise<BackendProduct 
   try {
     const response = (await getProductBySlug(identifier)) as ProductApiResponse;
     if (response?.data) return response.data;
+
+
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error?.response?.status !== 404) {
       throw error;
@@ -997,7 +1012,6 @@ export function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
-
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
@@ -1047,6 +1061,8 @@ export function ProductDetailPage() {
         setSaree(mapped);
         setSelectedImage(0);
         setAdding(false);
+        setSelectFall(false);
+        setSelectInSkirt(false);
 
         try {
           const relatedResponse = (await getProducts({
@@ -1118,29 +1134,15 @@ export function ProductDetailPage() {
     ? saree.originalPrice! - saree.price
     : 0;
 
-  const toggleAddon = (addonId: string) => {
-    setSelectedAddons((prev) =>
-      prev.includes(addonId)
-        ? prev.filter((a) => a !== addonId)
-        : [...prev, addonId]
-    );
-  };
-
-  const addonsPreviewTotal = useMemo(() => {
-    if (!saree) return 0;
-    let total = 0;
-    if (selectedAddons.includes('fall')) total += saree.fall_price ?? 0;
-    if (selectedAddons.includes('in_skirt')) total += saree.in_skirt_price ?? 0;
-    return total;
-  }, [saree, selectedAddons]);
-
   const handleAddToCart = async () => {
     if (!saree || adding) return;
 
     try {
+
       setAdding(true);
-      await addToCart(saree, 1, selectedAddons);
+      await addToCart(saree, 1);
       toast.success('Added to cart!');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error?.response?.data?.message || error?.response?.data?.detail || 'Failed to add to cart');
     } finally {
@@ -1298,7 +1300,9 @@ export function ProductDetailPage() {
 
               <div className="pd-price-box">
                 <div className="pd-price-row-main">
-                  <span className="pd-price-main">{formatCurrency(saree.price)}</span>
+                  <span className="pd-price-main">
+                    {formatCurrency(saree.price)}
+                  </span>
 
                   {hasDiscount && (
                     <>
@@ -1355,144 +1359,6 @@ export function ProductDetailPage() {
                 ))}
               </div>
 
-              {/* ── Add-on Selector ── */}
-              {(saree.has_fall || saree.has_in_skirt) && (
-                <div style={{
-                  background: 'rgba(255,249,240,.9)',
-                  border: '1px solid rgba(196,152,10,.22)',
-                  borderRadius: 18,
-                  padding: '18px 20px',
-                  marginBottom: 22,
-                }}>
-                  <div style={{
-                    fontFamily: "'Josefin Sans', sans-serif",
-                    fontSize: 12,
-                    letterSpacing: '.12em',
-                    textTransform: 'uppercase' as const,
-                    color: C.maroon,
-                    fontWeight: 700,
-                    marginBottom: 14,
-                  }}>Customise Your Saree</div>
-
-                  {saree.has_fall && (
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '12px 14px',
-                      borderRadius: 14,
-                      border: selectedAddons.includes('fall')
-                        ? `1.5px solid ${C.gold}`
-                        : '1.5px solid rgba(196,152,10,.18)',
-                      background: selectedAddons.includes('fall')
-                        ? 'rgba(196,152,10,.08)'
-                        : 'white',
-                      cursor: 'pointer',
-                      marginBottom: 10,
-                      transition: 'all .25s',
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedAddons.includes('fall')}
-                        onChange={() => toggleAddon('fall')}
-                        style={{ accentColor: C.maroon, width: 18, height: 18 }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontFamily: "'Josefin Sans', sans-serif",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: C.maroon,
-                        }}>Fall &amp; Pico Stitching</div>
-                        <div style={{
-                          fontFamily: "'Josefin Sans', sans-serif",
-                          fontSize: 12,
-                          color: '#7a6a5d',
-                          marginTop: 2,
-                        }}>Professional fall attachment for draping</div>
-                      </div>
-                      <span style={{
-                        fontFamily: "'Josefin Sans', sans-serif",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: '#059669',
-                      }}>+ ₹{saree.fall_price}</span>
-                    </label>
-                  )}
-
-                  {saree.has_in_skirt && (
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '12px 14px',
-                      borderRadius: 14,
-                      border: selectedAddons.includes('in_skirt')
-                        ? `1.5px solid ${C.gold}`
-                        : '1.5px solid rgba(196,152,10,.18)',
-                      background: selectedAddons.includes('in_skirt')
-                        ? 'rgba(196,152,10,.08)'
-                        : 'white',
-                      cursor: 'pointer',
-                      transition: 'all .25s',
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedAddons.includes('in_skirt')}
-                        onChange={() => toggleAddon('in_skirt')}
-                        style={{ accentColor: C.maroon, width: 18, height: 18 }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontFamily: "'Josefin Sans', sans-serif",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: C.maroon,
-                        }}>Matching In-Skirt (Petticoat)</div>
-                        <div style={{
-                          fontFamily: "'Josefin Sans', sans-serif",
-                          fontSize: 12,
-                          color: '#7a6a5d',
-                          marginTop: 2,
-                        }}>Colour-matched cotton petticoat</div>
-                      </div>
-                      <span style={{
-                        fontFamily: "'Josefin Sans', sans-serif",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: '#059669',
-                      }}>+ ₹{saree.in_skirt_price}</span>
-                    </label>
-                  )}
-
-                  {addonsPreviewTotal > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginTop: 14,
-                      padding: '10px 14px',
-                      borderRadius: 12,
-                      background: 'rgba(128,0,32,.04)',
-                      border: '1px solid rgba(128,0,32,.08)',
-                    }}>
-                      <span style={{
-                        fontFamily: "'Josefin Sans', sans-serif",
-                        fontSize: 12,
-                        color: '#7a6a5d',
-                        fontWeight: 500,
-                      }}>Effective Price with Add-ons</span>
-                      <span style={{
-                        fontFamily: "'Cinzel', serif",
-                        fontSize: 18,
-                        fontWeight: 700,
-                        color: C.maroon,
-                      }}>₹{(saree.price + addonsPreviewTotal).toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
               <div className="pd-cta-row">
                 <button
                   className="pd-btn-cart"
@@ -1516,6 +1382,26 @@ export function ProductDetailPage() {
                     fill={inWishlist ? C.maroon : 'none'}
                   />
                 </button>
+              </div>
+
+              <div className="pd-enquiry-box">
+                <div className="pd-enquiry-title">
+                  <Sparkles size={16} color={C.gold} />
+                  Want Blouse Stitching?
+                </div>
+                <div className="pd-enquiry-row">
+                  <a href="tel:+919113991711" className="pd-btn-call">
+                    <Phone size={16} /> Call Us
+                  </a>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pd-btn-wa"
+                  >
+                    <MessageCircle size={16} /> WhatsApp
+                  </a>
+                </div>
               </div>
 
               <div className="pd-trust">
