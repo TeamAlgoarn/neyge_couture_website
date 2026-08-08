@@ -67,7 +67,7 @@ class OrderService:
                 )
 
         now = datetime.now(timezone.utc).isoformat()
-        
+
         update_dict = {
             "order_status": requested_status.value,
             "updated_at": now
@@ -96,4 +96,10 @@ class OrderService:
         history.append(history_entry)
         update_dict["status_history"] = history
 
-        return OrderRepository.update_by_id(order_id, update_dict)
+        updated_order = OrderRepository.update_by_id(order_id, update_dict)
+        if not updated_order:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update order",
+            )
+        return updated_order

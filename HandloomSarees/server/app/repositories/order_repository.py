@@ -84,7 +84,7 @@ class OrderRepository:
         return result.data or []
 
     @staticmethod
-    def update_by_id(order_id: str, payload: dict) -> dict:
+    def update_by_id(order_id: str, payload: dict) -> dict | None:
         client = get_supabase_admin()
         result = (
             client.table("orders")
@@ -92,4 +92,4 @@ class OrderRepository:
             .eq("id", order_id)
             .execute()
         )
-        return result.data[0] if result.data else {}
+        return result.data[0] if result.data else None

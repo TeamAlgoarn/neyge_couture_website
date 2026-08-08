@@ -24,18 +24,17 @@ type OrderDetail = {
   courier_name?: string | null;
   tracking_number?: string | null;
   tracking_url?: string | null;
-  status_history?: any[];
+  status_history?: Record<string, unknown>[];
 };
 
- 
- 
- 
- 
- 
- 
- 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type OrderResponse = { data?: OrderDetail | any; order?: OrderDetail | any };
+
+
+
+
+
+
+
+type OrderResponse = { data?: OrderDetail; order?: OrderDetail };
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
@@ -384,13 +383,13 @@ export default function AdminOrderDetail() {
   useEffect(() => {
     if (!id) return;
     const fetchOrder = async () => {
- 
+
       try {
         setLoading(true);
- 
+
         setError("");
         const res = await adminApi.get<OrderResponse>(`/orders/admin/${id}`);
- 
+
         const data = res.data?.data || res.data?.order || res.data;
         setOrder(data || null);
         if (data) {
@@ -401,9 +400,8 @@ export default function AdminOrderDetail() {
             tracking_url: data.tracking_url || ""
           });
         }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        setError(err?.message || "Failed to fetch order detail");
+      } catch (err: unknown) {
+        setError((err as Error)?.message || "Failed to fetch order detail");
       } finally {
         setLoading(false);
       }
@@ -421,13 +419,14 @@ export default function AdminOrderDetail() {
         tracking_number: statusForm.tracking_number || null,
         tracking_url: statusForm.tracking_url || null,
       });
-      
+
       const res = await adminApi.get<OrderResponse>(`/orders/admin/${id}`);
       const data = res.data?.data || res.data?.order || res.data;
       setOrder(data || null);
       alert("Order status updated successfully!");
-    } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || "Failed to update status");
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { message?: string } }, message?: string })?.response?.data?.message || (err as Error)?.message || "Failed to update status";
+      alert(errorMsg);
     } finally {
       setStatusUpdating(false);
     }
@@ -501,8 +500,9 @@ export default function AdminOrderDetail() {
                   <div className="od-card-title">Update Status & Tracking</div>
                   <form onSubmit={handleUpdateStatus}>
                     <div className="od-form-group">
-                      <label className="od-form-label">Order Status</label>
-                      <select 
+                      <label className="od-form-label" htmlFor="order_status">Order Status</label>
+                      <select
+                        id="order_status"
                         className="od-form-select"
                         value={statusForm.order_status}
                         onChange={(e) => setStatusForm({...statusForm, order_status: e.target.value})}
@@ -519,30 +519,33 @@ export default function AdminOrderDetail() {
                     {(statusForm.order_status === "shipped" || statusForm.order_status === "out_for_delivery" || statusForm.order_status === "delivered") && (
                       <>
                         <div className="od-form-group">
-                          <label className="od-form-label">Courier Name</label>
-                          <input 
-                            className="od-form-input" 
-                            type="text" 
+                          <label className="od-form-label" htmlFor="courier_name">Courier Name</label>
+                          <input
+                            id="courier_name"
+                            className="od-form-input"
+                            type="text"
                             placeholder="e.g. FedEx, DTDC"
                             value={statusForm.courier_name}
                             onChange={(e) => setStatusForm({...statusForm, courier_name: e.target.value})}
                           />
                         </div>
                         <div className="od-form-group">
-                          <label className="od-form-label">Tracking Number</label>
-                          <input 
-                            className="od-form-input" 
-                            type="text" 
+                          <label className="od-form-label" htmlFor="tracking_number">Tracking Number</label>
+                          <input
+                            id="tracking_number"
+                            className="od-form-input"
+                            type="text"
                             placeholder="Tracking ID"
                             value={statusForm.tracking_number}
                             onChange={(e) => setStatusForm({...statusForm, tracking_number: e.target.value})}
                           />
                         </div>
                         <div className="od-form-group">
-                          <label className="od-form-label">Tracking URL</label>
-                          <input 
-                            className="od-form-input" 
-                            type="text" 
+                          <label className="od-form-label" htmlFor="tracking_url">Tracking URL</label>
+                          <input
+                            id="tracking_url"
+                            className="od-form-input"
+                            type="text"
                             placeholder="https://..."
                             value={statusForm.tracking_url}
                             onChange={(e) => setStatusForm({...statusForm, tracking_url: e.target.value})}

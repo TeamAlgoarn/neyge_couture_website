@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class OrderStatusEnum(str, Enum):
@@ -42,7 +42,14 @@ class OrderStatusUpdateRequest(BaseModel):
     order_status: OrderStatusEnum
     courier_name: str | None = None
     tracking_number: str | None = None
-    tracking_url: str | None = None
+    tracking_url: str | None = Field(default=None, pattern=r"^https?://")
+
+    @field_validator("courier_name", "tracking_number", mode="before")
+    @classmethod
+    def trim_whitespace(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 
 class OrderResponse(BaseModel):
