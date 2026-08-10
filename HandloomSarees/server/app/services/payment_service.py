@@ -11,6 +11,9 @@ from app.repositories.payment_repository import PaymentRepository
 from app.repositories.product_repository import ProductRepository
 
 
+from app.services.cart_service import CartService
+
+
 class PaymentService:
     @staticmethod
     def _client() -> razorpay.Client:
@@ -76,8 +79,19 @@ class PaymentService:
                     detail=f"Invalid price for '{product.get('name', 'Unknown')}'",
                 )
 
-            selected_addons = item.get("selected_addons") or []
-            addons_total = sum(float(a.get("price", 0)) for a in selected_addons)
+            raw_addons = item.get("selected_addons") or []
+            addon_keys = []
+            for a in raw_addons:
+                if isinstance(a, dict) and "id" in a:
+                    addon_keys.append(str(a["id"]))
+                elif isinstance(a, str):
+                    addon_keys.append(a)
+
+            # Revalidate add-on availability & compute current add-on prices directly from latest DB product record
+            selected_addons, addons_total = CartService._process_addons(
+                product=product,
+                requested_addons=addon_keys,
+            )
             unit_price = product_price + addons_total
 
             line_total = unit_price * quantity

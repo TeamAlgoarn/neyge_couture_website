@@ -164,6 +164,7 @@ export interface Saree {
 }
 
 export interface CartItem {
+  id?: string;
   saree: Saree;
   quantity: number;
   selected_addons?: AddOnSnapshot[];

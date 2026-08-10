@@ -617,7 +617,7 @@ export function CartPage() {
                             <button
                               type="button"
                               className="cart-qty-btn"
-                              onClick={() => updateQuantity(item.saree.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.saree.id, item.quantity - 1, item.id, item.selected_addons?.map((a) => a.id))}
                               aria-label={`Decrease quantity of ${item.saree.name}`}
                               disabled={loading}
                             >
@@ -629,7 +629,7 @@ export function CartPage() {
                             <button
                               type="button"
                               className="cart-qty-btn"
-                              onClick={() => updateQuantity(item.saree.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.saree.id, item.quantity + 1, item.id, item.selected_addons?.map((a) => a.id))}
                               aria-label={`Increase quantity of ${item.saree.name}`}
                               disabled={item.quantity >= item.saree.stock || loading}
                             >
@@ -645,7 +645,7 @@ export function CartPage() {
                             <button
                               type="button"
                               className="cart-item-remove"
-                              onClick={() => removeFromCart(item.saree.id)}
+                              onClick={() => removeFromCart(item.saree.id, item.id, item.selected_addons?.map((a) => a.id))}
                               aria-label={`Remove ${item.saree.name} from cart`}
                               disabled={loading}
                             >

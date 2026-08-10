@@ -71,8 +71,8 @@ type CartContextType = {
   initialized: boolean;
   refreshCart: () => Promise<void>;
   addToCart: (saree: Saree, quantity?: number, selectedAddons?: string[]) => Promise<void>;
-  removeFromCart: (sareeId: string) => Promise<void>;
-  updateQuantity: (sareeId: string, quantity: number) => Promise<void>;
+  removeFromCart: (sareeId: string, cartItemId?: string, selectedAddons?: string[]) => Promise<void>;
+  updateQuantity: (sareeId: string, quantity: number, cartItemId?: string, selectedAddons?: string[]) => Promise<void>;
   clearCart: () => Promise<void>;
   getCartTotal: () => number;
   getCartCount: () => number;
@@ -172,8 +172,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
  
       const mappedItems: CartItem[] = backendItems.map((item) => ({
+        id: item.id,
         saree: mapProductToSaree(item.product),
- 
         quantity: item.quantity,
         selected_addons: item.selected_addons || [],
         addons_total: item.addons_total || 0,
@@ -261,13 +261,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
  
 
   const removeFromCart = useCallback(
-    async (sareeId: string) => {
+    async (sareeId: string, cartItemId?: string, selectedAddons: string[] = []) => {
       if (!tokenStorage.has()) return;
- 
 
       setLoading(true);
       try {
-        await removeFromCartApi(sareeId);
+        await removeFromCartApi(sareeId, cartItemId, selectedAddons);
 
         await loadCart();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -284,20 +283,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const updateQuantity = useCallback(
-    async (sareeId: string, quantity: number) => {
+    async (sareeId: string, quantity: number, cartItemId?: string, selectedAddons: string[] = []) => {
       if (!tokenStorage.has()) return;
 
       setLoading(true);
       try {
         if (quantity <= 0) {
-          await removeFromCartApi(sareeId);
+          await removeFromCartApi(sareeId, cartItemId, selectedAddons);
 
           await loadCart();
           return;
         }
 
         // Single API call to update quantity directly using helper
-        await updateCartQuantityApi(sareeId, quantity);
+        await updateCartQuantityApi(sareeId, quantity, cartItemId, selectedAddons);
 
         await loadCart();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

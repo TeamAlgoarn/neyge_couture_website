@@ -29,11 +29,13 @@ class CartService:
         cleaned_addons = [str(a).strip().lower() for a in requested_addons if isinstance(a, str)]
         unique_addons = sorted(list(set(cleaned_addons)))
 
-        has_fall = bool(product.get("has_fall", True))
-        fall_price = float(product.get("fall_price") if product.get("fall_price") is not None else 150.0)
+        has_fall = bool(product.get("has_fall", False))
+        fall_price_raw = product.get("fall_price")
+        fall_price = float(fall_price_raw) if fall_price_raw is not None else 0.0
 
-        has_in_skirt = bool(product.get("has_in_skirt", True))
-        in_skirt_price = float(product.get("in_skirt_price") if product.get("in_skirt_price") is not None else 350.0)
+        has_in_skirt = bool(product.get("has_in_skirt", False))
+        in_skirt_price_raw = product.get("in_skirt_price")
+        in_skirt_price = float(in_skirt_price_raw) if in_skirt_price_raw is not None else 0.0
 
         addons_snapshot = []
         addons_total = 0.0
@@ -191,16 +193,28 @@ class CartService:
 
     @staticmethod
     def update_item_quantity(user_id: str, payload: CartQuantityUpdateRequest) -> dict:
-        product = CartService._validate_product(payload.product_id)
-
-        if payload.quantity > int(product.get("stock", 0)):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Insufficient stock",
-            )
-
         cart = CartRepository.get_or_create_cart(user_id)
-        existing = CartRepository.get_cart_item(cart["id"], payload.product_id)
+        target_item_id = payload.cart_item_id or payload.item_id
+
+        existing = None
+        if target_item_id:
+            existing = CartRepository.get_cart_item_by_id(cart["id"], target_item_id)
+
+        if not existing:
+            existing_items = CartRepository.get_cart_items(cart["id"])
+            if payload.selected_addons:
+                target_addons = set(str(a).strip().lower() for a in payload.selected_addons)
+                for item in existing_items:
+                    if item.get("product_id") == payload.product_id:
+                        item_addons = set(a.get("id") for a in (item.get("selected_addons") or []))
+                        if item_addons == target_addons:
+                            existing = item
+                            break
+            elif payload.product_id:
+                for item in existing_items:
+                    if item.get("product_id") == payload.product_id:
+                        existing = item
+                        break
 
         if not existing:
             raise HTTPException(
@@ -208,13 +222,35 @@ class CartService:
                 detail="Item not found in cart",
             )
 
-        unit_price = float(product.get("discount_price") or product["price"])
+        product = CartService._validate_product(existing["product_id"])
+
+        if payload.quantity > int(product.get("stock", 0)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Insufficient stock",
+            )
+
+        existing_addon_keys = [a["id"] for a in (existing.get("selected_addons") or []) if isinstance(a, dict) and "id" in a]
+        addons_snapshot, addons_total = CartService._process_addons(
+            product=product,
+            requested_addons=existing_addon_keys,
+        )
+
+        product_price = float(
+            product.get("discount_price")
+            if product.get("discount_price") is not None
+            else product.get("price", 0)
+        )
+        unit_price = product_price + addons_total
 
         CartRepository.update_cart_item(
             existing["id"],
             {
                 "quantity": payload.quantity,
+                "product_price": product_price,
                 "unit_price": unit_price,
+                "selected_addons": addons_snapshot,
+                "addons_total": addons_total,
             },
         )
 
@@ -223,5 +259,30 @@ class CartService:
     @staticmethod
     def remove_item(user_id: str, payload: CartRemoveRequest) -> dict:
         cart = CartRepository.get_or_create_cart(user_id)
-        CartRepository.delete_cart_item(cart["id"], payload.product_id)
+        target_item_id = payload.cart_item_id or payload.item_id
+
+        if target_item_id:
+            CartRepository.delete_cart_item_by_id(cart["id"], target_item_id)
+        else:
+            existing_items = CartRepository.get_cart_items(cart["id"])
+            matched = None
+            if payload.selected_addons and payload.product_id:
+                target_addons = set(str(a).strip().lower() for a in payload.selected_addons)
+                for item in existing_items:
+                    if item.get("product_id") == payload.product_id:
+                        item_addons = set(a.get("id") for a in (item.get("selected_addons") or []))
+                        if item_addons == target_addons:
+                            matched = item
+                            break
+            elif payload.product_id:
+                for item in existing_items:
+                    if item.get("product_id") == payload.product_id:
+                        matched = item
+                        break
+
+            if matched:
+                CartRepository.delete_cart_item_by_id(cart["id"], matched["id"])
+            elif payload.product_id:
+                CartRepository.delete_cart_item(cart["id"], payload.product_id)
+
         return CartService.get_cart(user_id)

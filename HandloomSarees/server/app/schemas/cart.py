@@ -11,12 +11,18 @@ class CartAddRequest(BaseModel):
 
 
 class CartRemoveRequest(BaseModel):
-    product_id: str = Field(..., min_length=1)
+    product_id: Optional[str] = None
+    cart_item_id: Optional[str] = None
+    item_id: Optional[str] = None
+    selected_addons: list[str] = Field(default_factory=list)
 
 
 class CartQuantityUpdateRequest(BaseModel):
-    product_id: str = Field(..., min_length=1)
+    product_id: Optional[str] = None
+    cart_item_id: Optional[str] = None
+    item_id: Optional[str] = None
     quantity: int = Field(..., ge=1, description="Target quantity must be a positive integer")
+    selected_addons: list[str] = Field(default_factory=list)
 
 
 class CartItemResponse(BaseModel):
