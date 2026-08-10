@@ -390,11 +390,12 @@ export default function AdminOrderDetail() {
         setError("");
         const res = await adminApi.get<OrderResponse>(`/orders/admin/${id}`);
 
-        const data = res.data?.data || res.data?.order || res.data;
-        setOrder(data || null);
+        const rawData = res.data?.data || res.data?.order || res.data;
+        const data = rawData ? (rawData as OrderDetail) : null;
+        setOrder(data);
         if (data) {
           setStatusForm({
-            order_status: data.order_status || data.status || "confirmed",
+            order_status: data.order_status || data.status || "",
             courier_name: data.courier_name || "",
             tracking_number: data.tracking_number || "",
             tracking_url: data.tracking_url || ""
@@ -421,8 +422,9 @@ export default function AdminOrderDetail() {
       });
 
       const res = await adminApi.get<OrderResponse>(`/orders/admin/${id}`);
-      const data = res.data?.data || res.data?.order || res.data;
-      setOrder(data || null);
+      const rawData = res.data?.data || res.data?.order || res.data;
+      const data = rawData ? (rawData as OrderDetail) : null;
+      setOrder(data);
       alert("Order status updated successfully!");
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { message?: string } }, message?: string })?.response?.data?.message || (err as Error)?.message || "Failed to update status";
@@ -525,6 +527,7 @@ export default function AdminOrderDetail() {
                             className="od-form-input"
                             type="text"
                             placeholder="e.g. FedEx, DTDC"
+                            maxLength={100}
                             value={statusForm.courier_name}
                             onChange={(e) => setStatusForm({...statusForm, courier_name: e.target.value})}
                           />
@@ -536,6 +539,7 @@ export default function AdminOrderDetail() {
                             className="od-form-input"
                             type="text"
                             placeholder="Tracking ID"
+                            maxLength={100}
                             value={statusForm.tracking_number}
                             onChange={(e) => setStatusForm({...statusForm, tracking_number: e.target.value})}
                           />
