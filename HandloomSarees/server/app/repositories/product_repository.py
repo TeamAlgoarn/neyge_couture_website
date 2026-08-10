@@ -90,6 +90,28 @@ class ProductRepository:
         result = query.limit(1).execute()
         return bool(result.data)
 
+    @staticmethod
+    def decrement_stock_optimistic(
+        product_id: str, quantity: int, expected_stock: int
+    ) -> dict | None:
+        """
+        Optimistic concurrency: decrement stock ONLY if it still equals
+        expected_stock. Returns the updated product or None if another
+        request modified the stock first (caller should abort/retry).
+        """
+        new_stock = expected_stock - quantity
+        if new_stock < 0:
+            return None
+        client = get_supabase_admin()
+        result = (
+            client.table("products")
+            .update({"stock": new_stock})
+            .eq("id", product_id)
+            .eq("stock", expected_stock)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+
     # ─────────────────────────────────────────────────────────────────────────
     # HOW MULTI-VALUE COLOR / FABRIC FILTERING WORKS
     # ─────────────────────────────────────────────────────────────────────────

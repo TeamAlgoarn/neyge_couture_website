@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin
+from app.schemas.payment import PaymentFailedRequest, RefundRequest
 from app.services.payment_service import PaymentService
 from app.utils.response import success_response
 from app.api.v1.whatsapp import send_whatsapp_message
@@ -47,11 +48,11 @@ async def verify_payment(
 
     # ── Send WhatsApp notification after payment ──────────────────────────
     try:
-        order = data.get("order", {})
+        # data is the order dict directly (from _finalize_payment)
         customer_name = current_user.get("profile", {}).get("full_name", "Customer")
         phone = current_user.get("profile", {}).get("phone", "")
-        order_id = order.get("id", payload.razorpay_order_id)
-        amount = str(order.get("total_amount", ""))
+        order_id = data.get("id", payload.razorpay_order_id)
+        amount = str(data.get("total_amount", ""))
 
         if phone:
             message = f"""Hi {customer_name}! 🎉
@@ -70,3 +71,55 @@ www.negyecouture.com"""
     # ─────────────────────────────────────────────────────────────────────
 
     return success_response("Payment verified successfully", data)
+
+
+# ── Payment Failure (Frontend Callback) ──────────────────────────────────
+
+@router.post("/failed", response_model=dict)
+async def report_payment_failure(
+    payload: PaymentFailedRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Called by the frontend when Razorpay reports a payment failure.
+    Marks the payment session as failed — does NOT touch inventory.
+    """
+    user_id = resolve_user_id(current_user)
+
+    data = PaymentService.handle_payment_failure(
+        razorpay_order_id=payload.razorpay_order_id,
+        user_id=user_id,
+        error_description=payload.error_description,
+    )
+
+    return success_response("Payment failure recorded", data)
+
+
+# ── Refund Endpoints (Admin Only) ────────────────────────────────────────
+
+@router.post("/refund", response_model=dict)
+async def initiate_refund(
+    payload: RefundRequest,
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Initiate a refund via Razorpay API. Admin-only.
+    Partial refund: specify amount in INR. Full refund: omit amount.
+    """
+    data = PaymentService.initiate_refund(
+        order_id=payload.order_id,
+        amount=payload.amount,
+        reason=payload.reason,
+    )
+
+    return success_response("Refund initiated successfully", data)
+
+
+@router.get("/refund/{refund_id}/status", response_model=dict)
+async def get_refund_status(
+    refund_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Fetch refund status from Razorpay. Admin-only."""
+    data = PaymentService.get_refund_status(refund_id)
+    return success_response("Refund status fetched", data)
