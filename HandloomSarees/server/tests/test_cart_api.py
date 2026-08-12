@@ -56,7 +56,20 @@ def test_update_cart_quantity_validates_positive_quantity():
 def test_update_cart_quantity_insufficient_stock(monkeypatch):
     app.dependency_overrides[get_current_user] = customer_user
 
+    mock_cart = {"id": "cart-1", "user_id": "customer-1"}
+    mock_cart_item = {
+        "id": "item-1",
+        "cart_id": "cart-1",
+        "product_id": "prod-1",
+        "quantity": 1,
+        "unit_price": 10500.0,
+    }
+
     monkeypatch.setattr(ProductRepository, "get_active_by_id", staticmethod(lambda pid: sample_product()))
+    monkeypatch.setattr(ProductRepository, "get_by_id", staticmethod(lambda pid: sample_product()))
+    monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: mock_cart))
+    monkeypatch.setattr(CartRepository, "get_cart_items", staticmethod(lambda cid: [mock_cart_item]))
+    monkeypatch.setattr(CartRepository, "get_cart_item_by_id", staticmethod(lambda cid, iid: mock_cart_item))
 
     # Target quantity 10 exceeds available stock 5
     response = client.post("/api/v1/cart/update", json={"product_id": "prod-1", "quantity": 10})
@@ -80,6 +93,7 @@ def test_update_cart_quantity_success_increment_and_decrement(monkeypatch):
     monkeypatch.setattr(ProductRepository, "get_by_id", staticmethod(lambda pid: sample_product()))
     monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: mock_cart))
     monkeypatch.setattr(CartRepository, "get_cart_item", staticmethod(lambda cid, pid: mock_cart_item))
+    monkeypatch.setattr(CartRepository, "get_cart_item_by_id", staticmethod(lambda cid, iid: mock_cart_item))
 
     updated_quantity_holder = {"qty": 1}
 
@@ -114,7 +128,8 @@ def test_update_cart_quantity_missing_item(monkeypatch):
     monkeypatch.setattr(ProductRepository, "get_active_by_id", staticmethod(lambda pid: sample_product()))
     monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: {"id": "cart-1", "user_id": uid}))
     # Simulate item not found in cart
-    monkeypatch.setattr(CartRepository, "get_cart_item", staticmethod(lambda cid, pid: None))
+    monkeypatch.setattr(CartRepository, "get_cart_items", staticmethod(lambda cid: []))
+    monkeypatch.setattr(CartRepository, "get_cart_item_by_id", staticmethod(lambda cid, iid: None))
 
     response = client.post("/api/v1/cart/update", json={"product_id": "prod-1", "quantity": 2})
     assert response.status_code == 404
@@ -124,6 +139,18 @@ def test_update_cart_quantity_missing_item(monkeypatch):
 def test_update_cart_quantity_inactive_or_missing_product(monkeypatch):
     app.dependency_overrides[get_current_user] = customer_user
 
+    mock_cart = {"id": "cart-1", "user_id": "customer-1"}
+    mock_cart_item = {
+        "id": "item-1",
+        "cart_id": "cart-1",
+        "product_id": "prod-1",
+        "quantity": 1,
+        "unit_price": 10500.0,
+    }
+
+    monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: mock_cart))
+    monkeypatch.setattr(CartRepository, "get_cart_items", staticmethod(lambda cid: [mock_cart_item]))
+    monkeypatch.setattr(CartRepository, "get_cart_item_by_id", staticmethod(lambda cid, iid: mock_cart_item))
     # Simulate product not found or inactive
     monkeypatch.setattr(ProductRepository, "get_active_by_id", staticmethod(lambda pid: None))
 
@@ -141,9 +168,10 @@ def test_update_cart_quantity_cross_user_protection(monkeypatch):
     monkeypatch.setattr(CartRepository, "get_or_create_cart", staticmethod(lambda uid: {"id": "cart-1", "user_id": uid}))
 
     # We simulate a scenario where the cart item exists in someone ELSE's cart (cart-2)
-    # The API will query get_cart_item with (cart-1, prod-1)
-    # So it should return None because the item doesn't exist in cart-1
-    monkeypatch.setattr(CartRepository, "get_cart_item", staticmethod(lambda cid, pid: None))
+    # The API will query get_cart_items with (cart-1)
+    # So it should return empty list because the item doesn't exist in cart-1
+    monkeypatch.setattr(CartRepository, "get_cart_items", staticmethod(lambda cid: []))
+    monkeypatch.setattr(CartRepository, "get_cart_item_by_id", staticmethod(lambda cid, iid: None))
 
     response = client.post("/api/v1/cart/update", json={"product_id": "prod-1", "quantity": 2})
     assert response.status_code == 404

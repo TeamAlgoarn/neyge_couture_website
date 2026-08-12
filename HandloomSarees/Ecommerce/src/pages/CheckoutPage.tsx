@@ -1108,7 +1108,30 @@ export function CheckoutPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="co-item-name">{item.saree.name}</div>
                         <div className="co-item-qty">Qty: {item.quantity}</div>
-                        <div className="co-item-price">{formatCurrency(item.saree.price * item.quantity)}</div>
+                        {item.selected_addons && item.selected_addons.length > 0 && (
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 4,
+                            marginTop: 4,
+                          }}>
+                            {item.selected_addons.map((addon) => (
+                              <span key={addon.id} style={{
+                                fontSize: 10,
+                                fontFamily: "'Josefin Sans', sans-serif",
+                                padding: '2px 8px',
+                                borderRadius: 999,
+                                background: 'rgba(196,152,10,.12)',
+                                border: '1px solid rgba(196,152,10,.25)',
+                                color: '#6f5320',
+                                fontWeight: 500,
+                              }}>
+                                {addon.name} +{formatCurrency(addon.price)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="co-item-price">{formatCurrency(item.line_total ?? item.saree.price * item.quantity)}</div>
                       </div>
                     </div>
                   ))}

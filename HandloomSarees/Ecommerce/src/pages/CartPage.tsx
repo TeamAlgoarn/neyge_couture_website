@@ -580,12 +580,44 @@ export function CartPage() {
                           ) : null}
                         </div>
 
+                        {/* ── Add-on badges ── */}
+                        {item.selected_addons && item.selected_addons.length > 0 && (
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 8,
+                            marginBottom: 14,
+                          }}>
+                            {item.selected_addons.map((addon) => (
+                              <span
+                                key={addon.id}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  padding: '5px 12px',
+                                  borderRadius: 999,
+                                  fontSize: 11,
+                                  fontFamily: "'Josefin Sans', sans-serif",
+                                  fontWeight: 600,
+                                  letterSpacing: '.06em',
+                                  background: 'rgba(196,152,10,.10)',
+                                  border: '1px solid rgba(196,152,10,.25)',
+                                  color: '#6f5320',
+                                }}
+                              >
+                                {addon.name} <span style={{ color: '#059669', fontWeight: 700 }}>+{formatCurrency(addon.price)}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="cart-item-actions">
                           <div className="cart-qty-row">
                             <button
                               type="button"
                               className="cart-qty-btn"
-                              onClick={() => updateQuantity(item.saree.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.saree.id, item.quantity - 1, item.id, item.selected_addons?.map((a) => a.id))}
                               aria-label={`Decrease quantity of ${item.saree.name}`}
                               disabled={loading}
                             >
@@ -597,7 +629,7 @@ export function CartPage() {
                             <button
                               type="button"
                               className="cart-qty-btn"
-                              onClick={() => updateQuantity(item.saree.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.saree.id, item.quantity + 1, item.id, item.selected_addons?.map((a) => a.id))}
                               aria-label={`Increase quantity of ${item.saree.name}`}
                               disabled={item.quantity >= item.saree.stock || loading}
                             >
@@ -607,13 +639,13 @@ export function CartPage() {
 
                           <div className="cart-price-row">
                             <span className="cart-item-price">
-                              {formatCurrency(item.saree.price * item.quantity)}
+                              {formatCurrency(item.line_total ?? item.saree.price * item.quantity)}
                             </span>
 
                             <button
                               type="button"
                               className="cart-item-remove"
-                              onClick={() => removeFromCart(item.saree.id)}
+                              onClick={() => removeFromCart(item.saree.id, item.id, item.selected_addons?.map((a) => a.id))}
                               aria-label={`Remove ${item.saree.name} from cart`}
                               disabled={loading}
                             >

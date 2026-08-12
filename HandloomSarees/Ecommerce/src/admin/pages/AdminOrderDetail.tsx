@@ -8,6 +8,8 @@ type OrderItem = {
   line_total?: number; total?: number;
   product?: { id?: string; name?: string; thumbnail?: string | null; image?: string | null; slug?: string } | null;
   product_name?: string; thumbnail?: string | null;
+  selected_addons?: Array<{ id: string; name: string; price: number }>;
+  addons_total?: number;
 };
 
 type OrderDetail = {
@@ -441,6 +443,15 @@ export default function AdminOrderDetail() {
                           <div className="od-item-name">{itemName}</div>
                           <div className="od-item-meta">Qty: {itemQty}</div>
                           <div className="od-item-meta">Unit: ₹{itemPrice.toLocaleString("en-IN")}</div>
+                          {item.selected_addons && item.selected_addons.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                              {item.selected_addons.map((addon) => (
+                                <span key={addon.id} className="od-badge" style={{ fontSize: 10, padding: '2px 8px' }}>
+                                  {addon.name} (+₹{addon.price})
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="od-item-total">₹{itemTotal.toLocaleString("en-IN")}</div>
