@@ -6,7 +6,7 @@ This document outlines the architecture for the SKU, inventory, and add-on manag
 ## 2. Current Schema
 Currently, the system uses a flat structure without explicit variants or SKUs:
 - **`products`**: Contains `id` (UUID, PK), `name`, `slug`, `price`, `discount_price`, `stock` (INT), `color`, `fabric`, `has_fall`, `fall_price`, `has_in_skirt`, `in_skirt_price`, `created_at`, `updated_at`. Inventory is tracked at the root product level.
-- **`cart_items` / `order_items`**: Store references to the `product_id`, `quantity`, and basic prices. They lack structured support for capturing selected add-ons or historical snapshot prices securely.
+- **`cart_items` / `order_items`**: Store references to the `product_id`, `quantity`, `product_price`, `addons_total`, and `selected_addons`. They currently lack SKU integration for granular inventory tracking.
 - **Limitation**: Lack of reserved stock mechanism and concurrency control risks overselling, and mutable fields make historical order items vulnerable to product changes.
 
 ## 3. Target Schema
@@ -40,8 +40,9 @@ The target schema will introduce structural support for variants, SKUs, inventor
   - `sku` (VARCHAR, FK to `inventory.sku`)
   - `quantity_change` (INT)
   - `reason` (VARCHAR) - e.g., 'purchase', 'restock', 'return', 'reconciliation'.
-  - `reference_id` (UUID, nullable) - FK to order_id if applicable.
+  - `reference_id` (UUID, nullable) - FK to order_id or idempotency_key for uniqueness.
   - `created_at` (TIMESTAMPTZ)
+  - *Constraints*: Unique constraint on `(reference_id, reason)` to ensure idempotency and prevent duplicate stock movements.
   - *Indexes*: Index on `sku`.
 
 - **`cart_items`**:
@@ -59,7 +60,7 @@ The target schema will introduce structural support for variants, SKUs, inventor
   - `variant_attributes_at_purchase` (JSONB)
 
 ## 4. SKU & Variant Strategy
-- **Stable SKUs**: SKUs will use stable, immutable codes to avoid issues when display properties (like color or category) change. 
+- **Stable SKUs**: SKUs will use stable, immutable codes to avoid issues when display properties (like color or category) change.
 - **Pattern**: `PRD-[UUID_PREFIX]-VAR-[INT_INDEX]` or an internal alphanumeric hash sequence.
 - For products without variants, a single default variant entry will be generated mapping to the base product.
 
@@ -67,8 +68,8 @@ The target schema will introduce structural support for variants, SKUs, inventor
 - **Concurrency Control**: Updates to inventory will use RPCs with database-level row locking (`SELECT ... FOR UPDATE`) to prevent race conditions during concurrent checkouts.
 - **Oversell Prevention**: Enforced at the database level using the CHECK constraint (`quantity_available >= 0`). Transactions resulting in negative availability will automatically rollback.
 - **Stock Tracking**: Inventory is tracked at the SKU level. Total available stock for purchase is `quantity_available - quantity_reserved`.
-- **Reservation**: When an item is added to a cart or during the checkout initiation, stock is moved to `quantity_reserved` for a configurable timeout (e.g., 15 minutes).
-- **Commit/Release**: Upon successful payment, reserved stock is permanently deducted. If timeout expires, it's released back.
+- **Reservation**: When an item is added to a cart or during checkout initiation, stock is moved to `quantity_reserved` for a configurable timeout (e.g., 15 minutes). A background cron job will periodically clean up expired reservations, releasing stock back to available.
+- **Commit/Release**: Payment sessions (e.g., Stripe/Razorpay) will use webhooks to permanently deduct reserved stock upon success, or immediately release it upon cancellation/failure.
 - **Reconciliation Queries**: Cron jobs will periodically sum `inventory_transactions` and verify against `inventory.quantity_available` to detect discrepancies.
 
 ## 6. Order Snapshot Strategy

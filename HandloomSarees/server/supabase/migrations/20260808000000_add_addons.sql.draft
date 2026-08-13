@@ -1,8 +1,10 @@
 -- DRAFT: Not for execution
 -- Up Migration
-ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS addons JSONB DEFAULT '[]'::jsonb;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS available_addons JSONB DEFAULT '{}'::jsonb;
+-- Note: PR #30 already implemented structured add-on support.
+-- The merged implementation uses: `selected_addons`, `product_price`, `addons_total` on cart_items/order_items
+-- and `has_fall`, `fall_price`, `has_in_skirt`, `in_skirt_price` on products.
+-- Therefore, the previously proposed `addons` and `available_addons` columns are superseded.
+-- Future migrations for SKU/Inventory will build on the existing PR #30 schema without adding new parallel add-on columns.
 
 -- Down Migration (for rollback purposes, not executed by default)
--- ALTER TABLE cart_items DROP COLUMN IF EXISTS addons;
--- ALTER TABLE products DROP COLUMN IF EXISTS available_addons;
+-- N/A
