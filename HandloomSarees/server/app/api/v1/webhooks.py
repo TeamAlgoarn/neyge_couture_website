@@ -18,6 +18,7 @@ import logging
 from fastapi import APIRouter, Request, HTTPException, status
 
 from app.core.config import settings
+from app.repositories.payment_repository import PaymentRepository
 from app.services.payment_service import PaymentService
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,11 @@ async def razorpay_webhook(request: Request):
 
     logger.info("Webhook received: event=%s, event_id=%s", event, event_id)
 
+    # ── Deduplication Check ─────────────────────────────────────────────
+    if event_id and PaymentRepository.is_webhook_event_processed(event_id):
+        logger.info("Webhook event %s already processed, skipping", event_id)
+        return {"status": "ok", "message": "Event already processed"}
+
     try:
         if event == "payment.captured":
             _handle_payment_captured(payload, event_id)
@@ -99,6 +105,9 @@ async def razorpay_webhook(request: Request):
         else:
             # Unrecognized event — acknowledge to prevent retries
             logger.info("Webhook: unhandled event type '%s', acknowledging", event)
+
+        if event_id:
+            PaymentRepository.record_webhook_event(event_id, event)
 
     except HTTPException:
         # Re-raise HTTP exceptions (e.g., 409 Conflict from concurrent processing)

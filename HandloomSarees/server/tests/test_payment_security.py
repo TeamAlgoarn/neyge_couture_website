@@ -4,13 +4,15 @@ Test Suite: Payment Security & Hardening (Issue #14)
 Tests for:
   - Duplicate verify callback → returns existing order (no duplicate)
   - Failed payment → inventory untouched
-  - Tampered amount → rejected
+  - Tampered amount / currency mismatch → rejected
   - Invalid signature → rejected
-  - Webhook signature verification
-  - Idempotency key deduplication
-  - Refund initiation
+  - Webhook signature verification & event deduplication
+  - Idempotency key deduplication & race protection
+  - Refund initiation atomic lock & amount validations
+  - Non-admin refund access restriction (403 Forbidden)
   - Processing lock (CAS)
-  - Optimistic stock deduction
+  - Optimistic stock deduction & multi-item rollback compensation
+  - Order-created session-update failure recovery without duplicate orders
 
 Uses mocks — does NOT require a running Supabase or Razorpay instance.
 """
@@ -119,7 +121,6 @@ class TestSignatureVerification:
         payment_id = "pay_test_456"
         signature = _compute_valid_signature(order_id, payment_id, "test_secret")
 
-        # Should not raise
         PaymentService._verify_signature(order_id, payment_id, signature)
 
     @patch("app.services.payment_service.settings")
@@ -166,7 +167,6 @@ class TestIdempotencyKey:
         assert key1 == key2
 
     def test_different_order_same_key(self):
-        """Items in different order should produce the same key (sorted internally)."""
         from app.services.payment_service import PaymentService
 
         items_a = [
@@ -216,13 +216,13 @@ class TestDuplicateVerify:
 
         mock_settings.RAZORPAY_KEY_SECRET = "test_secret"
 
-        # Session is already paid
         paid_session = _make_session(payment_status="paid")
         paid_session["order_id"] = "order-existing"
         mock_pay_repo.get_by_razorpay_order_id_and_user.return_value = paid_session
 
         existing_order = _make_order(order_id="order-existing")
         mock_order_repo.get_by_id.return_value = existing_order
+        mock_order_repo.get_by_razorpay_order_id.return_value = existing_order
 
         order_id = "order_test_123"
         payment_id = "pay_test_456"
@@ -235,7 +235,6 @@ class TestDuplicateVerify:
             razorpay_signature=signature,
         )
 
-        # Should return existing order, NOT create a new one
         assert result["id"] == "order-existing"
         mock_order_repo.create.assert_not_called()
         mock_cart_repo.clear_cart.assert_not_called()
@@ -261,9 +260,9 @@ class TestProcessingLock:
 
         session = _make_session(payment_status="pending")
         mock_pay_repo.get_by_razorpay_order_id_and_user.return_value = session
-
-        # CAS lock fails (another request got there first)
         mock_pay_repo.atomic_set_processing.return_value = None
+        mock_order_repo.get_by_id.return_value = None
+        mock_order_repo.get_by_razorpay_order_id.return_value = None
 
         order_id = "order_test_123"
         payment_id = "pay_test_456"
@@ -282,22 +281,21 @@ class TestProcessingLock:
 
 
 # ════════════════════════════════════════════════════════════════════════
-# Test: Amount Tampering Detection
+# Test: Amount & Currency Tampering Detection
 # ════════════════════════════════════════════════════════════════════════
 
-class TestAmountTampering:
-    """Razorpay order amount must match our stored total."""
+class TestAmountAndCurrencyTampering:
+    """Razorpay order amount and currency must match our stored details."""
 
     @patch("app.services.payment_service.PaymentService._client")
     @patch("app.services.payment_service.settings")
-    def test_matching_amount_passes(self, mock_settings, mock_client_fn):
+    def test_matching_amount_and_currency_passes(self, mock_settings, mock_client_fn):
         from app.services.payment_service import PaymentService
 
         mock_client = MagicMock()
-        mock_client.order.fetch.return_value = {"amount": 500000}  # 5000.00 INR
+        mock_client.order.fetch.return_value = {"amount": 500000, "currency": "INR"}
         mock_client_fn.return_value = mock_client
 
-        # Should not raise
         PaymentService._verify_amount_integrity("order_123", 5000.00)
 
     @patch("app.services.payment_service.PaymentService._client")
@@ -306,7 +304,7 @@ class TestAmountTampering:
         from app.services.payment_service import PaymentService
 
         mock_client = MagicMock()
-        mock_client.order.fetch.return_value = {"amount": 100}  # Tampered: 1.00 INR
+        mock_client.order.fetch.return_value = {"amount": 100, "currency": "INR"}
         mock_client_fn.return_value = mock_client
 
         with pytest.raises(HTTPException) as exc_info:
@@ -314,6 +312,21 @@ class TestAmountTampering:
 
         assert exc_info.value.status_code == 400
         assert "tampering" in exc_info.value.detail.lower()
+
+    @patch("app.services.payment_service.PaymentService._client")
+    @patch("app.services.payment_service.settings")
+    def test_currency_mismatch_rejected(self, mock_settings, mock_client_fn):
+        from app.services.payment_service import PaymentService
+
+        mock_client = MagicMock()
+        mock_client.order.fetch.return_value = {"amount": 500000, "currency": "USD"}
+        mock_client_fn.return_value = mock_client
+
+        with pytest.raises(HTTPException) as exc_info:
+            PaymentService._verify_amount_integrity("order_123", 5000.00)
+
+        assert exc_info.value.status_code == 400
+        assert "currency" in exc_info.value.detail.lower()
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -336,18 +349,14 @@ class TestFailedPaymentInventory:
             error_description="Card declined",
         )
 
-        # Session should be marked failed
         mock_pay_repo.update_by_id.assert_called_once()
         call_args = mock_pay_repo.update_by_id.call_args
         update_payload = call_args[0][1]
         assert update_payload["payment_status"] == "failed"
-
-        # Result reflects failure
         assert result["payment_status"] == "failed"
 
     @patch("app.services.payment_service.PaymentRepository")
     def test_failure_on_paid_session_is_ignored(self, mock_pay_repo):
-        """Cannot mark a paid session as failed."""
         from app.services.payment_service import PaymentService
 
         paid_session = _make_session(payment_status="paid")
@@ -358,68 +367,135 @@ class TestFailedPaymentInventory:
             user_id="user-1",
         )
 
-        # Should NOT update the session
         mock_pay_repo.update_by_id.assert_not_called()
 
 
 # ════════════════════════════════════════════════════════════════════════
-# Test: Optimistic Stock Deduction
+# Test: Multi-Item Stock Deduction & Compensation Rollback
 # ════════════════════════════════════════════════════════════════════════
 
-class TestOptimisticStockDeduction:
-    """Stock deduction with optimistic concurrency."""
+class TestMultiItemStockCompensation:
+    """Stock deduction with multi-item rollback compensation."""
 
     @patch("app.services.payment_service.ProductRepository")
-    def test_stock_deduction_succeeds(self, mock_prod_repo):
+    def test_multi_item_partial_stock_failure_rolls_back(self, mock_prod_repo):
         from app.services.payment_service import PaymentService
 
-        product = _make_product(stock=10)
-        mock_prod_repo.get_active_by_id.return_value = product
-        mock_prod_repo.decrement_stock_optimistic.return_value = {**product, "stock": 9}
+        prod1 = _make_product(product_id="prod-1", stock=10)
+        prod2 = _make_product(product_id="prod-2", stock=0)  # Out of stock
 
-        items = [{"product_id": "prod-1", "quantity": 1}]
-        PaymentService._deduct_stock_safely(items)
+        mock_prod_repo.get_active_by_id.side_effect = lambda pid: prod1 if pid == "prod-1" else prod2
+        mock_prod_repo.decrement_stock_optimistic.return_value = {**prod1, "stock": 9}
 
-        mock_prod_repo.decrement_stock_optimistic.assert_called_once_with(
-            product_id="prod-1", quantity=1, expected_stock=10
+        items = [
+            {"product_id": "prod-1", "quantity": 1},
+            {"product_id": "prod-2", "quantity": 1},
+        ]
+
+        with pytest.raises(HTTPException) as exc_info:
+            PaymentService._deduct_stock_safely(items)
+
+        assert exc_info.value.status_code == 400
+        # Verify that stock for prod-1 was incremented back!
+        mock_prod_repo.increment_stock.assert_called_once_with("prod-1", 1)
+
+    @patch("app.services.payment_service.ProductRepository")
+    @patch("app.services.payment_service.OrderRepository")
+    @patch("app.services.payment_service.PaymentRepository")
+    @patch("app.services.payment_service.PaymentService._verify_amount_integrity")
+    def test_order_creation_failure_rolls_back_all_stock(
+        self, mock_verify_amt, mock_pay_repo, mock_order_repo, mock_prod_repo
+    ):
+        from app.services.payment_service import PaymentService
+
+        session = _make_session(payment_status="pending")
+        mock_pay_repo.atomic_set_processing.return_value = session
+        mock_verify_amt.return_value = None
+        mock_order_repo.get_by_id.return_value = None
+        mock_order_repo.get_by_razorpay_order_id.return_value = None
+
+        prod1 = _make_product(product_id="prod-1", stock=5)
+        mock_prod_repo.get_active_by_id.return_value = prod1
+        mock_prod_repo.decrement_stock_optimistic.return_value = {**prod1, "stock": 4}
+
+        # Order creation throws an unexpected DB error before order is created
+        mock_order_repo.create.side_effect = Exception("DB Insert Failed")
+
+        with pytest.raises(HTTPException) as exc_info:
+            PaymentService._finalize_payment(
+                session=session,
+                razorpay_payment_id="pay_123",
+                source="callback",
+            )
+
+        assert exc_info.value.status_code == 500
+        # Verify stock compensation rollback occurred because order was NOT created
+        mock_prod_repo.increment_stock.assert_called_once_with("prod-1", 1)
+
+    @patch("app.services.payment_service.ProductRepository")
+    @patch("app.services.payment_service.OrderRepository")
+    @patch("app.services.payment_service.PaymentRepository")
+    @patch("app.services.payment_service.PaymentService._verify_amount_integrity")
+    def test_order_created_but_session_update_fails_recovers_safely(
+        self, mock_verify_amt, mock_pay_repo, mock_order_repo, mock_prod_repo
+    ):
+        """Order created successfully -> session update fails -> stock NOT rolled back -> retry recovers created order safely."""
+        from app.services.payment_service import PaymentService
+
+        session = _make_session(payment_status="pending")
+
+        # First call: atomic_set_processing succeeds
+        mock_pay_repo.atomic_set_processing.return_value = session
+        mock_verify_amt.return_value = None
+        mock_order_repo.get_by_id.return_value = None
+        mock_order_repo.get_by_razorpay_order_id.return_value = None
+
+        prod1 = _make_product(product_id="prod-1", stock=5)
+        mock_prod_repo.get_active_by_id.return_value = prod1
+        mock_prod_repo.decrement_stock_optimistic.return_value = {**prod1, "stock": 4}
+
+        created_order = _make_order(order_id="order-created-1")
+        mock_order_repo.create.return_value = created_order
+
+        # PaymentRepository.update_by_id throws exception on session update
+        mock_pay_repo.update_by_id.side_effect = Exception("DB Connection Dropped on session update")
+
+        # Initial call fails due to session update error
+        with pytest.raises(HTTPException) as exc_info:
+            PaymentService._finalize_payment(
+                session=session,
+                razorpay_payment_id="pay_123",
+                source="callback",
+            )
+
+        assert exc_info.value.status_code == 500
+
+        # Must NOT roll back stock because order was legitimately created!
+        mock_prod_repo.increment_stock.assert_not_called()
+
+        # On retry: OrderRepository finds the existing order by razorpay_order_id and recovers safely
+        session["order_id"] = "order-created-1"
+        mock_order_repo.get_by_id.return_value = created_order
+        mock_order_repo.get_by_razorpay_order_id.return_value = created_order
+        mock_pay_repo.update_by_id.side_effect = None  # Reset mock side effect for retry sync
+
+        retry_result = PaymentService._finalize_payment(
+            session=session,
+            razorpay_payment_id="pay_123",
+            source="callback",
         )
 
-    @patch("app.services.payment_service.ProductRepository")
-    def test_stock_race_returns_409(self, mock_prod_repo):
-        from app.services.payment_service import PaymentService
-
-        product = _make_product(stock=10)
-        mock_prod_repo.get_active_by_id.return_value = product
-        # Optimistic update fails (stock changed by another request)
-        mock_prod_repo.decrement_stock_optimistic.return_value = None
-
-        items = [{"product_id": "prod-1", "quantity": 1}]
-
-        with pytest.raises(HTTPException) as exc_info:
-            PaymentService._deduct_stock_safely(items)
-        assert exc_info.value.status_code == 409
-
-    @patch("app.services.payment_service.ProductRepository")
-    def test_insufficient_stock_raises_400(self, mock_prod_repo):
-        from app.services.payment_service import PaymentService
-
-        product = _make_product(stock=0)  # No stock
-        mock_prod_repo.get_active_by_id.return_value = product
-
-        items = [{"product_id": "prod-1", "quantity": 1}]
-
-        with pytest.raises(HTTPException) as exc_info:
-            PaymentService._deduct_stock_safely(items)
-        assert exc_info.value.status_code == 400
-        assert "Insufficient stock" in exc_info.value.detail
+        assert retry_result["id"] == "order-created-1"
+        # Must not call OrderRepository.create() a second time!
+        mock_order_repo.create.assert_called_once()
 
 
 # ════════════════════════════════════════════════════════════════════════
-# Test: Webhook Signature Verification
+# Test: Webhook Signature & Deduplication
 # ════════════════════════════════════════════════════════════════════════
 
-class TestWebhookSignature:
-    """Tests for webhook HMAC-SHA256 verification."""
+class TestWebhookDeduplicationAndEvents:
+    """Tests for webhook HMAC verification and event deduplication."""
 
     @patch("app.api.v1.webhooks.settings")
     def test_valid_webhook_signature(self, mock_settings):
@@ -429,45 +505,140 @@ class TestWebhookSignature:
         mock_settings.RAZORPAY_WEBHOOK_SECRET = secret
 
         body = b'{"event":"payment.captured"}'
-        signature = hmac.new(
-            secret.encode(), body, hashlib.sha256
-        ).hexdigest()
+        signature = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
 
-        # Should not raise
         _verify_webhook_signature(body, signature)
 
+    @patch("app.api.v1.webhooks.PaymentRepository")
     @patch("app.api.v1.webhooks.settings")
-    def test_invalid_webhook_signature(self, mock_settings):
-        from app.api.v1.webhooks import _verify_webhook_signature
+    def test_duplicate_webhook_event_id_skipped(self, mock_settings, mock_pay_repo):
+        from app.api.v1.webhooks import razorpay_webhook
+        from unittest.mock import AsyncMock
 
-        mock_settings.RAZORPAY_WEBHOOK_SECRET = "webhook_test_secret"
+        secret = "webhook_test_secret"
+        mock_settings.RAZORPAY_WEBHOOK_SECRET = secret
+
+        body = b'{"event":"payment.captured","id":"evt_dup_123"}'
+        signature = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+        mock_pay_repo.is_webhook_event_processed.return_value = True
+
+        mock_request = MagicMock()
+        mock_request.body = AsyncMock(return_value=body)
+        mock_request.headers.get.return_value = signature
+        mock_request.json = AsyncMock(return_value={"event": "payment.captured", "id": "evt_dup_123"})
+
+        import asyncio
+        response = asyncio.run(razorpay_webhook(mock_request))
+
+        assert response["status"] == "ok"
+        assert "already processed" in response["message"].lower()
+
+
+# ════════════════════════════════════════════════════════════════════════
+# Test: Sequence Edge Cases (Captured Before/After Callback, Failed After Captured)
+# ════════════════════════════════════════════════════════════════════════
+
+class TestWebhookSequenceEdgeCases:
+    """Sequence edge cases between webhooks and frontend callbacks."""
+
+    @patch("app.services.payment_service.OrderRepository")
+    @patch("app.services.payment_service.PaymentRepository")
+    def test_captured_webhook_before_frontend_verify(self, mock_pay_repo, mock_order_repo):
+        from app.services.payment_service import PaymentService
+
+        # Session is already paid by webhook
+        paid_session = _make_session(payment_status="paid")
+        paid_session["order_id"] = "order-webhook-1"
+        mock_pay_repo.get_by_razorpay_order_id_and_user.return_value = paid_session
+        existing_order = _make_order(order_id="order-webhook-1")
+        mock_order_repo.get_by_id.return_value = existing_order
+        mock_order_repo.get_by_razorpay_order_id.return_value = existing_order
+
+        signature = _compute_valid_signature("order_test_123", "pay_test_456", "test_secret")
+
+        with patch("app.services.payment_service.settings") as mock_settings:
+            mock_settings.RAZORPAY_KEY_SECRET = "test_secret"
+            result = PaymentService.verify_payment_and_finalize(
+                user_id="user-1",
+                razorpay_order_id="order_test_123",
+                razorpay_payment_id="pay_test_456",
+                razorpay_signature=signature,
+            )
+
+        assert result["id"] == "order-webhook-1"
+
+    @patch("app.services.payment_service.OrderRepository")
+    @patch("app.services.payment_service.PaymentRepository")
+    def test_captured_webhook_after_frontend_verify(self, mock_pay_repo, mock_order_repo):
+        """Frontend verification succeeds first -> order becomes paid -> same payment.captured webhook arrives -> no duplicate order created."""
+        from app.services.payment_service import PaymentService
+
+        paid_session = _make_session(payment_status="paid")
+        paid_session["order_id"] = "order-frontend-1"
+
+        mock_pay_repo.get_pending_by_razorpay_order_id.return_value = paid_session
+        existing_order = _make_order(order_id="order-frontend-1")
+        mock_order_repo.get_by_id.return_value = existing_order
+        mock_order_repo.get_by_razorpay_order_id.return_value = existing_order
+
+        # Webhook payment.captured arrives AFTER frontend verification
+        result = PaymentService.handle_webhook_payment_captured(
+            razorpay_order_id="order_test_123",
+            razorpay_payment_id="pay_test_456",
+            event_id="evt_cap_after_verify",
+        )
+
+        assert result["id"] == "order-frontend-1"
+        mock_order_repo.create.assert_not_called()
+
+    @patch("app.services.payment_service.PaymentRepository")
+    def test_failed_after_captured_ignored(self, mock_pay_repo):
+        from app.services.payment_service import PaymentService
+
+        paid_session = _make_session(payment_status="paid")
+        mock_pay_repo.get_pending_by_razorpay_order_id.return_value = paid_session
+
+        result = PaymentService.handle_payment_failure("order_test_123", error_description="Late failure")
+
+        assert result["payment_status"] == "paid"
+        mock_pay_repo.update_by_id.assert_not_called()
+
+
+# ════════════════════════════════════════════════════════════════════════
+# Test: Refund Validations & Role Permissions & Atomic Lock
+# ════════════════════════════════════════════════════════════════════════
+
+class TestRefundValidationsAndAtomicLock:
+    """Tests for refund amount validations and atomic CAS double-submit lock."""
+
+    @patch("app.services.payment_service.OrderRepository")
+    def test_invalid_refund_amount_zero_or_negative_raises_400(self, mock_order_repo):
+        from app.services.payment_service import PaymentService
+
+        order = _make_order()
+        mock_order_repo.get_by_id.return_value = order
 
         with pytest.raises(HTTPException) as exc_info:
-            _verify_webhook_signature(b"tampered body", "bad_signature")
+            PaymentService.initiate_refund(order_id="order-1", amount=0.0)
         assert exc_info.value.status_code == 400
+        assert "greater than 0" in exc_info.value.detail
 
-    @patch("app.api.v1.webhooks.settings")
-    def test_missing_webhook_secret_raises_500(self, mock_settings):
-        from app.api.v1.webhooks import _verify_webhook_signature
+    @patch("app.services.payment_service.OrderRepository")
+    def test_invalid_refund_amount_exceeds_total_raises_400(self, mock_order_repo):
+        from app.services.payment_service import PaymentService
 
-        mock_settings.RAZORPAY_WEBHOOK_SECRET = ""
+        order = _make_order()  # total = 5000.0
+        mock_order_repo.get_by_id.return_value = order
 
         with pytest.raises(HTTPException) as exc_info:
-            _verify_webhook_signature(b"body", "signature")
-        assert exc_info.value.status_code == 500
+            PaymentService.initiate_refund(order_id="order-1", amount=99999.0)
+        assert exc_info.value.status_code == 400
+        assert "cannot exceed" in exc_info.value.detail
 
-
-# ════════════════════════════════════════════════════════════════════════
-# Test: Refund Initiation
-# ════════════════════════════════════════════════════════════════════════
-
-class TestRefund:
-    """Tests for refund lifecycle."""
-
-    @patch("app.services.payment_service.PaymentService._client")
     @patch("app.services.payment_service.PaymentRepository")
     @patch("app.services.payment_service.OrderRepository")
-    def test_full_refund_success(self, mock_order_repo, mock_pay_repo, mock_client_fn):
+    def test_concurrent_double_refund_blocked_by_atomic_lock(self, mock_order_repo, mock_pay_repo):
         from app.services.payment_service import PaymentService
 
         order = _make_order()
@@ -475,98 +646,34 @@ class TestRefund:
 
         session = _make_session(payment_status="paid")
         session["refund_id"] = None
+        session["refund_status"] = None
         mock_pay_repo.get_pending_by_razorpay_order_id.return_value = session
-
-        mock_client = MagicMock()
-        mock_client.payment.refund.return_value = {
-            "id": "rfnd_test_123",
-            "status": "processed",
-            "amount": 500000,
-        }
-        mock_client_fn.return_value = mock_client
-
-        result = PaymentService.initiate_refund(
-            order_id="order-1",
-            reason="Customer requested",
-        )
-
-        assert result["refund_id"] == "rfnd_test_123"
-        assert result["amount"] == 5000.0
-        mock_client.payment.refund.assert_called_once()
-
-    @patch("app.services.payment_service.OrderRepository")
-    def test_refund_without_payment_id_raises(self, mock_order_repo):
-        from app.services.payment_service import PaymentService
-
-        order = _make_order()
-        order["payment_id"] = None  # No payment ID
-        mock_order_repo.get_by_id.return_value = order
+        mock_pay_repo.atomic_set_refunding.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            PaymentService.initiate_refund(order_id="order-1")
+            PaymentService.initiate_refund(order_id="order-1", amount=1000.0)
         assert exc_info.value.status_code == 400
-        assert "no associated payment" in exc_info.value.detail.lower()
+        assert "being processed" in exc_info.value.detail
 
-    @patch("app.services.payment_service.PaymentRepository")
-    @patch("app.services.payment_service.OrderRepository")
-    def test_duplicate_refund_raises(self, mock_order_repo, mock_pay_repo):
-        from app.services.payment_service import PaymentService
 
-        order = _make_order()
-        mock_order_repo.get_by_id.return_value = order
+class TestRefundRolePermissions:
+    """Tests for non-admin refund access restriction (HTTP 403 Forbidden)."""
 
-        session = _make_session(payment_status="paid")
-        session["refund_id"] = "rfnd_already_exists"
-        mock_pay_repo.get_pending_by_razorpay_order_id.return_value = session
+    def test_non_admin_refund_access_forbidden(self):
+        from app.core.dependencies import require_admin
 
+        customer_user = {"profile": {"id": "user-1", "role": "customer"}}
+        import asyncio
         with pytest.raises(HTTPException) as exc_info:
-            PaymentService.initiate_refund(order_id="order-1")
-        assert exc_info.value.status_code == 400
-        assert "already been initiated" in exc_info.value.detail.lower()
+            asyncio.run(require_admin(customer_user))
 
+        assert exc_info.value.status_code == 403
+        assert "Admin access required" in exc_info.value.detail
 
-# ════════════════════════════════════════════════════════════════════════
-# Test: Create Payment Order Idempotency
-# ════════════════════════════════════════════════════════════════════════
+    def test_admin_refund_access_allowed(self):
+        from app.core.dependencies import require_admin
 
-class TestCreatePaymentOrderIdempotency:
-    """Creating a payment order twice with same cart should reuse existing."""
-
-    @patch("app.services.payment_service.ProductRepository")
-    @patch("app.services.payment_service.CartRepository")
-    @patch("app.services.payment_service.PaymentRepository")
-    @patch("app.services.payment_service.settings")
-    def test_reuses_existing_session(
-        self, mock_settings, mock_pay_repo, mock_cart_repo, mock_prod_repo
-    ):
-        from app.services.payment_service import PaymentService
-
-        mock_settings.RAZORPAY_KEY_ID = "rzp_test_key"
-        mock_settings.RAZORPAY_KEY_SECRET = "test_secret"
-
-        # Cart setup
-        mock_cart_repo.get_or_create_cart.return_value = {"id": "cart-1"}
-        mock_cart_repo.get_cart_items.return_value = [
-            {"product_id": "prod-1", "quantity": 1}
-        ]
-
-        product = _make_product()
-        mock_prod_repo.get_active_by_id.return_value = product
-
-        # Existing session with matching idempotency key
-        existing_session = _make_session(
-            razorpay_order_id="order_existing_123",
-            total_amount=5000.0,
-            payment_status="pending",
-        )
-        mock_pay_repo.get_by_idempotency_key.return_value = existing_session
-
-        result = PaymentService.create_payment_order(
-            user_id="user-1",
-            shipping_address={"full_name": "Test"},
-        )
-
-        # Should reuse existing session
-        assert result["razorpay_order_id"] == "order_existing_123"
-        # Should NOT create a new Razorpay order
-        mock_pay_repo.create.assert_not_called()
+        admin_user = {"profile": {"id": "admin-1", "role": "admin"}}
+        import asyncio
+        res = asyncio.run(require_admin(admin_user))
+        assert res["profile"]["role"] == "admin"

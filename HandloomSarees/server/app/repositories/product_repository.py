@@ -112,6 +112,26 @@ class ProductRepository:
         )
         return result.data[0] if result.data else None
 
+    @staticmethod
+    def increment_stock(product_id: str, quantity: int) -> dict | None:
+        """
+        Compensation rollback: restore stock for a product when order
+        creation or payment finalization encounters a failure downstream.
+        """
+        product = ProductRepository.get_by_id(product_id)
+        if not product:
+            return None
+        current_stock = int(product.get("stock", 0))
+        new_stock = current_stock + quantity
+        client = get_supabase_admin()
+        result = (
+            client.table("products")
+            .update({"stock": new_stock})
+            .eq("id", product_id)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+
     # ─────────────────────────────────────────────────────────────────────────
     # HOW MULTI-VALUE COLOR / FABRIC FILTERING WORKS
     # ─────────────────────────────────────────────────────────────────────────

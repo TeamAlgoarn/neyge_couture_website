@@ -119,7 +119,7 @@ class PaymentService:
             "shipping_address": shipping_address,
         }
 
-    # ── Create Payment Order (Idempotent) ────────────────────────────────
+    # ── Create Payment Order (Atomic Idempotent) ──────────────────────────
 
     @staticmethod
     def create_payment_order(user_id: str, shipping_address: dict) -> dict:
@@ -130,29 +130,65 @@ class PaymentService:
             shipping_address=shipping_address,
         )
 
-        # Generate idempotency key to prevent duplicate Razorpay orders
         idempotency_key = PaymentService._compute_idempotency_key(
             user_id=user_id,
             cart_items=snapshot["items"],
             total_amount=snapshot["total_amount"],
         )
 
-        # Check for existing unexpired session with same idempotency key
+        # 1. Check for existing unexpired session with same idempotency key
         existing = PaymentRepository.get_by_idempotency_key(idempotency_key, user_id)
         if existing and existing.get("payment_status") in ("pending", "created"):
-            logger.info(
-                "Reusing existing payment session %s (idempotency_key=%s)",
-                existing["id"],
-                idempotency_key[:12],
-            )
-            amount_paise = int(round(existing["total_amount"] * 100))
-            return {
-                "razorpay_order_id": existing["razorpay_order_id"],
-                "amount": amount_paise,
-                "currency": "INR",
-                "key": settings.RAZORPAY_KEY_ID,
-            }
+            if existing.get("razorpay_order_id") and not str(existing["razorpay_order_id"]).startswith("tmp_"):
+                logger.info(
+                    "Reusing existing payment session %s (idempotency_key=%s)",
+                    existing["id"],
+                    idempotency_key[:12],
+                )
+                amount_paise = int(round(existing["total_amount"] * 100))
+                return {
+                    "razorpay_order_id": existing["razorpay_order_id"],
+                    "amount": amount_paise,
+                    "currency": "INR",
+                    "key": settings.RAZORPAY_KEY_ID,
+                }
 
+        # 2. Claim DB record FIRST to eliminate race condition around Razorpay API call
+        session_record = None
+        if not existing:
+            try:
+                session_record = PaymentRepository.create(
+                    {
+                        "user_id": user_id,
+                        "razorpay_order_id": f"tmp_{idempotency_key[:16]}",
+                        "items": snapshot["items"],
+                        "total_amount": snapshot["total_amount"],
+                        "shipping_address": snapshot["shipping_address"],
+                        "currency": "INR",
+                        "status": "created",
+                        "payment_status": "pending",
+                        "idempotency_key": idempotency_key,
+                    }
+                )
+            except Exception as db_exc:
+                # Concurrent request inserted first — fetch existing record
+                existing = PaymentRepository.get_by_idempotency_key(idempotency_key, user_id)
+                if existing and existing.get("razorpay_order_id") and not str(existing["razorpay_order_id"]).startswith("tmp_"):
+                    amount_paise = int(round(existing["total_amount"] * 100))
+                    return {
+                        "razorpay_order_id": existing["razorpay_order_id"],
+                        "amount": amount_paise,
+                        "currency": "INR",
+                        "key": settings.RAZORPAY_KEY_ID,
+                    }
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Payment order creation is already in progress for this cart",
+                ) from db_exc
+        else:
+            session_record = existing
+
+        # 3. Call Razorpay API safely
         client = PaymentService._client()
         amount_paise = int(round(snapshot["total_amount"] * 100))
 
@@ -164,25 +200,22 @@ class PaymentService:
                     "payment_capture": 1,
                 }
             )
+            # Update session with real razorpay_order_id
+            PaymentRepository.update_by_id(
+                session_record["id"],
+                {"razorpay_order_id": razorpay_order["id"]},
+            )
         except Exception as exc:
+            # Delete temporary session on Razorpay failure so user can retry
+            if session_record and str(session_record.get("razorpay_order_id", "")).startswith("tmp_"):
+                try:
+                    PaymentRepository.delete_by_id(session_record["id"])
+                except Exception:
+                    pass
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Failed to create Razorpay order",
             ) from exc
-
-        PaymentRepository.create(
-            {
-                "user_id": user_id,
-                "razorpay_order_id": razorpay_order["id"],
-                "items": snapshot["items"],
-                "total_amount": snapshot["total_amount"],
-                "shipping_address": snapshot["shipping_address"],
-                "currency": "INR",
-                "status": "created",
-                "payment_status": "pending",
-                "idempotency_key": idempotency_key,
-            }
-        )
 
         return {
             "razorpay_order_id": razorpay_order["id"],
@@ -211,19 +244,27 @@ class PaymentService:
                 detail="Invalid payment verification",
             )
 
-    # ── Amount Tampering Check ───────────────────────────────────────────
+    # ── Amount & Currency Integrity Check ───────────────────────────────
 
     @staticmethod
     def _verify_amount_integrity(razorpay_order_id: str, expected_total: float) -> None:
         """
-        Fetch the Razorpay order and confirm its amount matches what we
-        stored in our payment_session. Rejects price/quantity tampering.
+        Fetch the Razorpay order and confirm its amount and currency match what we
+        stored in our payment_session. Rejects price/quantity/currency tampering.
         """
         try:
             client = PaymentService._client()
             rz_order = client.order.fetch(razorpay_order_id)
             rz_amount_paise = int(rz_order.get("amount", 0))
+            rz_currency = str(rz_order.get("currency", "INR")).upper()
             expected_paise = int(round(expected_total * 100))
+
+            if rz_currency != "INR":
+                logger.warning("Currency mismatch: %s != INR", rz_currency)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unsupported payment currency '{rz_currency}'. Must be INR.",
+                )
 
             if rz_amount_paise != expected_paise:
                 logger.warning(
@@ -249,21 +290,25 @@ class PaymentService:
                 detail="Failed to verify payment amount with Razorpay",
             ) from exc
 
-    # ── Stock Deduction (Optimistic Concurrency) ─────────────────────────
+    # ── Stock Deduction with Partial Failure Rollback ─────────────────────
 
     @staticmethod
     def _deduct_stock_safely(items: list[dict]) -> None:
         """
         Deduct stock for every item using optimistic concurrency.
-        If any item's stock changed since we read it, abort the whole
-        operation (another request or webhook beat us to it).
+        If any item's stock deduction fails, roll back all previously
+        decremented items in the cart before raising exception.
         """
+        decremented_items: list[dict] = []
+
         for item in items:
             product_id = item["product_id"]
             quantity = int(item["quantity"])
 
             product = ProductRepository.get_active_by_id(product_id)
             if not product:
+                # Roll back previous decrements
+                PaymentService._rollback_stock_decrements(decremented_items)
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Product not found: {product_id}",
@@ -271,6 +316,8 @@ class PaymentService:
 
             current_stock = int(product.get("stock", 0))
             if current_stock < quantity:
+                # Roll back previous decrements
+                PaymentService._rollback_stock_decrements(decremented_items)
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Insufficient stock for '{product.get('name', 'Unknown')}'",
@@ -283,12 +330,25 @@ class PaymentService:
             )
 
             if not updated:
+                # Roll back previous decrements
+                PaymentService._rollback_stock_decrements(decremented_items)
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Stock was modified by another request. Please retry.",
                 )
 
-    # ── Finalize Payment (Shared Logic) ──────────────────────────────────
+            decremented_items.append({"product_id": product_id, "quantity": quantity})
+
+    @staticmethod
+    def _rollback_stock_decrements(decremented_items: list[dict]) -> None:
+        """Restore stock for items decremented prior to a failure."""
+        for item in decremented_items:
+            try:
+                ProductRepository.increment_stock(item["product_id"], item["quantity"])
+            except Exception as exc:
+                logger.error("Failed to rollback stock for product %s: %s", item["product_id"], exc)
+
+    # ── Finalize Payment (Transaction & Rollback Safe) ───────────────────
 
     @staticmethod
     def _finalize_payment(
@@ -299,54 +359,68 @@ class PaymentService:
     ) -> dict:
         """
         Shared finalization logic used by both the frontend callback
-        and the webhook handler. Idempotent — returns existing order
-        if already finalized.
+        and the webhook handler. Fully transaction-safe with stock compensation.
         """
-        # Already paid → idempotent return
-        if session.get("payment_status") == "paid":
-            order_id = session.get("order_id")
-            if order_id:
-                existing_order = OrderRepository.get_by_id(order_id)
-                if existing_order:
-                    logger.info(
-                        "Payment already finalized (source=%s, session=%s). Returning existing order.",
-                        source,
-                        session["id"],
-                    )
-                    return existing_order
-            # Edge case: paid but order missing — should not happen, raise
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Payment marked as paid but order not found",
-            )
+        order_id = session.get("order_id")
+        if session.get("payment_status") == "paid" or order_id:
+            existing_order = OrderRepository.get_by_id(order_id) if order_id else None
+            if not existing_order and session.get("razorpay_order_id"):
+                existing_order = OrderRepository.get_by_razorpay_order_id(session["razorpay_order_id"])
+
+            if existing_order:
+                if session.get("payment_status") != "paid":
+                    update_payload = {
+                        "payment_status": "paid",
+                        "status": "verified",
+                        "razorpay_payment_id": razorpay_payment_id,
+                        "order_id": existing_order["id"],
+                    }
+                    if razorpay_signature:
+                        update_payload["razorpay_signature"] = razorpay_signature
+                    if source == "webhook":
+                        update_payload["webhook_verified_at"] = datetime.now(timezone.utc).isoformat()
+                    try:
+                        PaymentRepository.update_by_id(session["id"], update_payload)
+                    except Exception as update_err:
+                        logger.warning("Failed to sync session for existing order: %s", update_err)
+                return existing_order
+
+            if session.get("payment_status") == "paid":
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Payment marked as paid but order not found",
+                )
 
         # Acquire processing lock (CAS)
         locked = PaymentRepository.atomic_set_processing(session["id"])
         if not locked:
-            # Another request is already processing this session
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Payment is being processed by another request",
             )
 
+        stock_deducted = False
+        created_order = None
+        items = session.get("items", [])
+
         try:
-            items = session.get("items", [])
             if not items:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Payment session has no items",
                 )
 
-            # Amount tampering check
+            # 1. Amount & Currency integrity check
             PaymentService._verify_amount_integrity(
                 razorpay_order_id=session["razorpay_order_id"],
                 expected_total=session["total_amount"],
             )
 
-            # Deduct stock with optimistic concurrency
+            # 2. Deduct stock safely (rolls back partial stock on failure)
             PaymentService._deduct_stock_safely(items)
+            stock_deducted = True
 
-            # Create order
+            # 3. Create order
             order = OrderRepository.create(
                 {
                     "user_id": session["user_id"],
@@ -359,8 +433,9 @@ class PaymentService:
                     "razorpay_order_id": session["razorpay_order_id"],
                 }
             )
+            created_order = order
 
-            # Update payment session
+            # 4. Update payment session
             update_payload = {
                 "payment_status": "paid",
                 "status": "verified",
@@ -374,7 +449,7 @@ class PaymentService:
 
             PaymentRepository.update_by_id(session["id"], update_payload)
 
-            # Clear cart
+            # 5. Clear cart
             try:
                 cart = CartRepository.get_or_create_cart(session["user_id"])
                 CartRepository.clear_cart(cart["id"])
@@ -389,16 +464,36 @@ class PaymentService:
             )
             return order
 
-        except HTTPException:
-            # Revert processing lock on business-logic failure
-            PaymentRepository.update_by_id(
-                session["id"], {"payment_status": "pending"}
-            )
-            raise
         except Exception as exc:
-            PaymentRepository.update_by_id(
-                session["id"], {"payment_status": "pending"}
-            )
+            # Only roll back stock if order creation failed BEFORE an order was created!
+            # If an order WAS created, stock was legitimately allocated for that order.
+            if stock_deducted and not created_order:
+                logger.warning("Payment finalization failed before order creation. Executing stock compensation rollback...")
+                PaymentService._rollback_stock_decrements(items)
+
+            if created_order:
+                try:
+                    session["order_id"] = created_order["id"]
+                    session["payment_status"] = "paid"
+                    PaymentRepository.update_by_id(
+                        session["id"],
+                        {
+                            "payment_status": "paid",
+                            "status": "verified",
+                            "razorpay_payment_id": razorpay_payment_id,
+                            "order_id": created_order["id"],
+                        },
+                    )
+                except Exception as sync_err:
+                    logger.warning("Failed to sync session with created order: %s", sync_err)
+            else:
+                PaymentRepository.update_by_id(
+                    session["id"], {"payment_status": "pending"}
+                )
+
+            if isinstance(exc, HTTPException):
+                raise exc
+
             logger.exception("Unexpected error during payment finalization")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -494,7 +589,7 @@ class PaymentService:
         )
         return {**session, "payment_status": "failed", "status": "failed"}
 
-    # ── Refund Lifecycle ─────────────────────────────────────────────────
+    # ── Refund Lifecycle (Atomic Lock & Validated Amount) ────────────────
 
     @staticmethod
     def initiate_refund(
@@ -504,7 +599,7 @@ class PaymentService:
     ) -> dict:
         """
         Initiate a refund via Razorpay API. Admin-only.
-        amount=None means full refund.
+        Validates amount > 0 and amount <= order_total. Uses atomic CAS lock.
         """
         order = OrderRepository.get_by_id(order_id)
         if not order:
@@ -512,6 +607,24 @@ class PaymentService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Order not found",
             )
+
+        order_total = float(order.get("total_amount", 0))
+
+        # Amount validation
+        if amount is not None:
+            if amount <= 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Refund amount must be greater than 0",
+                )
+            if amount > order_total:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Refund amount ({amount}) cannot exceed order total amount ({order_total})",
+                )
+            refund_target = amount
+        else:
+            refund_target = order_total
 
         payment_id = order.get("payment_id")
         if not payment_id:
@@ -523,16 +636,23 @@ class PaymentService:
         razorpay_order_id = order.get("razorpay_order_id", "")
         session = PaymentRepository.get_pending_by_razorpay_order_id(razorpay_order_id)
 
-        if session and session.get("refund_id"):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="A refund has already been initiated for this payment",
-            )
+        if session:
+            if session.get("refund_id") or session.get("refund_status") in ("initiating", "processed", "created"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A refund has already been initiated or completed for this payment",
+                )
+
+            # Atomic lock to block concurrent double refunds
+            locked = PaymentRepository.atomic_set_refunding(session["id"])
+            if not locked:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A refund is currently being processed for this payment",
+                )
 
         client = PaymentService._client()
-        refund_amount_paise = (
-            int(round(amount * 100)) if amount else int(round(order["total_amount"] * 100))
-        )
+        refund_amount_paise = int(round(refund_target * 100))
 
         try:
             refund = client.payment.refund(
@@ -543,6 +663,12 @@ class PaymentService:
                 },
             )
         except Exception as exc:
+            # Revert atomic lock on Razorpay API error
+            if session:
+                PaymentRepository.update_by_id(
+                    session["id"],
+                    {"refund_status": None},
+                )
             logger.error("Razorpay refund API error: %s", exc)
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
@@ -663,10 +789,6 @@ class PaymentService:
         event_id: str = "",
     ) -> None:
         """Handle refund.created / refund.processed webhooks."""
-        # Find session by payment_id
-        # We search all sessions — refund events reference payment_id
-        client_db = PaymentRepository
-        # Note: We don't have a direct payment_id lookup, so we search by it
         from app.core.database import get_supabase_admin
         db = get_supabase_admin()
         result = (

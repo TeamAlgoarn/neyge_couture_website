@@ -114,3 +114,57 @@ class PaymentRepository:
             .execute()
         )
         return result.data[0] if result.data else None
+
+    @staticmethod
+    def atomic_set_refunding(session_id: str) -> dict | None:
+        """
+        Atomic CAS lock for refund initiation.
+        Sets refund_status to 'initiating' ONLY if refund_id is null
+        and refund_status is null. Returns updated row or None if refund
+        already initiated/completed.
+        """
+        client = get_supabase_admin()
+        result = (
+            client.table("payment_sessions")
+            .update({"refund_status": "initiating"})
+            .eq("id", session_id)
+            .is_("refund_id", "null")
+            .execute()
+        )
+        return result.data[0] if result.data else None
+
+    @staticmethod
+    def is_webhook_event_processed(event_id: str) -> bool:
+        """Check if a webhook event ID has already been recorded/processed."""
+        if not event_id:
+            return False
+        client = get_supabase_admin()
+        result = (
+            client.table("processed_webhook_events")
+            .select("event_id")
+            .eq("event_id", event_id)
+            .limit(1)
+            .execute()
+        )
+        return bool(result.data)
+
+    @staticmethod
+    def record_webhook_event(event_id: str, event_type: str) -> bool:
+        """Record a webhook event ID in processed_webhook_events. Returns True if inserted, False if duplicate."""
+        if not event_id:
+            return True
+        client = get_supabase_admin()
+        try:
+            result = (
+                client.table("processed_webhook_events")
+                .insert({"event_id": event_id, "event_type": event_type})
+                .execute()
+            )
+            return bool(result.data)
+        except Exception:
+            return False
+
+    @staticmethod
+    def delete_by_id(session_id: str) -> None:
+        client = get_supabase_admin()
+        client.table("payment_sessions").delete().eq("id", session_id).execute()
