@@ -113,24 +113,25 @@ class ProductRepository:
         return result.data[0] if result.data else None
 
     @staticmethod
-    def increment_stock(product_id: str, quantity: int) -> dict | None:
+    def increment_stock(product_id: str, quantity: int) -> None:
         """
-        Compensation rollback: restore stock for a product when order
-        creation or payment finalization encounters a failure downstream.
+        Atomic compensation rollback: restore stock using a Postgres RPC
+        function that performs SET stock = stock + qty in a single SQL
+        statement, avoiding the read-modify-write race condition.
         """
-        product = ProductRepository.get_by_id(product_id)
-        if not product:
-            return None
-        current_stock = int(product.get("stock", 0))
-        new_stock = current_stock + quantity
         client = get_supabase_admin()
-        result = (
-            client.table("products")
-            .update({"stock": new_stock})
-            .eq("id", product_id)
-            .execute()
-        )
-        return result.data[0] if result.data else None
+        try:
+            client.rpc(
+                "increment_product_stock",
+                {"p_id": product_id, "qty": quantity},
+            ).execute()
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).error(
+                "Atomic increment_stock RPC failed for product %s: %s",
+                product_id, exc,
+            )
+            raise
 
     # ─────────────────────────────────────────────────────────────────────────
     # HOW MULTI-VALUE COLOR / FABRIC FILTERING WORKS

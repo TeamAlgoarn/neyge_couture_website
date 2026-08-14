@@ -1,6 +1,7 @@
 -- ============================================================================
--- Migration 002: Payment Sessions Hardening (Issue #14)
+-- Migration 003: Payment Sessions Hardening (Issue #14)
 -- Adds idempotency, refund tracking, webhook event tracking table, and failure columns.
+-- Also adds atomic increment_product_stock RPC and webhook event status tracking.
 -- Run on Supabase BEFORE deploying the new backend code.
 -- ============================================================================
 
@@ -23,9 +24,20 @@ ALTER TABLE payment_sessions ADD COLUMN IF NOT EXISTS webhook_verified_at TIMEST
 -- Failure reason tracking
 ALTER TABLE payment_sessions ADD COLUMN IF NOT EXISTS failure_reason TEXT;
 
--- Processed Webhook Events Table (Deduplication)
+-- Processed Webhook Events Table (Deduplication with status tracking)
 CREATE TABLE IF NOT EXISTS processed_webhook_events (
   event_id TEXT PRIMARY KEY,
   event_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'processing',
   processed_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ============================================================================
+-- Atomic Stock Increment RPC Function
+-- Used by compensation rollback to avoid read-modify-write race conditions.
+-- Performs SET stock = stock + qty in a single SQL statement.
+-- ============================================================================
+CREATE OR REPLACE FUNCTION increment_product_stock(p_id UUID, qty INT)
+RETURNS VOID AS $$
+  UPDATE products SET stock = stock + qty WHERE id = p_id;
+$$ LANGUAGE sql;

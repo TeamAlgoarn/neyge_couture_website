@@ -119,8 +119,8 @@ class PaymentRepository:
     def atomic_set_refunding(session_id: str) -> dict | None:
         """
         Atomic CAS lock for refund initiation.
-        Sets refund_status to 'initiating' ONLY if refund_id is null
-        and refund_status is null. Returns updated row or None if refund
+        Sets refund_status to 'initiating' ONLY if BOTH refund_id AND
+        refund_status are null. Returns updated row or None if refund
         already initiated/completed.
         """
         client = get_supabase_admin()
@@ -129,40 +129,51 @@ class PaymentRepository:
             .update({"refund_status": "initiating"})
             .eq("id", session_id)
             .is_("refund_id", "null")
+            .is_("refund_status", "null")
             .execute()
         )
         return result.data[0] if result.data else None
 
     @staticmethod
-    def is_webhook_event_processed(event_id: str) -> bool:
-        """Check if a webhook event ID has already been recorded/processed."""
-        if not event_id:
-            return False
-        client = get_supabase_admin()
-        result = (
-            client.table("processed_webhook_events")
-            .select("event_id")
-            .eq("event_id", event_id)
-            .limit(1)
-            .execute()
-        )
-        return bool(result.data)
-
-    @staticmethod
-    def record_webhook_event(event_id: str, event_type: str) -> bool:
-        """Record a webhook event ID in processed_webhook_events. Returns True if inserted, False if duplicate."""
+    def reserve_webhook_event(event_id: str, event_type: str) -> bool:
+        """
+        Atomically reserve a webhook event ID by inserting into processed_webhook_events
+        with status='processing'. Returns True if this caller won the insert (first arrival),
+        False if the event was already reserved/processed (duplicate key violation).
+        """
         if not event_id:
             return True
         client = get_supabase_admin()
         try:
             result = (
                 client.table("processed_webhook_events")
-                .insert({"event_id": event_id, "event_type": event_type})
+                .insert({
+                    "event_id": event_id,
+                    "event_type": event_type,
+                    "status": "processing",
+                })
                 .execute()
             )
             return bool(result.data)
         except Exception:
+            # Duplicate key violation — another request already reserved this event
             return False
+
+    @staticmethod
+    def mark_webhook_event_processed(event_id: str) -> None:
+        """Mark a reserved webhook event as fully processed."""
+        if not event_id:
+            return
+        client = get_supabase_admin()
+        try:
+            client.table("processed_webhook_events").update(
+                {"status": "processed"}
+            ).eq("event_id", event_id).execute()
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Failed to mark webhook event %s as processed: %s", event_id, exc
+            )
 
     @staticmethod
     def delete_by_id(session_id: str) -> None:

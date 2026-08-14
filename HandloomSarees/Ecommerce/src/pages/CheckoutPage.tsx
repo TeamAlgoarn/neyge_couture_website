@@ -808,19 +808,48 @@ export function CheckoutPage() {
             const errStatus = apiErr?.response?.status;
             const errMsg = apiErr?.response?.data?.message || '';
 
-            // ── Handle idempotent responses gracefully ─────────────────
-            // 409 from 'already verified' or 'being processed' = treat as success
+            // ── Handle idempotent / processing responses gracefully ────
             if (errStatus === 409 || errMsg.includes('already')) {
-              await clearCart();
-              toast.success('Payment already confirmed!');
-              navigate(`/order-confirmation/${response.razorpay_order_id}`, {
-                state: {
-                  orderId: response.razorpay_order_id,
-                  paymentId: response.razorpay_payment_id,
-                  amount: total,
-                  shippingAddress,
-                },
-              });
+              // 409 can mean "being processed" (not yet paid) or "already paid".
+              // Poll the verify endpoint to determine the actual state before
+              // clearing cart or navigating.
+              let confirmedOrder = null;
+              for (let attempt = 0; attempt < 5; attempt++) {
+                await new Promise((r) => setTimeout(r, 2000));
+                try {
+                  const retryRes = await api.post('/payments/verify', {
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                  });
+                  confirmedOrder =
+                    retryRes.data?.data?.order ||
+                    retryRes.data?.order ||
+                    retryRes.data?.data ||
+                    retryRes.data;
+                  break;
+                } catch {
+                  // Still processing — keep polling
+                }
+              }
+
+              if (confirmedOrder?.id) {
+                await clearCart();
+                toast.success('Payment confirmed!');
+                navigate(`/order-confirmation/${confirmedOrder.id}`, {
+                  state: {
+                    order: confirmedOrder,
+                    orderId: confirmedOrder.id,
+                    paymentId: response.razorpay_payment_id,
+                    amount: total,
+                    shippingAddress,
+                  },
+                });
+              } else {
+                toast.info(
+                  'Payment is being processed. Please check your order history shortly.'
+                );
+              }
             } else {
               toast.error(errMsg || 'Payment verification failed');
             }

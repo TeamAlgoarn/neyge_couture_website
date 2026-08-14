@@ -87,9 +87,9 @@ async def razorpay_webhook(request: Request):
 
     logger.info("Webhook received: event=%s, event_id=%s", event, event_id)
 
-    # ── Deduplication Check ─────────────────────────────────────────────
-    if event_id and PaymentRepository.is_webhook_event_processed(event_id):
-        logger.info("Webhook event %s already processed, skipping", event_id)
+    # ── Deduplication: Reserve event ID FIRST (insert-or-fail) ──────────
+    if event_id and not PaymentRepository.reserve_webhook_event(event_id, event):
+        logger.info("Webhook event %s already reserved/processed, skipping", event_id)
         return {"status": "ok", "message": "Event already processed"}
 
     try:
@@ -106,8 +106,9 @@ async def razorpay_webhook(request: Request):
             # Unrecognized event — acknowledge to prevent retries
             logger.info("Webhook: unhandled event type '%s', acknowledging", event)
 
+        # Mark event as fully processed
         if event_id:
-            PaymentRepository.record_webhook_event(event_id, event)
+            PaymentRepository.mark_webhook_event_processed(event_id)
 
     except HTTPException:
         # Re-raise HTTP exceptions (e.g., 409 Conflict from concurrent processing)

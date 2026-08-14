@@ -139,7 +139,8 @@ class PaymentService:
         # 1. Check for existing unexpired session with same idempotency key
         existing = PaymentRepository.get_by_idempotency_key(idempotency_key, user_id)
         if existing and existing.get("payment_status") in ("pending", "created"):
-            if existing.get("razorpay_order_id") and not str(existing["razorpay_order_id"]).startswith("tmp_"):
+            razorpay_oid = str(existing.get("razorpay_order_id", ""))
+            if razorpay_oid and not razorpay_oid.startswith("tmp_"):
                 logger.info(
                     "Reusing existing payment session %s (idempotency_key=%s)",
                     existing["id"],
@@ -152,43 +153,45 @@ class PaymentService:
                     "currency": "INR",
                     "key": settings.RAZORPAY_KEY_ID,
                 }
-
-        # 2. Claim DB record FIRST to eliminate race condition around Razorpay API call
-        session_record = None
-        if not existing:
-            try:
-                session_record = PaymentRepository.create(
-                    {
-                        "user_id": user_id,
-                        "razorpay_order_id": f"tmp_{idempotency_key[:16]}",
-                        "items": snapshot["items"],
-                        "total_amount": snapshot["total_amount"],
-                        "shipping_address": snapshot["shipping_address"],
-                        "currency": "INR",
-                        "status": "created",
-                        "payment_status": "pending",
-                        "idempotency_key": idempotency_key,
-                    }
-                )
-            except Exception as db_exc:
-                # Concurrent request inserted first — fetch existing record
-                existing = PaymentRepository.get_by_idempotency_key(idempotency_key, user_id)
-                if existing and existing.get("razorpay_order_id") and not str(existing["razorpay_order_id"]).startswith("tmp_"):
-                    amount_paise = int(round(existing["total_amount"] * 100))
-                    return {
-                        "razorpay_order_id": existing["razorpay_order_id"],
-                        "amount": amount_paise,
-                        "currency": "INR",
-                        "key": settings.RAZORPAY_KEY_ID,
-                    }
+            # tmp_* means another request is creating the Razorpay order right now
+            if razorpay_oid.startswith("tmp_"):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Payment order creation is already in progress for this cart",
-                ) from db_exc
-        else:
-            session_record = existing
+                    detail="Payment order creation is already in progress",
+                )
 
-        # 3. Call Razorpay API safely
+        # 2. Claim DB record FIRST to eliminate race condition around Razorpay API call
+        try:
+            session_record = PaymentRepository.create(
+                {
+                    "user_id": user_id,
+                    "razorpay_order_id": f"tmp_{idempotency_key[:16]}",
+                    "items": snapshot["items"],
+                    "total_amount": snapshot["total_amount"],
+                    "shipping_address": snapshot["shipping_address"],
+                    "currency": "INR",
+                    "status": "created",
+                    "payment_status": "pending",
+                    "idempotency_key": idempotency_key,
+                }
+            )
+        except Exception as db_exc:
+            # Concurrent request inserted first — fetch existing record
+            existing = PaymentRepository.get_by_idempotency_key(idempotency_key, user_id)
+            if existing and existing.get("razorpay_order_id") and not str(existing["razorpay_order_id"]).startswith("tmp_"):
+                amount_paise = int(round(existing["total_amount"] * 100))
+                return {
+                    "razorpay_order_id": existing["razorpay_order_id"],
+                    "amount": amount_paise,
+                    "currency": "INR",
+                    "key": settings.RAZORPAY_KEY_ID,
+                }
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Payment order creation is already in progress for this cart",
+            ) from db_exc
+
+        # 3. Call Razorpay API safely — only the session creator reaches here
         client = PaymentService._client()
         amount_paise = int(round(snapshot["total_amount"] * 100))
 
@@ -636,20 +639,25 @@ class PaymentService:
         razorpay_order_id = order.get("razorpay_order_id", "")
         session = PaymentRepository.get_pending_by_razorpay_order_id(razorpay_order_id)
 
-        if session:
-            if session.get("refund_id") or session.get("refund_status") in ("initiating", "processed", "created"):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="A refund has already been initiated or completed for this payment",
-                )
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No payment session found for this order. Cannot track refund state.",
+            )
 
-            # Atomic lock to block concurrent double refunds
-            locked = PaymentRepository.atomic_set_refunding(session["id"])
-            if not locked:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="A refund is currently being processed for this payment",
-                )
+        if session.get("refund_id") or session.get("refund_status") in ("initiating", "processed", "created"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A refund has already been initiated or completed for this payment",
+            )
+
+        # Atomic lock to block concurrent double refunds
+        locked = PaymentRepository.atomic_set_refunding(session["id"])
+        if not locked:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A refund is currently being processed for this payment",
+            )
 
         client = PaymentService._client()
         refund_amount_paise = int(round(refund_target * 100))
@@ -664,11 +672,10 @@ class PaymentService:
             )
         except Exception as exc:
             # Revert atomic lock on Razorpay API error
-            if session:
-                PaymentRepository.update_by_id(
-                    session["id"],
-                    {"refund_status": None},
-                )
+            PaymentRepository.update_by_id(
+                session["id"],
+                {"refund_status": None},
+            )
             logger.error("Razorpay refund API error: %s", exc)
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
@@ -676,17 +683,16 @@ class PaymentService:
             ) from exc
 
         # Update payment session with refund info
-        if session:
-            PaymentRepository.update_by_id(
-                session["id"],
-                {
-                    "refund_id": refund.get("id"),
-                    "refund_status": refund.get("status", "created"),
-                    "refund_amount": refund_amount_paise / 100.0,
-                    "refund_reason": reason[:500],
-                    "refund_created_at": datetime.now(timezone.utc).isoformat(),
-                },
-            )
+        PaymentRepository.update_by_id(
+            session["id"],
+            {
+                "refund_id": refund.get("id"),
+                "refund_status": refund.get("status", "created"),
+                "refund_amount": refund_amount_paise / 100.0,
+                "refund_reason": reason[:500],
+                "refund_created_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
         logger.info(
             "Refund initiated: refund_id=%s, order_id=%s, amount_paise=%d",
