@@ -23,17 +23,20 @@ type OrderDetail = {
     city?: string; state?: string; postal_code?: string; country?: string; phone?: string;
   } | string | null;
   items?: OrderItem[];
+  courier_name?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  status_history?: Record<string, unknown>[];
 };
 
- 
- 
- 
- 
- 
- 
- 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type OrderResponse = { data?: OrderDetail | any; order?: OrderDetail | any };
+
+
+
+
+
+
+
+type OrderResponse = { data?: OrderDetail; order?: OrderDetail };
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
@@ -300,6 +303,61 @@ const CSS = `
 @media(min-width: 640px) {
   .od-summary-total-value { font-size: 20px; }
 }
+
+.od-form-group {
+  margin-bottom: 16px;
+}
+.od-form-label {
+  display: block;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9a8070;
+  margin-bottom: 6px;
+}
+.od-form-select, .od-form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(196,152,10,0.3);
+  border-radius: 8px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 14px;
+  color: #4a3828;
+  background: rgba(255,255,255,0.7);
+  transition: all 0.2s;
+}
+.od-form-select:focus, .od-form-input:focus {
+  outline: none;
+  border-color: rgba(196,152,10,0.6);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(196,152,10,0.1);
+}
+.od-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  background: #800020;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.od-btn-primary:hover {
+  background: #5a0016;
+}
+.od-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
 `;
 
 export default function AdminOrderDetail() {
@@ -313,6 +371,13 @@ export default function AdminOrderDetail() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [statusForm, setStatusForm] = useState({
+    order_status: "",
+    courier_name: "",
+    tracking_number: "",
+    tracking_url: ""
+  });
 
   const getOrderStatus = (order: { order_status?: string; status?: string }) =>
     order.order_status || order.status || "Pending";
@@ -320,24 +385,56 @@ export default function AdminOrderDetail() {
   useEffect(() => {
     if (!id) return;
     const fetchOrder = async () => {
- 
+
       try {
         setLoading(true);
- 
+
         setError("");
         const res = await adminApi.get<OrderResponse>(`/orders/admin/${id}`);
- 
-        const data = res.data?.data || res.data?.order || res.data;
-        setOrder(data || null);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        setError(err?.message || "Failed to fetch order detail");
+
+        const rawData = res.data?.data || res.data?.order || res.data;
+        const data = rawData ? (rawData as OrderDetail) : null;
+        setOrder(data);
+        if (data) {
+          setStatusForm({
+            order_status: data.order_status || data.status || "",
+            courier_name: data.courier_name || "",
+            tracking_number: data.tracking_number || "",
+            tracking_url: data.tracking_url || ""
+          });
+        }
+      } catch (err: unknown) {
+        setError((err as Error)?.message || "Failed to fetch order detail");
       } finally {
         setLoading(false);
       }
     };
     fetchOrder();
   }, [id]);
+
+  const handleUpdateStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setStatusUpdating(true);
+      await adminApi.patch(`/orders/admin/${id}/status`, {
+        order_status: statusForm.order_status,
+        courier_name: statusForm.courier_name || null,
+        tracking_number: statusForm.tracking_number || null,
+        tracking_url: statusForm.tracking_url || null,
+      });
+
+      const res = await adminApi.get<OrderResponse>(`/orders/admin/${id}`);
+      const rawData = res.data?.data || res.data?.order || res.data;
+      const data = rawData ? (rawData as OrderDetail) : null;
+      setOrder(data);
+      alert("Order status updated successfully!");
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { message?: string } }, message?: string })?.response?.data?.message || (err as Error)?.message || "Failed to update status";
+      alert(errorMsg);
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
 
   const customerName = order?.customer_name || order?.user?.name || order?.user?.full_name || "Customer";
   const customerEmail = order?.customer_email || order?.user?.email || "-";
@@ -402,6 +499,72 @@ export default function AdminOrderDetail() {
                     <span className="od-field-value">{customerPhone}</span>
                   </div>
                 </div>
+
+                <div className="od-card">
+                  <div className="od-card-title">Update Status & Tracking</div>
+                  <form onSubmit={handleUpdateStatus}>
+                    <div className="od-form-group">
+                      <label className="od-form-label" htmlFor="order_status">Order Status</label>
+                      <select
+                        id="order_status"
+                        className="od-form-select"
+                        value={statusForm.order_status}
+                        onChange={(e) => setStatusForm({...statusForm, order_status: e.target.value})}
+                      >
+                        <option value="confirmed">Confirmed</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="out_for_delivery">Out for Delivery</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+
+                    {(statusForm.order_status === "shipped" || statusForm.order_status === "out_for_delivery" || statusForm.order_status === "delivered") && (
+                      <>
+                        <div className="od-form-group">
+                          <label className="od-form-label" htmlFor="courier_name">Courier Name</label>
+                          <input
+                            id="courier_name"
+                            className="od-form-input"
+                            type="text"
+                            placeholder="e.g. FedEx, DTDC"
+                            maxLength={100}
+                            value={statusForm.courier_name}
+                            onChange={(e) => setStatusForm({...statusForm, courier_name: e.target.value})}
+                          />
+                        </div>
+                        <div className="od-form-group">
+                          <label className="od-form-label" htmlFor="tracking_number">Tracking Number</label>
+                          <input
+                            id="tracking_number"
+                            className="od-form-input"
+                            type="text"
+                            placeholder="Tracking ID"
+                            maxLength={100}
+                            value={statusForm.tracking_number}
+                            onChange={(e) => setStatusForm({...statusForm, tracking_number: e.target.value})}
+                          />
+                        </div>
+                        <div className="od-form-group">
+                          <label className="od-form-label" htmlFor="tracking_url">Tracking URL</label>
+                          <input
+                            id="tracking_url"
+                            className="od-form-input"
+                            type="text"
+                            placeholder="https://..."
+                            value={statusForm.tracking_url}
+                            onChange={(e) => setStatusForm({...statusForm, tracking_url: e.target.value})}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <button type="submit" className="od-btn-primary" disabled={statusUpdating}>
+                      {statusUpdating ? "Updating..." : "Update Order"}
+                    </button>
+                  </form>
+                </div>
               </div>
 
               <div className="od-card">
@@ -419,6 +582,32 @@ export default function AdminOrderDetail() {
                   </div>
                 ) : (
                   <p className="od-field-value" style={{ color: "#9a8070" }}>No shipping address found.</p>
+                )}
+
+                {(order.courier_name || order.tracking_number) && (
+                  <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(196,152,10,0.18)" }}>
+                    <div className="od-card-title" style={{ fontSize: 14, marginBottom: 12, border: "none", padding: 0 }}>Tracking Details</div>
+                    {order.courier_name && (
+                      <div className="od-field">
+                        <span className="od-field-label">Courier</span>
+                        <span className="od-field-value">{order.courier_name}</span>
+                      </div>
+                    )}
+                    {order.tracking_number && (
+                      <div className="od-field">
+                        <span className="od-field-label">Tracking Number</span>
+                        <span className="od-field-value">{order.tracking_number}</span>
+                      </div>
+                    )}
+                    {order.tracking_url && (
+                      <div className="od-field">
+                        <span className="od-field-label">Tracking Link</span>
+                        <a href={order.tracking_url} target="_blank" rel="noreferrer" className="od-field-value" style={{ color: "#800020", textDecoration: "underline" }}>
+                          Track Package
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 

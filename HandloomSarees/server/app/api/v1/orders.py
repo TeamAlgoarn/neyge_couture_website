@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.dependencies import get_current_user, require_admin
-from app.schemas.order import OrderCreateRequest
+from app.schemas.order import OrderCreateRequest, OrderStatusUpdateRequest
 from app.services.order_service import OrderService
 from app.services.payment_service import PaymentService
 from app.utils.response import success_response
@@ -84,6 +84,16 @@ async def get_order_admin(
 ):
     data = OrderService.get_admin_order_by_id(order_id)
     return success_response("Order fetched successfully", data)
+
+
+@router.patch("/admin/{order_id}/status", response_model=dict)
+async def update_order_status_admin(
+    order_id: str,
+    payload: OrderStatusUpdateRequest,
+    current_user: dict = Depends(require_admin),
+):
+    data = OrderService.update_order_status(order_id, payload)
+    return success_response("Order status updated successfully", data)
 
 
 @router.get("/{order_id}", response_model=dict)
