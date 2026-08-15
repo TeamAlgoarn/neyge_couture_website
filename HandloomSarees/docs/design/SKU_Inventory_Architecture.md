@@ -85,7 +85,7 @@ Add-ons align with existing product fields (`has_fall`, `fall_price`, `has_in_sk
 ## 8. Non-Destructive Migration Order
 Migrations must be executed sequentially to ensure zero downtime and no data loss:
 1. **Schema Additions**: Create `product_variants`, `inventory`, `inventory_transactions`, and the new normalized `order_items` tables. Add snapshot/addon columns to `cart_items`.
-2. **Backfill Data**: 
+2. **Backfill Data**:
    - Populate `product_variants` and `inventory` using existing flat `products` data. Assign default SKUs. Generate initial `inventory_transactions`.
    - Backfill the new `order_items` table by extracting data from the existing `orders.items` JSON array.
 3. **App Code Deployment**: Deploy application code that writes to both old (`orders.items` JSON) and new (`order_items` table) structures but reads from the old.
@@ -96,7 +96,7 @@ Migrations must be executed sequentially to ensure zero downtime and no data los
 - A one-time executable script (Python or Node) will iterate through all existing `products`.
 - For each product, generate a base immutable SKU.
 - Create a single default entry in `product_variants` and `inventory` mapping to the base product.
-- Ensure all existing `cart_items` and `order_items` are safely mapped to the default SKU.
+- Ensure all existing `cart_items` and existing `orders.items` JSON snapshots are safely mapped/backfilled to default SKUs in the new `order_items` table.
 
 ## 10. Staging Validation & Production Approval
 - **Staging Validation**:

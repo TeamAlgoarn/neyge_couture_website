@@ -1,7 +1,7 @@
 -- DRAFT: Not for execution
 -- Up Migration
 -- Note: PR #30 already implemented structured add-on support.
--- The merged implementation uses: `selected_addons`, `product_price`, `addons_total` on cart_items/order_items
+-- The merged implementation uses: `selected_addons`, `product_price`, `addons_total` on cart_items and order snapshots in orders.items JSON
 -- and `has_fall`, `fall_price`, `has_in_skirt`, `in_skirt_price` on products.
 -- Therefore, the previously proposed `addons` and `available_addons` columns are superseded.
 -- Future migrations for SKU/Inventory will build on the existing PR #30 schema without adding new parallel add-on columns.
