@@ -6,7 +6,8 @@ This document outlines the architecture for the SKU, inventory, and add-on manag
 ## 2. Current Schema
 Currently, the system uses a flat structure without explicit variants or SKUs:
 - **`products`**: Contains `id` (UUID, PK), `name`, `slug`, `price`, `discount_price`, `stock` (INT), `color`, `fabric`, `has_fall`, `fall_price`, `has_in_skirt`, `in_skirt_price`, `created_at`, `updated_at`. Inventory is tracked at the root product level.
-- **`cart_items` / `order_items`**: Store references to the `product_id`, `quantity`, `product_price`, `addons_total`, and `selected_addons`. They currently lack SKU integration for granular inventory tracking.
+- **`cart_items`**: Store references to the `product_id`, `quantity`, `product_price`, `addons_total`, and `selected_addons`. They currently lack SKU integration for granular inventory tracking.
+- **`orders`**: Currently stores order line snapshots in `orders.items` as a JSON array, not as a separate normalized `order_items` table.
 - **Limitation**: Lack of reserved stock mechanism and concurrency control risks overselling, and mutable fields make historical order items vulnerable to product changes.
 
 ## 3. Target Schema
@@ -42,7 +43,7 @@ The target schema will introduce structural support for variants, SKUs, inventor
   - `reason` (VARCHAR) - e.g., 'purchase', 'restock', 'return', 'reconciliation'.
   - `reference_id` (UUID, nullable) - FK to order_id or idempotency_key for uniqueness.
   - `created_at` (TIMESTAMPTZ)
-  - *Constraints*: Unique constraint on `(reference_id, reason)` to ensure idempotency and prevent duplicate stock movements.
+  - *Constraints*: Unique constraint on `(sku, reference_id, reason)` to ensure idempotency and prevent duplicate stock movements.
   - *Indexes*: Index on `sku`.
 
 - **`cart_items`**:
@@ -50,8 +51,9 @@ The target schema will introduce structural support for variants, SKUs, inventor
   - `sku` (VARCHAR, FK to `product_variants.sku`)
   - `selected_addons` (JSONB) - e.g., `{"fall": true, "in_skirt": false}`
 
-- **`order_items`**:
-  - `id` (UUID, PK), `order_id` (UUID, FK), `product_id` (UUID, FK)
+- **`order_items` (New Normalized Table)**:
+  - Migrating from `orders.items` JSON snapshot to a standalone table.
+  - `id` (UUID, PK), `order_id` (UUID, FK to `orders.id`), `product_id` (UUID, FK)
   - `sku` (VARCHAR, FK to `product_variants.sku`)
   - `selected_addons` (JSONB)
   - `price_at_purchase` (DECIMAL) - Snapshot of base item price.
@@ -68,8 +70,8 @@ The target schema will introduce structural support for variants, SKUs, inventor
 - **Concurrency Control**: Updates to inventory will use RPCs with database-level row locking (`SELECT ... FOR UPDATE`) to prevent race conditions during concurrent checkouts.
 - **Oversell Prevention**: Enforced at the database level using the CHECK constraint (`quantity_available >= 0`). Transactions resulting in negative availability will automatically rollback.
 - **Stock Tracking**: Inventory is tracked at the SKU level. Total available stock for purchase is `quantity_available - quantity_reserved`.
-- **Reservation**: When an item is added to a cart or during checkout initiation, stock is moved to `quantity_reserved` for a configurable timeout (e.g., 15 minutes). A background cron job will periodically clean up expired reservations, releasing stock back to available.
-- **Commit/Release**: Payment sessions (e.g., Stripe/Razorpay) will use webhooks to permanently deduct reserved stock upon success, or immediately release it upon cancellation/failure.
+- **Reservation**: When an item is added to a cart or during checkout initiation, stock is moved to `quantity_reserved` for a configurable timeout (e.g., 15 minutes). The reservation owner (e.g., user session ID or order intent ID) and expiration time must be tracked (e.g., in a temporary Redis cache or a lightweight `reservations` DB table). A background cron job will periodically clean up expired reservations, releasing stock back to `quantity_available`.
+- **Commit/Release**: Payment sessions (e.g., Stripe/Razorpay) will use webhooks to permanently deduct reserved stock upon success, or immediately release it upon cancellation/failure. The webhook handler must match the payment session to the specific reservation owner to securely finalize the transaction.
 - **Reconciliation Queries**: Cron jobs will periodically sum `inventory_transactions` and verify against `inventory.quantity_available` to detect discrepancies.
 
 ## 6. Order Snapshot Strategy
@@ -82,11 +84,13 @@ Add-ons align with existing product fields (`has_fall`, `fall_price`, `has_in_sk
 
 ## 8. Non-Destructive Migration Order
 Migrations must be executed sequentially to ensure zero downtime and no data loss:
-1. **Schema Additions**: Create `product_variants`, `inventory`, `inventory_transactions` tables. Add snapshot/addon columns to `cart_items` and `order_items`.
-2. **Backfill Data**: Populate `product_variants` and `inventory` using existing flat `products` data. Assign default SKUs. Generate initial `inventory_transactions`.
-3. **App Code Deployment**: Deploy application code that writes to both old and new structures but reads from the old.
-4. **Read Cut-over**: Deploy application code that reads from the new schema structures.
-5. **Cleanup (Optional/Future)**: Drop deprecated columns after verifying system stability.
+1. **Schema Additions**: Create `product_variants`, `inventory`, `inventory_transactions`, and the new normalized `order_items` tables. Add snapshot/addon columns to `cart_items`.
+2. **Backfill Data**: 
+   - Populate `product_variants` and `inventory` using existing flat `products` data. Assign default SKUs. Generate initial `inventory_transactions`.
+   - Backfill the new `order_items` table by extracting data from the existing `orders.items` JSON array.
+3. **App Code Deployment**: Deploy application code that writes to both old (`orders.items` JSON) and new (`order_items` table) structures but reads from the old.
+4. **Read Cut-over**: Deploy application code that exclusively reads from the new schema structures.
+5. **Cleanup (Optional/Future)**: Drop `orders.items` and other deprecated columns after verifying system stability.
 
 ## 9. Backfill Plan
 - A one-time executable script (Python or Node) will iterate through all existing `products`.
