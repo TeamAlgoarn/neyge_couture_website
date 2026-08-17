@@ -88,9 +88,24 @@ async def razorpay_webhook(request: Request):
     logger.info("Webhook received: event=%s, event_id=%s", event, event_id)
 
     # ── Deduplication: Reserve event ID FIRST (insert-or-fail) ──────────
-    if event_id and not PaymentRepository.reserve_webhook_event(event_id, event):
-        logger.info("Webhook event %s already reserved/processed, skipping", event_id)
-        return {"status": "ok", "message": "Event already processed"}
+    if event_id:
+        try:
+            reserved = PaymentRepository.reserve_webhook_event(event_id, event)
+        except Exception as reserve_exc:
+            # Non-duplicate DB error (network, timeout, schema issue, etc.)
+            # Return 503 so Razorpay retries later
+            logger.error(
+                "Webhook reservation DB error for event %s: %s", event_id, reserve_exc
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Temporary reservation failure, please retry",
+            )
+
+        if not reserved:
+            # Duplicate key → event already being processed or was processed
+            logger.info("Webhook event %s already reserved/processed, skipping", event_id)
+            return {"status": "ok", "message": "Event already processed"}
 
     try:
         if event == "payment.captured":
@@ -114,9 +129,16 @@ async def razorpay_webhook(request: Request):
         # Re-raise HTTP exceptions (e.g., 409 Conflict from concurrent processing)
         raise
     except Exception as exc:
-        # Log but still return 200 to prevent Razorpay retries on transient errors
-        # that we've already partially handled
+        # Processing failed AFTER reservation succeeded.
+        # Mark the event as failed so it can be investigated, and return 503
+        # so Razorpay retries delivery.
         logger.exception("Webhook handler error for event=%s: %s", event, exc)
+        if event_id:
+            PaymentRepository.mark_webhook_event_failed(event_id, str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Webhook processing failed, please retry",
+        )
 
     return {"status": "ok"}
 

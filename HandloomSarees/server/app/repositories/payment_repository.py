@@ -140,9 +140,11 @@ class PaymentRepository:
         Atomically reserve a webhook event ID by inserting into processed_webhook_events
         with status='processing'. Returns True if this caller won the insert (first arrival),
         False if the event was already reserved/processed (duplicate key violation).
+        Raises on any non-duplicate DB error so the caller can return a retryable status.
         """
         if not event_id:
             return True
+        from postgrest.exceptions import APIError
         client = get_supabase_admin()
         try:
             result = (
@@ -155,9 +157,15 @@ class PaymentRepository:
                 .execute()
             )
             return bool(result.data)
+        except APIError as exc:
+            # PostgreSQL unique_violation = code 23505 → duplicate event, skip safely
+            if exc.code == "23505":
+                return False
+            # Any other PostgREST/DB error → re-raise for retryable response
+            raise
         except Exception:
-            # Duplicate key violation — another request already reserved this event
-            return False
+            # Non-PostgREST errors (network, timeout, etc.) → re-raise for retry
+            raise
 
     @staticmethod
     def mark_webhook_event_processed(event_id: str) -> None:
@@ -173,6 +181,22 @@ class PaymentRepository:
             import logging
             logging.getLogger(__name__).warning(
                 "Failed to mark webhook event %s as processed: %s", event_id, exc
+            )
+
+    @staticmethod
+    def mark_webhook_event_failed(event_id: str, error: str = "") -> None:
+        """Mark a reserved webhook event as failed so it can be investigated."""
+        if not event_id:
+            return
+        client = get_supabase_admin()
+        try:
+            client.table("processed_webhook_events").update(
+                {"status": f"failed: {error[:200]}" if error else "failed"}
+            ).eq("event_id", event_id).execute()
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Failed to mark webhook event %s as failed: %s", event_id, exc
             )
 
     @staticmethod

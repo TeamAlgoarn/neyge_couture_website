@@ -787,12 +787,16 @@ class TestWebhookReserveFirst:
         assert insert_args["status"] == "processing"
         assert insert_args["event_id"] == "evt_1"
 
-    def test_reserve_returns_false_on_duplicate(self):
+    def test_reserve_returns_false_on_duplicate_key(self):
+        """Duplicate key violation (23505) returns False — safe to skip."""
         from app.repositories.payment_repository import PaymentRepository
+        from postgrest.exceptions import APIError
 
         mock_client = MagicMock()
         mock_table = MagicMock()
-        mock_table.insert.return_value.execute.side_effect = Exception("duplicate key violation")
+        # Simulate PostgreSQL 23505 unique_violation via PostgREST APIError
+        dup_error = APIError({"message": "duplicate key", "code": "23505", "details": "", "hint": ""})
+        mock_table.insert.return_value.execute.side_effect = dup_error
         mock_client.table.return_value = mock_table
 
         with patch("app.repositories.payment_repository.get_supabase_admin", return_value=mock_client):
@@ -800,10 +804,134 @@ class TestWebhookReserveFirst:
 
         assert result is False
 
+    def test_reserve_raises_on_non_duplicate_db_error(self):
+        """Non-duplicate DB errors (e.g. connection, schema) must raise, not return False."""
+        from app.repositories.payment_repository import PaymentRepository
+        from postgrest.exceptions import APIError
+
+        mock_client = MagicMock()
+        mock_table = MagicMock()
+        # Simulate a non-duplicate PostgREST error (e.g. 42P01 = undefined table)
+        db_error = APIError({"message": "relation does not exist", "code": "42P01", "details": "", "hint": ""})
+        mock_table.insert.return_value.execute.side_effect = db_error
+        mock_client.table.return_value = mock_table
+
+        with patch("app.repositories.payment_repository.get_supabase_admin", return_value=mock_client):
+            with pytest.raises(APIError):
+                PaymentRepository.reserve_webhook_event("evt_1", "payment.captured")
+
+    def test_reserve_raises_on_network_error(self):
+        """Network/timeout errors must raise, not return False."""
+        from app.repositories.payment_repository import PaymentRepository
+
+        mock_client = MagicMock()
+        mock_table = MagicMock()
+        mock_table.insert.return_value.execute.side_effect = ConnectionError("DB unreachable")
+        mock_client.table.return_value = mock_table
+
+        with patch("app.repositories.payment_repository.get_supabase_admin", return_value=mock_client):
+            with pytest.raises(ConnectionError):
+                PaymentRepository.reserve_webhook_event("evt_1", "payment.captured")
+
     def test_empty_event_id_always_returns_true(self):
         from app.repositories.payment_repository import PaymentRepository
 
         assert PaymentRepository.reserve_webhook_event("", "payment.captured") is True
+
+
+# ════════════════════════════════════════════════════════════════════════
+# Test: Webhook Handler Error Behavior (Mentor Required)
+# ════════════════════════════════════════════════════════════════════════
+
+class TestWebhookHandlerErrorBehavior:
+    """Tests for correct HTTP status codes based on reservation and processing outcomes."""
+
+    def _make_signed_request(self, secret, event="payment.captured", event_id="evt_test_1"):
+        """Helper: build a mock request with valid HMAC signature and proper nested payload."""
+        from unittest.mock import AsyncMock
+        # Build full Razorpay webhook payload structure
+        payload_dict = {
+            "event": event,
+            "id": event_id,
+            "payload": {
+                "payment": {
+                    "entity": {
+                        "id": "pay_test_999",
+                        "order_id": "order_test_999",
+                    }
+                }
+            },
+        }
+        payload = json.dumps(payload_dict).encode()
+        sig = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+        mock_request = MagicMock()
+        mock_request.body = AsyncMock(return_value=payload)
+        mock_request.headers.get.return_value = sig
+        mock_request.json = AsyncMock(return_value=payload_dict)
+        return mock_request
+
+    @patch("app.api.v1.webhooks.PaymentRepository")
+    @patch("app.api.v1.webhooks.settings")
+    def test_duplicate_event_returns_200_skip(self, mock_settings, mock_pay_repo):
+        """Duplicate event ID (reserve returns False) → HTTP 200 with skip message."""
+        from app.api.v1.webhooks import razorpay_webhook
+        import asyncio
+
+        mock_settings.RAZORPAY_WEBHOOK_SECRET = "test_secret"
+        mock_pay_repo.reserve_webhook_event.return_value = False
+
+        request = self._make_signed_request("test_secret", event_id="evt_dup")
+        response = asyncio.run(razorpay_webhook(request))
+
+        assert response["status"] == "ok"
+        assert "already processed" in response["message"].lower()
+
+    @patch("app.api.v1.webhooks.PaymentRepository")
+    @patch("app.api.v1.webhooks.settings")
+    def test_reservation_db_error_returns_503(self, mock_settings, mock_pay_repo):
+        """Non-duplicate DB error during reservation → HTTP 503 retryable."""
+        from app.api.v1.webhooks import razorpay_webhook
+        import asyncio
+
+        mock_settings.RAZORPAY_WEBHOOK_SECRET = "test_secret"
+        mock_pay_repo.reserve_webhook_event.side_effect = ConnectionError("DB down")
+
+        request = self._make_signed_request("test_secret", event_id="evt_db_err")
+
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(razorpay_webhook(request))
+
+        assert exc_info.value.status_code == 503
+        assert "retry" in exc_info.value.detail.lower()
+
+    @patch("app.api.v1.webhooks.PaymentService")
+    @patch("app.api.v1.webhooks.PaymentRepository")
+    @patch("app.api.v1.webhooks.settings")
+    def test_processing_failure_marks_event_failed_and_returns_503(
+        self, mock_settings, mock_pay_repo, mock_pay_service
+    ):
+        """Processing failure after successful reservation → mark event failed + HTTP 503."""
+        from app.api.v1.webhooks import razorpay_webhook
+        import asyncio
+
+        mock_settings.RAZORPAY_WEBHOOK_SECRET = "test_secret"
+        mock_pay_repo.reserve_webhook_event.return_value = True
+
+        # Simulate processing failure in the payment.captured handler
+        mock_pay_service.handle_webhook_payment_captured.side_effect = RuntimeError("Processing crashed")
+
+        request = self._make_signed_request("test_secret", event="payment.captured", event_id="evt_proc_fail")
+
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(razorpay_webhook(request))
+
+        assert exc_info.value.status_code == 503
+        assert "retry" in exc_info.value.detail.lower()
+        # Verify event was marked as failed
+        mock_pay_repo.mark_webhook_event_failed.assert_called_once()
+        call_args = mock_pay_repo.mark_webhook_event_failed.call_args
+        assert call_args[0][0] == "evt_proc_fail"
+        assert "Processing crashed" in call_args[0][1]
 
 
 # ════════════════════════════════════════════════════════════════════════
