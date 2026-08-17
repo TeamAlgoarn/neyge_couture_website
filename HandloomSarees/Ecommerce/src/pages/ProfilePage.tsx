@@ -364,6 +364,9 @@ type UserOrder = {
     id?: string;
     quantity?: number;
   }>;
+  courier_name?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
 };
 
 const initialForm: AddressFormState = {
@@ -877,6 +880,31 @@ export function ProfilePage() {
                         </div>
                         <span className="pf-tag">{status}</span>
                       </div>
+                      {(o.courier_name || o.tracking_number) && (
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(196,152,10,.1)' }}>
+                          <div className="pf-row-sub" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                            {o.courier_name && (
+                              <div>
+                                <span style={{ fontWeight: 500, color: '#4a3828' }}>Courier: </span>
+                                {o.courier_name}
+                              </div>
+                            )}
+                            {o.tracking_number && (
+                              <div>
+                                <span style={{ fontWeight: 500, color: '#4a3828' }}>Tracking ID: </span>
+                                {o.tracking_number}
+                              </div>
+                            )}
+                            {o.tracking_url && (
+                              <div>
+                                <a href={o.tracking_url} target="_blank" rel="noreferrer" style={{ color: '#800020', textDecoration: 'underline', fontWeight: 500 }}>
+                                  Track Package
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })

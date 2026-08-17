@@ -2041,10 +2041,7 @@ const IG_IMGS = [IMG.ig1, IMG.ig2, IMG.ig3, IMG.ig4, IMG.ig5, IMG.ig6];
 
 function InstagramGrid() {
   const [ref, on] = useInView(0.08);
- 
- 
- 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [igPosts, setIgPosts] = useState<any[]>([]);
 
   useEffect(() => {

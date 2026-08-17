@@ -15,6 +15,9 @@ from app.repositories.product_repository import ProductRepository
 logger = logging.getLogger(__name__)
 
 
+from app.services.cart_service import CartService
+
+
 class PaymentService:
     @staticmethod
     def _client() -> razorpay.Client:
@@ -84,17 +87,32 @@ class PaymentService:
                     detail=f"Insufficient stock for '{product.get('name', 'Unknown')}'",
                 )
 
-            unit_price = float(
+            product_price = float(
                 product.get("discount_price")
                 if product.get("discount_price") is not None
                 else product.get("price", 0)
             )
 
-            if unit_price <= 0:
+            if product_price <= 0:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid price for '{product.get('name', 'Unknown')}'",
                 )
+
+            raw_addons = item.get("selected_addons") or []
+            addon_keys = []
+            for a in raw_addons:
+                if isinstance(a, dict) and "id" in a:
+                    addon_keys.append(str(a["id"]))
+                elif isinstance(a, str):
+                    addon_keys.append(a)
+
+            # Revalidate add-on availability & compute current add-on prices directly from latest DB product record
+            selected_addons, addons_total = CartService._process_addons(
+                product=product,
+                requested_addons=addon_keys,
+            )
+            unit_price = product_price + addons_total
 
             line_total = unit_price * quantity
             total_amount += line_total
@@ -103,7 +121,10 @@ class PaymentService:
                 {
                     "name": product.get("name"),
                     "slug": product.get("slug"),
-                    "price": unit_price,
+                    "price": product_price,
+                    "selected_addons": selected_addons,
+                    "addons_total": addons_total,
+                    "unit_price": unit_price,
                     "quantity": quantity,
                     "thumbnail": product.get("thumbnail"),
                     "line_total": line_total,
