@@ -93,3 +93,18 @@ class OrderRepository:
             .execute()
         )
         return result.data[0] if result.data else None
+
+    @staticmethod
+    def get_by_razorpay_order_id(razorpay_order_id: str) -> dict | None:
+        """Find an order by razorpay_order_id."""
+        if not razorpay_order_id:
+            return None
+        client = get_supabase_admin()
+        result = (
+            client.table("orders")
+            .select("*")
+            .eq("razorpay_order_id", razorpay_order_id)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None

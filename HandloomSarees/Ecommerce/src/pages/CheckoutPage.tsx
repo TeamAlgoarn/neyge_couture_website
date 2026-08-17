@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCarts';
 import { authService } from '@/lib/auth';
@@ -535,6 +535,7 @@ export function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [isProcessing, setIsProcessing] = useState(false);
+  const paymentInProgressRef = useRef(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [addressesError, setAddressesError] = useState('');
@@ -697,6 +698,11 @@ export function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    // ── Double-click guard (ref survives re-renders) ──────────────────
+    if (paymentInProgressRef.current) {
+      return;
+    }
+
     if (!user) {
       toast.error('Please log in to continue');
       navigate('/login');
@@ -715,6 +721,12 @@ export function CheckoutPage() {
       return;
     }
 
+    // Lock payment flow
+    paymentInProgressRef.current = true;
+
+    // Track the razorpay_order_id for failure reporting
+    let currentRazorpayOrderId = '';
+
     try {
       setIsProcessing(true);
 
@@ -722,6 +734,7 @@ export function CheckoutPage() {
       if (!sdkLoaded) {
         toast.error('Failed to load payment gateway');
         setIsProcessing(false);
+        paymentInProgressRef.current = false;
         return;
       }
 
@@ -748,6 +761,8 @@ export function CheckoutPage() {
       if (!checkoutData?.razorpay_order_id || !checkoutData?.key) {
         throw new Error('Invalid checkout response');
       }
+
+      currentRazorpayOrderId = checkoutData.razorpay_order_id;
 
       const options: RazorpayOptions = {
         key: checkoutData.key,
@@ -789,15 +804,64 @@ export function CheckoutPage() {
             });
           } catch (err: unknown) {
             console.error('Payment verification failed:', err);
-            const apiErr = err as { response?: { data?: { message?: string } } };
-            toast.error(apiErr?.response?.data?.message || 'Payment verification failed');
+            const apiErr = err as { response?: { data?: { message?: string }; status?: number } };
+            const errStatus = apiErr?.response?.status;
+            const errMsg = apiErr?.response?.data?.message || '';
+
+            // ── Handle idempotent / processing responses gracefully ────
+            if (errStatus === 409 || errMsg.includes('already')) {
+              // 409 can mean "being processed" (not yet paid) or "already paid".
+              // Poll the verify endpoint to determine the actual state before
+              // clearing cart or navigating.
+              let confirmedOrder = null;
+              for (let attempt = 0; attempt < 5; attempt++) {
+                await new Promise((r) => setTimeout(r, 2000));
+                try {
+                  const retryRes = await api.post('/payments/verify', {
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                  });
+                  confirmedOrder =
+                    retryRes.data?.data?.order ||
+                    retryRes.data?.order ||
+                    retryRes.data?.data ||
+                    retryRes.data;
+                  break;
+                } catch {
+                  // Still processing — keep polling
+                }
+              }
+
+              if (confirmedOrder?.id) {
+                await clearCart();
+                toast.success('Payment confirmed!');
+                navigate(`/order-confirmation/${confirmedOrder.id}`, {
+                  state: {
+                    order: confirmedOrder,
+                    orderId: confirmedOrder.id,
+                    paymentId: response.razorpay_payment_id,
+                    amount: total,
+                    shippingAddress,
+                  },
+                });
+              } else {
+                toast.info(
+                  'Payment is being processed. Please check your order history shortly.'
+                );
+              }
+            } else {
+              toast.error(errMsg || 'Payment verification failed');
+            }
           } finally {
             setIsProcessing(false);
+            paymentInProgressRef.current = false;
           }
         },
         modal: {
           ondismiss: function () {
             setIsProcessing(false);
+            paymentInProgressRef.current = false;
             toast.info('Payment cancelled');
           },
         },
@@ -807,7 +871,17 @@ export function CheckoutPage() {
       rzp.on('payment.failed', function (response: RazorpayFailedResponse) {
         console.error('Payment failed:', response.error);
         toast.error(response.error?.description || 'Payment failed');
+
+        // ── Report failure to server so session is marked failed ──────
+        if (currentRazorpayOrderId) {
+          api.post('/payments/failed', {
+            razorpay_order_id: currentRazorpayOrderId,
+            error_description: response.error?.description || 'Payment failed',
+          }).catch((e) => console.error('Failed to report payment failure:', e));
+        }
+
         setIsProcessing(false);
+        paymentInProgressRef.current = false;
       });
 
       rzp.open();
@@ -816,6 +890,7 @@ export function CheckoutPage() {
       const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
       toast.error(apiErr?.response?.data?.message || apiErr?.message || 'Failed to initialize payment');
       setIsProcessing(false);
+      paymentInProgressRef.current = false;
     }
   };
 

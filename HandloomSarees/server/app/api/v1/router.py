@@ -15,6 +15,7 @@ from app.api.v1 import festive_collections
 from app.api.v1 import chatbot
 from app.api.v1 import whatsapp          # ← ADD THIS
 from app.api.v1 import instagram 
+from app.api.v1 import webhooks
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -32,6 +33,7 @@ api_router.include_router(festive_collections.router, tags=["Festive Collections
 api_router.include_router(chatbot.router)
 api_router.include_router(whatsapp.router)    # ← ADD THIS
 api_router.include_router(instagram.router) 
+api_router.include_router(webhooks.router)
 
 @api_router.get("/health", tags=["Health"])
 async def health_check():
