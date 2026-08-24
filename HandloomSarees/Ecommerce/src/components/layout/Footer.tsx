@@ -1,0 +1,345 @@
+import { Link } from 'react-router-dom';
+import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
+import logo from '@/assets/Client_NC_Logo-03.png';
+import patternBg from '@/assets/Client_NC_Pattern-01.png';
+
+const WHATSAPP_NUMBER = "919113991711";
+const WHATSAPP_MSG = encodeURIComponent("Hi Neyge Couture, I am interested in your saree collection.");
+
+const WA_ICON = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+  </svg>
+);
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
+
+.ft-root {
+  position: relative;
+  background: linear-gradient(160deg, #5a0016 0%, #800020 45%, #1B2A6B 100%);
+  color: white;
+  overflow: hidden;
+  font-family: 'Josefin Sans', sans-serif;
+}
+.ft-butta {
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  background-position: top left;
+  opacity: 0.10; pointer-events: none; z-index: 0;
+}
+.ft-orb-a {
+  position: absolute; top: -100px; right: -80px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(20,64,42,.15) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+.ft-orb-b {
+  position: absolute; bottom: -120px; left: -100px;
+  width: 540px; height: 540px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(242,196,206,.12) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+.ft-top-border {
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(128,0,32,.55) 15%, rgba(196,152,10,.65) 50%, rgba(128,0,32,.55) 85%, transparent 100%);
+  z-index: 1;
+}
+.ft-logo { display:inline-block; text-decoration:none; margin-bottom:20px; }
+.ft-logo-img {
+  display:block; height: 120px; width:auto; object-fit:contain;
+  filter: brightness(0) invert(1) drop-shadow(0 2px 12px rgba(196,152,10,.30));
+  transition: opacity .3s;
+}
+.ft-logo:hover .ft-logo-img { opacity: .8; }
+.ft-wrap {
+  max-width: 1340px; margin: 0 auto;
+  padding: 72px 64px 0;
+  position: relative; z-index: 2;
+}
+@media(max-width:900px){ .ft-wrap { padding: 56px 24px 0; } }
+@media(max-width:480px){ .ft-wrap { padding: 44px 16px 0; } }
+.ft-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr 1fr 1.3fr;
+  gap: 52px;
+  padding-bottom: 58px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+@media(max-width:1024px){ .ft-grid { grid-template-columns:1fr 1fr; gap:36px; } }
+@media(max-width:560px)  { .ft-grid { grid-template-columns:1fr; gap:30px; } }
+.ft-tagline {
+  font-family: 'Cinzel', serif; font-size: 11px;
+  letter-spacing: .22em; color: rgba(196,152,10,.85);
+  text-transform: uppercase; margin-bottom: 16px; font-weight: 400;
+}
+.ft-brand-desc {
+  font-family: 'Josefin Sans'; font-size: 14px; font-weight: 400;
+  color: rgba(255,255,255,.72); line-height: 1.90; margin-bottom: 26px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.30); letter-spacing: .030em;
+}
+.ft-gd { width: 44px; height: 1px; background: rgba(196,152,10,.55); margin-bottom: 22px; }
+.ft-socials { display:flex; gap:10px; }
+.ft-social-btn {
+  width: 36px; height: 36px;
+  background: rgba(255,249,240,.08); border: 1px solid rgba(255,249,240,.18);
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none; transition: background .3s, border-color .3s, transform .3s;
+}
+.ft-social-btn:hover {
+  background: rgba(128,0,32,.28); border-color: rgba(128,0,32,.55);
+  transform: scale(1.12) translateY(-2px);
+}
+.ft-col-head {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Josefin Sans'; font-size: 11px;
+  letter-spacing: .28em; text-transform: uppercase; color: #D4A80E;
+  font-weight: 600; margin-bottom: 22px;
+}
+.ft-col-line { width: 20px; height: 1px; background: rgba(196,152,10,.50); }
+.ft-links { list-style:none; padding:0; margin:0; }
+.ft-links li { margin-bottom: 13px; }
+.ft-link {
+  font-family: 'Josefin Sans'; font-size: 13.5px; font-weight: 400;
+  color: rgba(255,255,255,.68); text-decoration: none; letter-spacing: .08em;
+  transition: color .25s, padding-left .25s; display: inline-block;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.20);
+}
+.ft-link:hover { color: #D4A80E; padding-left: 6px; }
+.ft-contact { list-style:none; padding:0; margin:0; }
+.ft-contact li { display:flex; align-items:flex-start; gap:11px; margin-bottom:15px; }
+.ft-contact-icon { flex-shrink:0; margin-top:1px; }
+.ft-contact-text {
+  font-family: 'Josefin Sans'; font-size: 13px; font-weight: 400;
+  color: rgba(255,255,255,.68); line-height: 1.6; letter-spacing: .04em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.20);
+}
+.ft-wa-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 16px; padding: 10px 18px;
+  background: #25D366; border-radius: 999px;
+  color: white; font-family: 'Josefin Sans'; font-size: 13px;
+  font-weight: 700; text-decoration: none; letter-spacing: .06em;
+  transition: background .2s, transform .2s;
+}
+.ft-wa-btn:hover { background: #1da851; transform: translateY(-2px); }
+.ft-newsletter {
+  margin: 0 -64px; padding: 32px 64px;
+  background: rgba(128,0,32,.22); border-top: 1px solid rgba(128,0,32,.38);
+  border-bottom: 1px solid rgba(128,0,32,.22);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  flex-wrap: wrap; position: relative; z-index: 2;
+}
+@media(max-width:900px){ .ft-newsletter { margin:0 -24px; padding:24px 24px; } }
+@media(max-width:480px){ .ft-newsletter { margin:0 -16px; padding:20px 16px; flex-direction:column; } }
+.ft-newsletter-text h4 {
+  font-family: 'Cinzel', serif; font-size: 17px; font-weight: 500;
+  color: #F5E6D3; letter-spacing: .06em; margin-bottom: 5px;
+}
+.ft-newsletter-text p {
+  font-family: 'Josefin Sans'; font-size: 13px; font-weight: 400;
+  color: rgba(255,255,255,.62); letter-spacing: .06em;
+}
+.ft-newsletter-form { display: flex; gap: 0; flex-shrink: 0; }
+.ft-newsletter-input {
+  padding: 12px 18px;
+  background: rgba(255,249,240,.10);
+  border: 1px solid rgba(255,249,240,.22); border-right: none;
+  color: #F5E6D3; font-family: 'Josefin Sans'; font-size: 13px;
+  letter-spacing: .08em; outline: none; width: 240px;
+}
+.ft-newsletter-input::placeholder { color: rgba(245,230,211,.50); }
+.ft-newsletter-btn {
+  padding: 12px 22px; background: #800020; color: #FFF9F0;
+  border: 1px solid #800020; font-family: 'Josefin Sans'; font-size: 10px;
+  letter-spacing: .22em; font-weight: 700; text-transform: uppercase; cursor: pointer;
+  transition: background .3s, box-shadow .3s;
+}
+.ft-newsletter-btn:hover { background: #5a0016; box-shadow: 0 4px 18px rgba(128,0,32,.36); }
+.ft-bottom {
+  max-width: 1340px; margin: 0 auto; padding: 20px 64px 30px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; position: relative; z-index: 2;
+}
+@media(max-width:900px){ .ft-bottom { padding:18px 24px 26px; } }
+@media(max-width:480px){ .ft-bottom { padding:16px 16px 22px; flex-direction:column; text-align:center; } }
+.ft-copy {
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .10em;
+  color: rgba(255,255,255,.48); font-weight: 300;
+}
+.ft-copy em { color: rgba(196,152,10,.80); font-style: normal; }
+.ft-bottom-links { display:flex; gap:20px; }
+.ft-bottom-link {
+  font-family: 'Josefin Sans'; font-size: 11px; letter-spacing: .12em;
+  color: rgba(255,255,255,.48); text-decoration:none; transition:color .2s;
+}
+.ft-bottom-link:hover { color: rgba(196,152,10,.85); }
+.ft-integrity {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  border: 1px solid rgba(196,152,10,.30); background: rgba(196,152,10,.10);
+  margin-top: 18px; width: fit-content;
+}
+.ft-integrity-dot { width: 6px; height: 6px; border-radius: 50%; background: #D4A80E; flex-shrink: 0; }
+.ft-integrity-text {
+  font-family: 'Josefin Sans'; font-size: 9.5px; letter-spacing: .20em;
+  color: rgba(196,152,10,.90); text-transform: uppercase; font-weight: 600;
+}
+.ft-palette-bar { height: 3px; display: flex; position: relative; z-index: 2; opacity: .55; }
+.ft-palette-bar-navy   { flex: 1; background: #1B2A6B; }
+.ft-palette-bar-maroon { flex: 1; background: #800020; }
+.ft-palette-bar-blush  { flex: 1; background: #F2C4CE; }
+.ft-palette-bar-forest { flex: 1; background: #14402A; }
+@media(max-width:480px){ .ft-bottom-links { display:none; } }
+`;
+
+const SOCIAL_LINKS = [
+  { Icon: Facebook, label: 'Facebook', href: 'https://www.facebook.com/neygecouture' },
+  { Icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/neygecouture' },
+  { Icon: Twitter, label: 'Twitter / X', href: 'https://www.twitter.com/neygecouture' },
+  { Icon: Youtube, label: 'YouTube', href: 'https://www.youtube.com/@neygecouture' },
+];
+
+const EXPLORE = [
+  { label: 'Shop All', to: '/shop' },
+  { label: 'Silk Collection', to: '/collections/silk' },
+  { label: 'Our Artisans', to: '/about' },
+  { label: 'Track Order', to: '/track' },
+];
+
+const SUPPORT = [
+  { label: 'Contact Us', to: '/contact' },
+  { label: 'Shipping Info', to: '/shipping' },
+  { label: 'Returns Policy', to: '/returns' },
+  { label: 'FAQ', to: '/faq' },
+  { label: 'Privacy Policy', to: '/privacy' },
+];
+
+const CONTACT = [
+  { Icon: MapPin, text: 'Gadag, Karnataka, India — 582103' },
+  { Icon: Phone, text: '+91-9113991711' },
+  { Icon: Mail, text: 'admin@neygecouture.com' },
+];
+
+export function Footer() {
+  return (
+    <>
+      <style>{CSS}</style>
+      <footer className="ft-root">
+        <div className="ft-butta" style={{ backgroundImage: `url(${patternBg})` }} />
+        <div className="ft-orb-a" />
+        <div className="ft-orb-b" />
+        <div className="ft-top-border" />
+
+        <div className="ft-wrap">
+          <div className="ft-grid">
+
+            {/* Brand column */}
+            <div>
+              <Link to="/" className="ft-logo" aria-label="Neyge Couture">
+                <img src={logo} alt="Neyge Couture" className="ft-logo-img" draggable={false} />
+              </Link>
+              <p className="ft-tagline">Crafted Elegance · Est. 2026</p>
+              <p className="ft-brand-desc">
+                Preserving India's handloom heritage by empowering artisan families
+                and delivering timeless sarees — one thread, one soul at a time.
+              </p>
+              <div className="ft-gd" />
+              <div className="ft-integrity">
+                <div className="ft-integrity-dot" />
+                <span className="ft-integrity-text">GI Certified · Artisan Integrity Pledge</span>
+              </div>
+              <div className="ft-socials" style={{ marginTop: 20 }}>
+                {SOCIAL_LINKS.map(({ Icon, label, href }) => (
+                  <a key={label} href={href} className="ft-social-btn" aria-label={label} target="_blank" rel="noopener noreferrer">
+                    <Icon size={15} color="rgba(255,249,240,.75)" strokeWidth={1.5} />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Explore */}
+            <div>
+              <div className="ft-col-head"><div className="ft-col-line" />Explore</div>
+              <ul className="ft-links">
+                {EXPLORE.map(({ label, to }) => (
+                  <li key={label}><Link to={to} className="ft-link">{label}</Link></li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <div className="ft-col-head"><div className="ft-col-line" />Support</div>
+              <ul className="ft-links">
+                {SUPPORT.map(({ label, to }) => (
+                  <li key={label}><Link to={to} className="ft-link">{label}</Link></li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <div className="ft-col-head"><div className="ft-col-line" />Contact</div>
+              <ul className="ft-contact">
+                {CONTACT.map(({ Icon, text }) => (
+                  <li key={text}>
+                    <Icon size={14} color="#D4A80E" className="ft-contact-icon" strokeWidth={1.5} />
+                    <span className="ft-contact-text">{text}</span>
+                  </li>
+                ))}
+              </ul>
+              <div style={{ marginTop: 14 }}>
+                <a href="https://www.negyecouture.com" className="ft-link" style={{ color: 'rgba(196,152,10,.80)', letterSpacing: '.10em' }}>
+                  www.negyecouture.com
+                </a>
+              </div>
+              {/* WhatsApp Button */}
+              <a
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MSG}`}
+                target="_blank"
+                rel="noreferrer"
+                className="ft-wa-btn"
+              >
+                {WA_ICON}
+                Chat on WhatsApp
+              </a>
+            </div>
+          </div>
+
+          {/* Newsletter */}
+          <div className="ft-newsletter">
+            <div className="ft-newsletter-text">
+              <h4>Join the Couture Club</h4>
+              <p>New collections, artisan stories &amp; exclusive access — delivered to you.</p>
+            </div>
+            <div className="ft-newsletter-form">
+              <input className="ft-newsletter-input" type="email" placeholder="Your email address" aria-label="Email for newsletter" />
+              <button className="ft-newsletter-btn">Subscribe</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="ft-bottom">
+          <span className="ft-copy">
+            © {new Date().getFullYear()} <em>Neyge Couture</em> — Rooted. Refined. Powerful.
+          </span>
+          <div className="ft-bottom-links">
+            {[{ l: 'Terms', to: '/terms' }, { l: 'Privacy', to: '/privacy' }, { l: 'Cookies', to: '/cookies' }].map(({ l, to }) => (
+              <Link key={l} to={to} className="ft-bottom-link">{l}</Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Palette bar */}
+        <div className="ft-palette-bar">
+          <div className="ft-palette-bar-navy" />
+          <div className="ft-palette-bar-maroon" />
+          <div className="ft-palette-bar-blush" />
+          <div className="ft-palette-bar-forest" />
+        </div>
+      </footer>
+    </>
+  );
+}

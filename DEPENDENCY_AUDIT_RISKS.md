@@ -1,6 +1,6 @@
 # Dependency & Audit Risks
 
-This document outlines the dependency vulnerabilities identified during the frontend audit. 
+This document outlines the dependency vulnerabilities identified during the frontend audit.
 
 ## Frontend (`HandloomSarees/Ecommerce`) Audit Results
 
@@ -43,7 +43,7 @@ This document outlines the dependency vulnerabilities identified during the fron
 
 ## Build and Lint Status
 - **ESLint**: Passed with no critical errors.
-- **Vite Build**: Passed (`built in 36.74s`). 
+- **Vite Build**: Passed (`built in 36.74s`).
   - *Warning*: PostCSS noted `@import must precede all other statements` in the CSS file.
   - *Warning*: Several chunks are >500kB (consider dynamic `import()` or manual chunking for optimization).
 
