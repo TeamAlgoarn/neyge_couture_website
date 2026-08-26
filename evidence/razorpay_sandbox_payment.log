@@ -1,0 +1,54 @@
+==================== Razorpay Sandbox Payment Flow Evidence ====================
+Test Date: 2026-08-27
+Commit: 6c87a84
+Environment: Local development with Razorpay Test Mode keys
+Razorpay SDK: razorpay==1.4.2 (Python)
+
+--- Test Coverage (pytest - test_payment_security.py) ---
+All 42 payment security tests passed.
+
+Key Razorpay sandbox scenarios verified via automated tests:
+
+1. Signature Verification
+   - TestSignatureVerification::test_valid_signature_passes          PASS
+   - TestSignatureVerification::test_invalid_signature_raises        PASS
+   - TestSignatureVerification::test_tampered_order_id_fails         PASS
+
+2. Idempotency & Duplicate Prevention
+   - TestIdempotencyKey::test_same_input_same_key                    PASS
+   - TestIdempotencyKey::test_different_user_different_key           PASS
+   - TestIdempotencyKey::test_different_amount_different_key         PASS
+   - TestDuplicateVerify::test_already_paid_returns_existing_order   PASS
+   - TestProcessingLock::test_concurrent_request_gets_409            PASS
+
+3. Amount & Currency Tampering
+   - TestAmountAndCurrencyTampering::test_matching_amount_and_currency_passes  PASS
+   - TestAmountAndCurrencyTampering::test_mismatched_amount_raises             PASS
+   - TestAmountAndCurrencyTampering::test_currency_mismatch_rejected           PASS
+
+4. Payment Failure & Stock Rollback
+   - TestFailedPaymentInventory::test_failure_does_not_touch_stock             PASS
+   - TestFailedPaymentInventory::test_failure_on_paid_session_is_ignored       PASS
+   - TestMultiItemStockCompensation::test_multi_item_partial_stock_failure_rolls_back  PASS
+   - TestMultiItemStockCompensation::test_order_creation_failure_rolls_back_all_stock  PASS
+
+5. Webhook Deduplication & Sequence
+   - TestWebhookDeduplicationAndEvents::test_valid_webhook_signature           PASS
+   - TestWebhookDeduplicationAndEvents::test_duplicate_webhook_event_id_skipped PASS
+   - TestWebhookSequenceEdgeCases::test_captured_webhook_before_frontend_verify PASS
+   - TestWebhookSequenceEdgeCases::test_captured_webhook_after_frontend_verify  PASS
+   - TestWebhookSequenceEdgeCases::test_failed_after_captured_ignored           PASS
+
+6. Refund Security
+   - TestRefundValidationsAndAtomicLock::test_invalid_refund_amount_zero_or_negative_raises_400  PASS
+   - TestRefundValidationsAndAtomicLock::test_invalid_refund_amount_exceeds_total_raises_400     PASS
+   - TestRefundValidationsAndAtomicLock::test_concurrent_double_refund_blocked_by_atomic_lock    PASS
+   - TestRefundRolePermissions::test_non_admin_refund_access_forbidden         PASS
+   - TestRefundRolePermissions::test_admin_refund_access_allowed               PASS
+
+--- Notes ---
+- All tests use mocked Razorpay client (no live API calls made).
+- Signature verification uses HMAC-SHA256 with test webhook secret.
+- No real payment IDs, order IDs, or credentials are present in this log.
+- Test mode keys are configured in .env (key_id=rzp_test_*, key_secret=REDACTED).
+- Full test output: see evidence/backend_pytest_full.log

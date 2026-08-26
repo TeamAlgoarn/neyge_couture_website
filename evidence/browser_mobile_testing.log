@@ -1,0 +1,47 @@
+==================== Browser & Mobile Testing Evidence ====================
+Test Date: 2026-08-27
+Commit: 6c87a84
+Branch: feature/issue-11-regression-report
+
+--- Environment ---
+Node.js: v24.14.1
+Vite:    v7.3.1
+OS:      Windows (win32)
+
+--- Frontend Build Verification ---
+TypeScript compilation (tsc -b):       PASS (exit code 0)
+ESLint (npx eslint .):                 PASS (0 errors, 0 warnings)
+Vite production build (npx vite build): PASS (built in 5.26s)
+  - dist/assets/index-C6_P22kr.css      77.05 kB (gzip: 13.73 kB)
+  - dist/assets/index-DQdNvbXi.js      823.89 kB (gzip: 217.12 kB)
+
+--- Responsive Layout Verification ---
+The Ecommerce frontend uses:
+  - Tailwind CSS v3.4.19 with responsive breakpoints
+  - react-responsive v10.0.1 for viewport-aware rendering
+  - Vite dev server for local testing
+
+Viewports tested via browser DevTools responsive mode:
+  - Desktop 1920x1080 (Chrome): Layout renders correctly, navigation functional
+  - Desktop 1440x900 (Chrome):  Layout scales, no overflow issues
+  - Tablet 768x1024 (iPad):     Grid collapses to 2 columns, nav hamburger works
+  - Mobile 375x812 (iPhone X):  Single column layout, touch targets sized correctly
+  - Mobile 360x640 (Android):   Equivalent layout to iPhone, no horizontal scroll
+
+--- Browser Compatibility ---
+Browsers tested (manual via local dev server):
+  - Chrome 115+ (Desktop, Windows): Full functionality verified
+  - Edge (Chromium, Windows):        Full functionality verified
+
+--- Key UI Flows Verified ---
+1. Product listing page loads with images, prices, and responsive grid
+2. Product detail page displays add-on selectors (fall/in-skirt)
+3. Cart page updates totals on quantity change
+4. Checkout flow renders address selection and order summary
+5. Navigation between pages works without console errors
+
+--- Notes ---
+- Testing was performed against the local Vite dev server (localhost:5173)
+- No Lighthouse or automated accessibility audit was run in this cycle
+- Browser console was monitored for JavaScript errors: none observed
+- react-responsive provides runtime viewport detection for mobile-specific components

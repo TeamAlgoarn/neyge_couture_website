@@ -1,0 +1,22 @@
+==================== Frontend Lint (ESLint) ====================
+$ cd HandloomSarees/Ecommerce && npx eslint .
+(no errors, no warnings)
+Exit code: 0
+
+==================== Frontend Build (Vite) ====================
+$ cd HandloomSarees/Ecommerce && npx tsc -b && npx vite build
+
+vite v7.3.1 building for production...
+transforming...
+✓ 75 modules transformed.
+rendering chunks...
+computing gzip size...
+
+dist/assets/index-C6_P22kr.css                    77.05 kB │ gzip:  13.73 kB
+dist/assets/index-DQdNvbXi.js                    823.89 kB │ gzip: 217.12 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking
+✓ built in 5.26s
+Exit code: 0
