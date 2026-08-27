@@ -1,8 +1,27 @@
 ==================== Razorpay Sandbox Payment Flow Evidence ====================
 Test Date: 2026-08-27
-Commit: 6c87a84
+Commit: 51191b2acd9d5d77ab0f81100cb59a05ecf7575b
 Environment: Local development with Razorpay Test Mode keys
 Razorpay SDK: razorpay==1.4.2 (Python)
+
+--- IMPORTANT: Scope & Limitations ---
+All 42 payment tests below use a MOCKED Razorpay client.
+No live or sandbox Razorpay API calls were made during this test run.
+
+What IS verified:
+  - Server-side payment logic (signature validation, idempotency, tampering
+    detection, webhook handling, refund security, RBAC enforcement)
+  - All Razorpay client interactions are mocked via unittest.mock
+
+What is NOT verified:
+  - End-to-end Razorpay sandbox checkout (creating a real test order via
+    Razorpay Dashboard, completing payment in the test checkout page,
+    verifying webhook delivery to the backend)
+  - Real Razorpay API responses, latency, or error behavior
+
+Recommendation:
+  A full end-to-end Razorpay sandbox checkout should be performed before
+  production deployment as a post-merge task.
 
 --- Test Coverage (pytest - test_payment_security.py) ---
 All 42 payment security tests passed.
