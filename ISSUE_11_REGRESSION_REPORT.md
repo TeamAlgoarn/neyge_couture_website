@@ -32,14 +32,7 @@ the actual repository at the commit hash listed below.
 - Backend tests (pytest, 171 tests) all pass
 - Frontend lint (ESLint) and build (tsc + Vite) both pass cleanly
 
-## PR Body Corrections Required
 
-> **Note:** The following items exist in the **GitHub PR description body** (not in
-> the committed files) and must be manually corrected on GitHub:
->
-> 1. **Test count:** PR body says "181 / 181 passed" — must be changed to **"171 / 171 passed"** (actual count from pytest and independent reviewer re-run)
-> 2. **Screenshot claim:** PR body says screenshots/evidence were added — must be **removed or changed** to say "text-based evidence logs" (no screenshot files are included in this PR)
-> 3. **Razorpay evidence:** PR body should note that payment evidence is from **mocked automated tests**, not an end-to-end Razorpay sandbox checkout
 
 ## QA Evidence & Execution Table
 
