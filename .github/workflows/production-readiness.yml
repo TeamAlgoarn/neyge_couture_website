@@ -46,7 +46,7 @@ jobs:
       JWT_SECRET: jwt-placeholder-for-ci
       JWT_ALGORITHM: HS256
       PAYMENTS_ENABLED: "false"
-      RAZORPAY_ENABLED: "false"
+      RAZORPAY_ENABLED: "true"
       RAZORPAY_KEY_ID: rzp_test_placeholder
       RAZORPAY_KEY_SECRET: razorpay-placeholder
       RAZORPAY_WEBHOOK_SECRET: webhook-placeholder
