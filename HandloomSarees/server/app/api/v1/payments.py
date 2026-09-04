@@ -64,7 +64,7 @@ Amount Paid: ₹{amount}
 
 We will notify you once your order is shipped. Thank you for shopping with us! 🛍️
 
-www.negyecouture.com"""
+www.neygecouture.com"""
             await send_whatsapp_message(phone, message)
     except Exception as e:
         print(f"WhatsApp notification error: {e}")

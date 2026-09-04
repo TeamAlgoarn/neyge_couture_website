@@ -1,51 +1,68 @@
 # Dependency & Audit Risks
 
-This document outlines the dependency vulnerabilities identified during the frontend audit.
+Frontend location: `HandloomSarees/Ecommerce`
 
-## Frontend (`HandloomSarees/Ecommerce`) Audit Results
+## Current audit status
 
-**Summary**: 15 vulnerabilities (2 low, 1 moderate, 12 high)
+The last successful npm audit evidence for this workspace reported:
 
-### High Severity Risks
-1. **Axios (1.0.0 - 1.17.0)**
-   - Issues include SSRF bypasses, Prototype Pollution gadgets, CRLF Injection, and ReDoS.
-   - *Risk*: High risk if the frontend handles untrusted input that is passed directly to axios config or if running on a server (SSR). Since this is a client-side Vite app, the risk is slightly mitigated but still a significant concern.
-2. **Brace-expansion (<=1.1.17 || 3.0.0 - 5.0.8)**
-   - Issues: Zero-step sequence process hang, memory exhaustion, DoS via unbounded expansion.
-   - *Risk*: Mostly affects build tooling or backend parsing, but should be patched.
-3. **Esbuild (0.27.3 - 0.28.0)**
-   - Allows arbitrary file read when running the development server on Windows.
-   - *Risk*: Impacts local development environments on Windows.
-4. **Flatted (<=3.4.1)**
-   - Unbounded recursion DoS and Prototype Pollution in `parse()` revive phase.
-5. **Form-data (4.0.0 - 4.0.5)**
-   - CRLF injection via unescaped multipart field names.
-6. **JS-YAML (4.0.0 - 4.3.0)**
-   - Quadratic-complexity DoS in merge key handling.
-7. **Nanoid (<=3.3.17)**
-   - Non-secure/custom generators can loop indefinitely with negative/zero size.
-8. **Picomatch (<=2.3.1 || 4.0.0 - 4.0.3)**
-   - Method Injection and ReDoS vulnerabilities via glob matching.
-9. **PostCSS (<=8.5.22)**
-   - XSS via unescaped `</style>` in output and arbitrary file read via source maps.
-10. **React Router / React Router DOM (6.0.0 - 7.18.1)**
-    - Potential CSRF, Open redirect, DoS via unbounded path expansion, and RCE in vendored turbo-stream.
-    - *Risk*: High priority update needed for core routing library.
-11. **Vite (7.0.0 - 7.3.3)**
-    - Path Traversal, arbitrary file read via WebSocket, `server.fs.deny` bypass.
-    - *Risk*: Impacts dev server and build processes.
-12. **WS (8.0.0 - 8.20.1)**
-    - Uninitialized memory disclosure and Memory exhaustion DoS.
+| Severity | Count |
+| --- | ---: |
+| Critical | 0 |
+| High | 13 |
+| Moderate | 2 |
+| Low | 3 |
 
-### Moderate / Low Severity Risks
-- **Follow-redirects (<=1.15.11)**: Leaks custom authentication headers to cross-domain redirect targets.
-- **@babel/core**: Arbitrary File Read via sourceMappingURL Comment.
+During the continuation pass on September 4, 2026:
 
-## Build and Lint Status
-- **ESLint**: Passed with no critical errors.
-- **Vite Build**: Passed (`built in 36.74s`).
-  - *Warning*: PostCSS noted `@import must precede all other statements` in the CSS file.
-  - *Warning*: Several chunks are >500kB (consider dynamic `import()` or manual chunking for optimization).
+- `npm outdated` completed.
+- The final `npm audit` completed after `npm ci`.
+- No dependency versions were changed because the network install/update approval was rejected.
+- `npm audit fix --force` was not run.
 
-## Recommendation
-Run `npm audit fix` in the frontend directory (`HandloomSarees/Ecommerce`) prior to staging deployment, and test thoroughly to ensure no breaking changes were introduced by minor dependency bumps.
+## Direct runtime findings requiring remediation
+
+| Package | Current | Wanted | Latest | Classification | Action |
+| --- | ---: | ---: | ---: | --- | --- |
+| `axios` | 1.14.0 | 1.20.0 | 1.20.0 | Direct runtime | Upgrade within same major before production traffic |
+| `react-router-dom` | 7.14.0 | 7.18.3 | 7.18.3 | Direct runtime | Upgrade within same major before production traffic |
+| `@supabase/supabase-js` | 2.104.0 | 2.115.0 | 2.115.0 | Direct runtime; pulls websocket client dependencies | Upgrade within same major before production traffic |
+
+## Direct build/dev findings requiring remediation
+
+| Package | Current | Wanted | Latest | Classification | Action |
+| --- | ---: | ---: | ---: | --- | --- |
+| `vite` | 7.3.1 | 7.3.6 | 8.2.2 | Direct dev/build tooling | Upgrade to 7.3.6 first; avoid Vite 8 until migration-tested |
+| `@vitejs/plugin-react` | 5.1.3 | 5.2.0 | 6.1.1 | Direct dev/build tooling | Upgrade to 5.2.0 first; avoid major upgrade until migration-tested |
+
+## Transitive/build-tool findings
+
+Known transitive findings from the prior audit include:
+
+- `@babel/core`
+- `@humanfs/node`
+- `brace-expansion`
+- `browserslist`
+- `esbuild`
+- `flatted`
+- `follow-redirects`
+- `form-data`
+- `js-yaml`
+- `nanoid`
+- `picomatch`
+- `postcss`
+- `postcss-selector-parser`
+- `ws`
+
+Most are build/dev-tool exposure in this Vite client app. They still need cleanup before production release because developers run the dev server locally and CI runs the build pipeline.
+
+## Production recommendation
+
+Before production traffic:
+
+1. Apply same-major updates for `axios`, `react-router-dom`, `@supabase/supabase-js`, `vite`, and `@vitejs/plugin-react`.
+2. Run `npm ci`.
+3. Run `npm run lint`.
+4. Run `npm run build`.
+5. Re-run `npm audit`.
+6. Do not use `npm audit fix --force` unless a separate major-upgrade migration is explicitly approved.

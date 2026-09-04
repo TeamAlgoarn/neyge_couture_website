@@ -22,8 +22,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
 
-    RAZORPAY_KEY_ID: str
-    RAZORPAY_KEY_SECRET: str
+    PAYMENTS_ENABLED: bool = True
+    RAZORPAY_ENABLED: bool = True
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
     RAZORPAY_WEBHOOK_SECRET: str = ""
 
     CLOUDINARY_CLOUD_NAME: str
@@ -39,6 +41,7 @@ class Settings(BaseSettings):
     ]
 
     # WhatsApp
+    WHATSAPP_ENABLED: bool = True
     WHATSAPP_PHONE_NUMBER_ID: str = ""
     WHATSAPP_BUSINESS_ACCOUNT_ID: str = ""
     WHATSAPP_ACCESS_TOKEN: str = ""
@@ -47,6 +50,7 @@ class Settings(BaseSettings):
     WHATSAPP_API_VERSION: str = "v25.0"
 
     # Instagram
+    INSTAGRAM_ENABLED: bool = True
     INSTAGRAM_BUSINESS_ACCOUNT_ID: str = ""
     INSTAGRAM_ACCESS_TOKEN: str = ""
     INSTAGRAM_APP_ID: str = ""
@@ -84,6 +88,26 @@ class Settings(BaseSettings):
             return False
 
         raise ValueError("DEBUG must be a boolean-like value such as true or false")
+
+    @field_validator(
+        "PAYMENTS_ENABLED",
+        "RAZORPAY_ENABLED",
+        "WHATSAPP_ENABLED",
+        "INSTAGRAM_ENABLED",
+        mode="before",
+    )
+    @classmethod
+    def parse_feature_flag(cls, value: Any) -> bool:
+        if isinstance(value, bool):
+            return value
+
+        normalized = str(value).strip().lower()
+        if normalized in {"1", "true", "t", "yes", "y", "on", "enabled"}:
+            return True
+        if normalized in {"0", "false", "f", "no", "n", "off", "disabled"}:
+            return False
+
+        raise ValueError("Feature flags must be boolean-like values")
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
@@ -124,7 +148,12 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
-        if self.APP_ENV != "production":
+        if self.PAYMENTS_ENABLED and not self.RAZORPAY_ENABLED:
+            raise ValueError(
+                "PAYMENTS_ENABLED=true requires RAZORPAY_ENABLED=true"
+            )
+
+        if self.APP_ENV not in {"staging", "production"}:
             return self
 
         required = [
@@ -132,20 +161,35 @@ class Settings(BaseSettings):
             "SUPABASE_SERVICE_ROLE_KEY",
             "SUPABASE_ANON_KEY",
             "JWT_SECRET",
-            "RAZORPAY_KEY_ID",
-            "RAZORPAY_KEY_SECRET",
-            "RAZORPAY_WEBHOOK_SECRET",
-            "WHATSAPP_PHONE_NUMBER_ID",
-            "WHATSAPP_BUSINESS_ACCOUNT_ID",
-            "WHATSAPP_ACCESS_TOKEN",
-            "WHATSAPP_WEBHOOK_VERIFY_TOKEN",
-            "WHATSAPP_APP_SECRET",
-            "INSTAGRAM_BUSINESS_ACCOUNT_ID",
-            "INSTAGRAM_ACCESS_TOKEN",
-            "INSTAGRAM_APP_ID",
-            "INSTAGRAM_APP_SECRET",
-            "INSTAGRAM_WEBHOOK_VERIFY_TOKEN",
         ]
+        if self.RAZORPAY_ENABLED:
+            required.extend(
+                [
+                    "RAZORPAY_KEY_ID",
+                    "RAZORPAY_KEY_SECRET",
+                    "RAZORPAY_WEBHOOK_SECRET",
+                ]
+            )
+        if self.WHATSAPP_ENABLED:
+            required.extend(
+                [
+                    "WHATSAPP_PHONE_NUMBER_ID",
+                    "WHATSAPP_BUSINESS_ACCOUNT_ID",
+                    "WHATSAPP_ACCESS_TOKEN",
+                    "WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+                    "WHATSAPP_APP_SECRET",
+                ]
+            )
+        if self.INSTAGRAM_ENABLED:
+            required.extend(
+                [
+                    "INSTAGRAM_BUSINESS_ACCOUNT_ID",
+                    "INSTAGRAM_ACCESS_TOKEN",
+                    "INSTAGRAM_APP_ID",
+                    "INSTAGRAM_APP_SECRET",
+                    "INSTAGRAM_WEBHOOK_VERIFY_TOKEN",
+                ]
+            )
         missing = [name for name in required if not str(getattr(self, name, "")).strip()]
         if missing:
             raise ValueError(

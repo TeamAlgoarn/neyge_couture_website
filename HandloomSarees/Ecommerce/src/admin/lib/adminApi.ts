@@ -1,8 +1,9 @@
 import axios from "axios";
 import { adminAuth } from "./adminAuth";
+import { API_BASE_URL } from "@/config/env";
 
 const adminApi = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
+  baseURL: API_BASE_URL,
 });
 
 adminApi.interceptors.request.use((config) => {

@@ -20,7 +20,25 @@ from app.services.cart_service import CartService
 
 class PaymentService:
     @staticmethod
+    def _ensure_checkout_enabled() -> None:
+        if not settings.PAYMENTS_ENABLED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Online payment checkout is disabled for this environment",
+            )
+        PaymentService._ensure_razorpay_integration_enabled()
+
+    @staticmethod
+    def _ensure_razorpay_integration_enabled() -> None:
+        if not settings.RAZORPAY_ENABLED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Razorpay integration is disabled for this environment",
+            )
+
+    @staticmethod
     def _client() -> razorpay.Client:
+        PaymentService._ensure_razorpay_integration_enabled()
         return razorpay.Client(
             auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
         )
@@ -144,6 +162,7 @@ class PaymentService:
 
     @staticmethod
     def create_payment_order(user_id: str, shipping_address: dict) -> dict:
+        PaymentService._ensure_checkout_enabled()
         user_id = str(user_id)
 
         snapshot = PaymentService._build_checkout_snapshot(
@@ -533,6 +552,7 @@ class PaymentService:
         razorpay_payment_id: str,
         razorpay_signature: str,
     ) -> dict:
+        PaymentService._ensure_razorpay_integration_enabled()
         user_id = str(user_id)
 
         session = PaymentRepository.get_by_razorpay_order_id_and_user(
@@ -568,6 +588,7 @@ class PaymentService:
         user_id: str | None = None,
         error_description: str = "",
     ) -> dict:
+        PaymentService._ensure_razorpay_integration_enabled()
         """
         Mark a payment session as failed. Does NOT touch inventory.
         Can be called by frontend or webhook.
@@ -621,6 +642,7 @@ class PaymentService:
         amount: float | None = None,
         reason: str = "",
     ) -> dict:
+        PaymentService._ensure_razorpay_integration_enabled()
         """
         Initiate a refund via Razorpay API. Admin-only.
         Validates amount > 0 and amount <= order_total. Uses atomic CAS lock.
@@ -734,6 +756,7 @@ class PaymentService:
     @staticmethod
     def get_refund_status(refund_id: str) -> dict:
         """Fetch refund status from Razorpay API."""
+        PaymentService._ensure_razorpay_integration_enabled()
         try:
             client = PaymentService._client()
             refund = client.refund.fetch(refund_id)
@@ -763,6 +786,7 @@ class PaymentService:
         Handle payment.captured webhook. Uses shared _finalize_payment
         for idempotency — if already finalized, returns existing order.
         """
+        PaymentService._ensure_razorpay_integration_enabled()
         session = PaymentRepository.get_pending_by_razorpay_order_id(razorpay_order_id)
         if not session:
             logger.warning(
@@ -789,6 +813,7 @@ class PaymentService:
         event_id: str = "",
     ) -> None:
         """Handle payment.failed webhook."""
+        PaymentService._ensure_razorpay_integration_enabled()
         session = PaymentRepository.get_pending_by_razorpay_order_id(razorpay_order_id)
         if not session:
             logger.warning(
@@ -816,6 +841,7 @@ class PaymentService:
         event_id: str = "",
     ) -> None:
         """Handle refund.created / refund.processed webhooks."""
+        PaymentService._ensure_razorpay_integration_enabled()
         from app.core.database import get_supabase_admin
         db = get_supabase_admin()
         result = (

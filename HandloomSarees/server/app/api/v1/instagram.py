@@ -63,6 +63,12 @@ async def verify_webhook(
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
     hub_challenge: str = Query(None, alias="hub.challenge"),
 ):
+    if not settings.INSTAGRAM_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Instagram integration is disabled for this environment",
+        )
+
     verify_token = settings.INSTAGRAM_WEBHOOK_VERIFY_TOKEN
     if not verify_token:
         logger.error("INSTAGRAM_WEBHOOK_VERIFY_TOKEN is not configured — rejecting verification")
@@ -79,6 +85,12 @@ async def verify_webhook(
 # ── Webhook Receiver (POST) ────────────────────────────────────────────────
 @router.post("/webhook")
 async def receive_webhook(request: Request):
+    if not settings.INSTAGRAM_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Instagram integration is disabled for this environment",
+        )
+
     raw_body = await request.body()
     signature = request.headers.get("X-Hub-Signature-256", "")
 
@@ -188,19 +200,23 @@ async def receive_webhook(request: Request):
 
 def get_auto_reply(text: str) -> str:
     if any(word in text for word in ["hi", "hello", "hey"]):
-        return "Hi! 👋 Welcome to Neyge Couture. How can we help you today?\n\nVisit www.negyecouture.com to explore our handloom saree collection!"
+        return "Hi! 👋 Welcome to Neyge Couture. How can we help you today?\n\nVisit www.neygecouture.com to explore our handloom saree collection!"
     elif "price" in text or "cost" in text:
-        return "💰 Our sarees start from ₹1,500 onwards. Visit www.negyecouture.com to see our full collection with prices!"
+        return "💰 Our sarees start from ₹1,500 onwards. Visit www.neygecouture.com to see our full collection with prices!"
     elif "shop" in text or "saree" in text or "collection" in text:
-        return "🛍️ Explore our exclusive handloom saree collection at www.negyecouture.com"
+        return "🛍️ Explore our exclusive handloom saree collection at www.neygecouture.com"
     elif "order" in text or "track" in text:
-        return "📦 To track your order, please visit www.negyecouture.com or share your Order ID with us."
+        return "📦 To track your order, please visit www.neygecouture.com or share your Order ID with us."
     else:
-        return "Thank you for reaching out to Neyge Couture! 🙏 Our team will get back to you shortly.\n\nwww.negyecouture.com"
+        return "Thank you for reaching out to Neyge Couture! 🙏 Our team will get back to you shortly.\n\nwww.neygecouture.com"
 
 
 # ── Send DM Reply ───────────────────────────────────────────────────────────
 async def send_instagram_reply(recipient_id: str, message: str):
+    if not settings.INSTAGRAM_ENABLED:
+        logger.info("Instagram integration disabled; skipped outbound reply")
+        return {"status": "disabled", "message": "Instagram integration is disabled"}
+
     url = f"{GRAPH_URL}/{settings.INSTAGRAM_BUSINESS_ACCOUNT_ID}/messages"
     headers = {
         "Authorization": f"Bearer {settings.INSTAGRAM_ACCESS_TOKEN}",
@@ -218,6 +234,10 @@ async def send_instagram_reply(recipient_id: str, message: str):
 
 # ── Reply to Comment ─────────────────────────────────────────────────────────
 async def reply_to_comment(comment_id: str, message: str):
+    if not settings.INSTAGRAM_ENABLED:
+        logger.info("Instagram integration disabled; skipped comment reply")
+        return {"status": "disabled", "message": "Instagram integration is disabled"}
+
     url = f"{GRAPH_URL}/{comment_id}/replies"
     headers = {
         "Authorization": f"Bearer {settings.INSTAGRAM_ACCESS_TOKEN}",
@@ -232,6 +252,9 @@ async def reply_to_comment(comment_id: str, message: str):
 # ── Get Instagram Media/Posts (for website feed) ─────────────────────────────
 @router.get("/media")
 async def get_instagram_media(limit: int = 6):
+    if not settings.INSTAGRAM_ENABLED:
+        return {"success": True, "data": []}
+
     url = f"{GRAPH_URL}/{settings.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media"
     params = {
         "fields": "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp",

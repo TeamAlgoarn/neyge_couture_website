@@ -290,8 +290,8 @@ export function Footer() {
                 ))}
               </ul>
               <div style={{ marginTop: 14 }}>
-                <a href="https://www.negyecouture.com" className="ft-link" style={{ color: 'rgba(196,152,10,.80)', letterSpacing: '.10em' }}>
-                  www.negyecouture.com
+                <a href="https://www.neygecouture.com" className="ft-link" style={{ color: 'rgba(196,152,10,.80)', letterSpacing: '.10em' }}>
+                  www.neygecouture.com
                 </a>
               </div>
               {/* WhatsApp Button */}

@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import api from '@/api/client';
 import { addressApi } from '@/api/address';
+import { isPaymentsEnabled } from '@/config/env';
 import type { Address } from '@/types/address';
 import { CreditCard, Smartphone, Wallet, Sparkles, MapPin, Plus } from 'lucide-react';
 
@@ -611,6 +612,7 @@ export function CheckoutPage() {
   const subtotal = getCartTotal();
   const shipping = subtotal > 2999 ? 0 : 150;
   const total = subtotal + shipping;
+  const paymentDisabled = !isPaymentsEnabled;
 
   const loadRazorpayScript = async () => {
     return new Promise<boolean>((resolve) => {
@@ -718,6 +720,11 @@ export function CheckoutPage() {
 
     if (cart.length === 0) {
       toast.error('Cart is empty');
+      return;
+    }
+
+    if (paymentDisabled) {
+      toast.info('Online payments are currently being activated. Please contact Neyge Couture for assistance with your order.');
       return;
     }
 
@@ -1157,6 +1164,27 @@ export function CheckoutPage() {
                     </label>
                   ))}
                 </div>
+
+                {paymentDisabled && (
+                  <div
+                    role="status"
+                    style={{
+                      marginTop: 16,
+                      padding: '14px 16px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(196,152,10,.35)',
+                      background: 'rgba(196,152,10,.10)',
+                      color: '#5a3e16',
+                      fontFamily: "'Josefin Sans', sans-serif",
+                      fontSize: 14,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Online Payments Temporarily Unavailable.
+                    Online payments are currently being activated. Please contact
+                    Neyge Couture for assistance with your order.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1233,12 +1261,14 @@ export function CheckoutPage() {
                   <span className="co-total-val">{formatCurrency(total)}</span>
                 </div>
 
-                <button className="co-place-btn" onClick={handlePlaceOrder} disabled={isProcessing}>
+                <button className="co-place-btn" onClick={handlePlaceOrder} disabled={isProcessing || paymentDisabled}>
                   {isProcessing ? (
                     <>
                       <span className="co-spinner" />
                       Processing…
                     </>
+                  ) : paymentDisabled ? (
+                    'Online Payments Temporarily Unavailable'
                   ) : (
                     'Place Order ✦'
                   )}

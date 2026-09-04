@@ -61,6 +61,12 @@ async def verify_webhook(
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
     hub_challenge: str = Query(None, alias="hub.challenge"),
 ):
+    if not settings.WHATSAPP_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WhatsApp integration is disabled for this environment",
+        )
+
     verify_token = settings.WHATSAPP_WEBHOOK_VERIFY_TOKEN
     if not verify_token:
         logger.error("WHATSAPP_WEBHOOK_VERIFY_TOKEN is not configured — rejecting verification")
@@ -77,6 +83,12 @@ async def verify_webhook(
 # ── Webhook Receiver (POST) ────────────────────────────────────────────────
 @router.post("/webhook")
 async def receive_webhook(request: Request):
+    if not settings.WHATSAPP_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WhatsApp integration is disabled for this environment",
+        )
+
     raw_body = await request.body()
     signature = request.headers.get("X-Hub-Signature-256", "")
 
@@ -131,13 +143,13 @@ async def receive_webhook(request: Request):
                             if any(word in text for word in ["hi", "hello", "hey", "namaste"]):
                                 reply = "Hi! 👋 Welcome to Neyge Couture. How can we help you today?\n\nReply with:\n*SHOP* - Browse our collection\n*ORDER* - Track your order\n*HELP* - Get assistance"
                             elif "shop" in text or "saree" in text or "collection" in text:
-                                reply = "🛍️ Explore our exclusive handloom saree collection at:\nwww.negyecouture.com\n\nWe have beautiful handcrafted sarees for every occasion!"
+                                reply = "🛍️ Explore our exclusive handloom saree collection at:\nwww.neygecouture.com\n\nWe have beautiful handcrafted sarees for every occasion!"
                             elif "order" in text or "track" in text:
-                                reply = "📦 To track your order, please visit:\nwww.negyecouture.com\n\nOr share your Order ID and we will check the status for you."
+                                reply = "📦 To track your order, please visit:\nwww.neygecouture.com\n\nOr share your Order ID and we will check the status for you."
                             elif "price" in text or "cost" in text or "rate" in text:
-                                reply = "💰 Our sarees are priced from ₹1,500 onwards.\n\nVisit www.negyecouture.com to see our complete collection with prices."
+                                reply = "💰 Our sarees are priced from ₹1,500 onwards.\n\nVisit www.neygecouture.com to see our complete collection with prices."
                             else:
-                                reply = "Thank you for contacting Neyge Couture! 🙏\n\nOur team will get back to you shortly.\n\nVisit us at: www.negyecouture.com"
+                                reply = "Thank you for contacting Neyge Couture! 🙏\n\nOur team will get back to you shortly.\n\nVisit us at: www.neygecouture.com"
                             await send_whatsapp_message(phone, reply)
 
                         if dedupe_key:
@@ -201,6 +213,10 @@ async def receive_webhook(request: Request):
 
 # ── Send Text Message ──────────────────────────────────────────────────────
 async def send_whatsapp_message(to: str, message: str):
+    if not settings.WHATSAPP_ENABLED:
+        logger.info("WhatsApp integration disabled; skipped outbound message")
+        return {"status": "disabled", "message": "WhatsApp integration is disabled"}
+
     url = f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {settings.WHATSAPP_ACCESS_TOKEN}",
@@ -225,6 +241,10 @@ async def send_template_message(
     language: str = "en_US",
     components: list | None = None
 ):
+    if not settings.WHATSAPP_ENABLED:
+        logger.info("WhatsApp integration disabled; skipped outbound template")
+        return {"status": "disabled", "message": "WhatsApp integration is disabled"}
+
     url = f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {settings.WHATSAPP_ACCESS_TOKEN}",
@@ -264,7 +284,7 @@ Amount Paid: ₹{amount}
 We will notify you once your order is shipped.
 Thank you for shopping with us! 🛍️
 
-www.negyecouture.com"""
+www.neygecouture.com"""
     result = await send_whatsapp_message(phone, message)
     return {"success": True, "data": result}
 
@@ -288,6 +308,6 @@ Order ID: {order_id}
 Your saree is on its way! 🎊
 Thank you for shopping with us!
 
-www.negyecouture.com"""
+www.neygecouture.com"""
     result = await send_whatsapp_message(phone, message)
     return {"success": True, "data": result}

@@ -1,0 +1,135 @@
+services:
+  - type: web
+    name: neyge-api-preview
+    runtime: python
+    branch: integration/neyge-15-day-sprint
+    rootDir: HandloomSarees/server
+    buildCommand: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: DEBUG
+        value: "false"
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: PAYMENTS_ENABLED
+        value: "true"
+      - key: RAZORPAY_ENABLED
+        value: "true"
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: WHATSAPP_ENABLED
+        value: "false"
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: INSTAGRAM_ENABLED
+        value: "false"
+      - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: INSTAGRAM_ACCESS_TOKEN
+        sync: false
+      - key: INSTAGRAM_APP_ID
+        sync: false
+      - key: INSTAGRAM_APP_SECRET
+        sync: false
+      - key: INSTAGRAM_WEBHOOK_VERIFY_TOKEN
+        sync: false
+  - type: web
+    name: neyge-api-production
+    runtime: python
+    branch: main
+    rootDir: HandloomSarees/server
+    buildCommand: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: PAYMENTS_ENABLED
+        value: "false"
+      - key: RAZORPAY_ENABLED
+        value: "false"
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: WHATSAPP_ENABLED
+        value: "false"
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: INSTAGRAM_ENABLED
+        value: "false"
+      - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: INSTAGRAM_ACCESS_TOKEN
+        sync: false
+      - key: INSTAGRAM_APP_ID
+        sync: false
+      - key: INSTAGRAM_APP_SECRET
+        sync: false
+      - key: INSTAGRAM_WEBHOOK_VERIFY_TOKEN
+        sync: false

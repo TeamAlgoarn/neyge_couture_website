@@ -27,11 +27,16 @@ def settings_kwargs(**overrides):
         "SUPABASE_SERVICE_ROLE_KEY": "service-role-placeholder",
         "SUPABASE_ANON_KEY": "anon-placeholder",
         "JWT_SECRET": "jwt-placeholder",
+        "PAYMENTS_ENABLED": True,
+        "RAZORPAY_ENABLED": True,
         "RAZORPAY_KEY_ID": "rzp_test_placeholder",
         "RAZORPAY_KEY_SECRET": "razorpay-placeholder",
+        "RAZORPAY_WEBHOOK_SECRET": "webhook-placeholder",
         "CLOUDINARY_CLOUD_NAME": "cloud",
         "CLOUDINARY_API_KEY": "cloud-key",
         "CLOUDINARY_API_SECRET": "cloud-secret",
+        "WHATSAPP_ENABLED": False,
+        "INSTAGRAM_ENABLED": False,
     }
     values.update(overrides)
     return values
@@ -214,6 +219,124 @@ def test_production_requires_integration_secrets():
         ))
 
     assert "Missing required production environment variables" in str(exc.value)
+
+
+def test_production_allows_disabled_integrations_without_provider_secrets():
+    settings = Settings(
+        _env_file=None,
+        **settings_kwargs(
+            APP_ENV="production",
+            PAYMENTS_ENABLED=False,
+            RAZORPAY_ENABLED=False,
+            RAZORPAY_KEY_ID="",
+            RAZORPAY_KEY_SECRET="",
+            RAZORPAY_WEBHOOK_SECRET="",
+            WHATSAPP_ENABLED=False,
+            WHATSAPP_PHONE_NUMBER_ID="",
+            WHATSAPP_BUSINESS_ACCOUNT_ID="",
+            WHATSAPP_ACCESS_TOKEN="",
+            WHATSAPP_WEBHOOK_VERIFY_TOKEN="",
+            WHATSAPP_APP_SECRET="",
+            INSTAGRAM_ENABLED=False,
+            INSTAGRAM_BUSINESS_ACCOUNT_ID="",
+            INSTAGRAM_ACCESS_TOKEN="",
+            INSTAGRAM_APP_ID="",
+            INSTAGRAM_APP_SECRET="",
+            INSTAGRAM_WEBHOOK_VERIFY_TOKEN="",
+        ),
+    )
+
+    assert settings.PAYMENTS_ENABLED is False
+    assert settings.RAZORPAY_ENABLED is False
+    assert settings.WHATSAPP_ENABLED is False
+    assert settings.INSTAGRAM_ENABLED is False
+
+
+def test_staging_allows_checkout_with_razorpay_test_credentials():
+    settings = Settings(
+        _env_file=None,
+        **settings_kwargs(
+            APP_ENV="staging",
+            PAYMENTS_ENABLED=True,
+            RAZORPAY_ENABLED=True,
+            RAZORPAY_KEY_ID="rzp_test_validkey",
+            RAZORPAY_KEY_SECRET="test-secret",
+            RAZORPAY_WEBHOOK_SECRET="test-webhook-secret",
+        ),
+    )
+
+    assert settings.APP_ENV == "staging"
+    assert settings.PAYMENTS_ENABLED is True
+    assert settings.RAZORPAY_ENABLED is True
+
+
+def test_production_allows_razorpay_reconciliation_only_with_credentials():
+    settings = Settings(
+        _env_file=None,
+        **settings_kwargs(
+            APP_ENV="production",
+            PAYMENTS_ENABLED=False,
+            RAZORPAY_ENABLED=True,
+            RAZORPAY_KEY_ID="rzp_test_reconcile",
+            RAZORPAY_KEY_SECRET="test-secret",
+            RAZORPAY_WEBHOOK_SECRET="test-webhook-secret",
+        ),
+    )
+
+    assert settings.PAYMENTS_ENABLED is False
+    assert settings.RAZORPAY_ENABLED is True
+
+
+def test_production_rejects_checkout_without_razorpay_enabled():
+    with pytest.raises(ValidationError) as exc:
+        Settings(
+            _env_file=None,
+            **settings_kwargs(
+                APP_ENV="production",
+                PAYMENTS_ENABLED=True,
+                RAZORPAY_ENABLED=False,
+                RAZORPAY_KEY_ID="",
+                RAZORPAY_KEY_SECRET="",
+                RAZORPAY_WEBHOOK_SECRET="",
+            ),
+        )
+
+    assert "PAYMENTS_ENABLED=true requires RAZORPAY_ENABLED=true" in str(exc.value)
+
+
+def test_production_rejects_enabled_razorpay_without_credentials():
+    with pytest.raises(ValidationError) as exc:
+        Settings(
+            _env_file=None,
+            **settings_kwargs(
+                APP_ENV="production",
+                PAYMENTS_ENABLED=True,
+                RAZORPAY_ENABLED=True,
+                RAZORPAY_KEY_ID="",
+                RAZORPAY_KEY_SECRET="",
+                RAZORPAY_WEBHOOK_SECRET="",
+            ),
+        )
+
+    assert "Missing required production environment variables" in str(exc.value)
+    assert "RAZORPAY_KEY_ID" in str(exc.value)
+
+
+def test_feature_flags_parse_boolean_strings():
+    settings = Settings(
+        _env_file=None,
+        **settings_kwargs(
+            PAYMENTS_ENABLED="off",
+            RAZORPAY_ENABLED="disabled",
+            WHATSAPP_ENABLED="false",
+            INSTAGRAM_ENABLED="0",
+        ),
+    )
+
+    assert settings.PAYMENTS_ENABLED is False
+    assert settings.RAZORPAY_ENABLED is False
+    assert settings.WHATSAPP_ENABLED is False
+    assert settings.INSTAGRAM_ENABLED is False
 
 
 # ── Chatbot Lead Auth Tests ──────────────────────────────────────────────────

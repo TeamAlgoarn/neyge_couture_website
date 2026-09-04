@@ -60,6 +60,12 @@ async def razorpay_webhook(request: Request):
     Razorpay sends POST with JSON body + X-Razorpay-Signature header.
     We must respond 200 quickly — Razorpay retries on non-2xx.
     """
+    if not settings.RAZORPAY_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Razorpay integration is disabled for this environment",
+        )
+
     # Read raw body for signature verification
     raw_body = await request.body()
     signature = request.headers.get("X-Razorpay-Signature", "")

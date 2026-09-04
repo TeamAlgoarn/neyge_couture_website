@@ -400,8 +400,11 @@ JWT_SECRET=your_jwt_secret
 JWT_ALGORITHM=HS256
 
 # Razorpay
+PAYMENTS_ENABLED=false
+RAZORPAY_ENABLED=false
 RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
 
 # Cloudinary (file/image uploads)
 CLOUDINARY_CLOUD_NAME=your_cloud_name
@@ -409,6 +412,7 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
 # WhatsApp Business API (Cloud API)
+WHATSAPP_ENABLED=false
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_BUSINESS_ACCOUNT_ID=your_waba_id
 WHATSAPP_ACCESS_TOKEN=your_access_token
@@ -416,6 +420,7 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token
 WHATSAPP_API_VERSION=v25.0
 
 # Instagram API
+INSTAGRAM_ENABLED=false
 INSTAGRAM_BUSINESS_ACCOUNT_ID=your_instagram_account_id
 INSTAGRAM_ACCESS_TOKEN=your_instagram_access_token
 INSTAGRAM_APP_ID=your_app_id
@@ -423,6 +428,13 @@ INSTAGRAM_APP_SECRET=your_app_secret
 INSTAGRAM_WEBHOOK_VERIFY_TOKEN=your_ig_webhook_verify_token
 INSTAGRAM_API_VERSION=v25.0
 ```
+
+Payment flag semantics:
+
+- `PAYMENTS_ENABLED` controls whether customers can initiate new online payment checkout.
+- `RAZORPAY_ENABLED` controls whether Razorpay integration is configured for callbacks, signed webhooks, reconciliation, and refunds.
+- `PAYMENTS_ENABLED=true` requires `RAZORPAY_ENABLED=true`.
+- `PAYMENTS_ENABLED=false` with `RAZORPAY_ENABLED=true` is valid for reconciliation-only production: new checkout stays blocked, but existing signed Razorpay payment/refund webhooks can still be processed.
 
 > ⚠️ Never commit `.env` to version control. It is already listed in `.gitignore`.
 

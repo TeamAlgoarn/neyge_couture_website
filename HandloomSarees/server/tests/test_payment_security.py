@@ -886,6 +886,102 @@ class TestWebhookHandlerErrorBehavior:
         assert response["status"] == "ok"
         assert "already processed" in response["message"].lower()
 
+    @patch("app.api.v1.webhooks.PaymentService")
+    @patch("app.api.v1.webhooks.PaymentRepository")
+    @patch("app.api.v1.webhooks.settings")
+    def test_reconciliation_only_accepts_signed_payment_captured_webhook(
+        self, mock_settings, mock_pay_repo, mock_payment_service
+    ):
+        """PAYMENTS_ENABLED=false + RAZORPAY_ENABLED=true must still reconcile existing captures."""
+        from app.api.v1.webhooks import razorpay_webhook
+        import asyncio
+
+        mock_settings.PAYMENTS_ENABLED = False
+        mock_settings.RAZORPAY_ENABLED = True
+        mock_settings.RAZORPAY_WEBHOOK_SECRET = "test_secret"
+        mock_pay_repo.reserve_webhook_event.return_value = True
+
+        request = self._make_signed_request(
+            "test_secret",
+            event="payment.captured",
+            event_id="evt_reconcile_capture",
+        )
+
+        response = asyncio.run(razorpay_webhook(request))
+
+        assert response == {"status": "ok"}
+        mock_pay_repo.reserve_webhook_event.assert_called_once_with(
+            "evt_reconcile_capture", "payment.captured"
+        )
+        mock_payment_service.handle_webhook_payment_captured.assert_called_once_with(
+            razorpay_order_id="order_test_999",
+            razorpay_payment_id="pay_test_999",
+            event_id="evt_reconcile_capture",
+        )
+        mock_payment_service.create_payment_order.assert_not_called()
+        mock_pay_repo.mark_webhook_event_processed.assert_called_once_with(
+            "evt_reconcile_capture"
+        )
+
+    @patch("app.api.v1.webhooks.PaymentService")
+    @patch("app.api.v1.webhooks.PaymentRepository")
+    @patch("app.api.v1.webhooks.settings")
+    def test_reconciliation_only_accepts_signed_refund_webhook(
+        self, mock_settings, mock_pay_repo, mock_payment_service
+    ):
+        """PAYMENTS_ENABLED=false + RAZORPAY_ENABLED=true must still reconcile refund webhooks."""
+        from app.api.v1.webhooks import razorpay_webhook
+        from unittest.mock import AsyncMock
+        import asyncio
+
+        mock_settings.PAYMENTS_ENABLED = False
+        mock_settings.RAZORPAY_ENABLED = True
+        mock_settings.RAZORPAY_WEBHOOK_SECRET = "test_secret"
+        mock_pay_repo.reserve_webhook_event.return_value = True
+
+        payload_dict = {
+            "event": "refund.processed",
+            "id": "evt_reconcile_refund",
+            "payload": {
+                "refund": {
+                    "entity": {
+                        "id": "rfnd_test_123",
+                        "payment_id": "pay_test_999",
+                        "status": "processed",
+                        "amount": 250000,
+                    }
+                }
+            },
+        }
+        body = json.dumps(payload_dict).encode()
+        signature = hmac.new(
+            b"test_secret",
+            body,
+            hashlib.sha256,
+        ).hexdigest()
+        request = MagicMock()
+        request.body = AsyncMock(return_value=body)
+        request.headers.get.return_value = signature
+        request.json = AsyncMock(return_value=payload_dict)
+
+        response = asyncio.run(razorpay_webhook(request))
+
+        assert response == {"status": "ok"}
+        mock_pay_repo.reserve_webhook_event.assert_called_once_with(
+            "evt_reconcile_refund", "refund.processed"
+        )
+        mock_payment_service.handle_webhook_refund_event.assert_called_once_with(
+            payment_id="pay_test_999",
+            refund_id="rfnd_test_123",
+            refund_status="processed",
+            refund_amount_paise=250000,
+            event_id="evt_reconcile_refund",
+        )
+        mock_payment_service.create_payment_order.assert_not_called()
+        mock_pay_repo.mark_webhook_event_processed.assert_called_once_with(
+            "evt_reconcile_refund"
+        )
+
     @patch("app.api.v1.webhooks.PaymentRepository")
     @patch("app.api.v1.webhooks.settings")
     def test_reservation_db_error_returns_503(self, mock_settings, mock_pay_repo):

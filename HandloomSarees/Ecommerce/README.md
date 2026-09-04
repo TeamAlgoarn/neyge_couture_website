@@ -142,9 +142,9 @@ HandloomSarees/
 
 | Layer | Technology |
 |---|---|
-| Runtime | Node.js |
-| Entry Point | `server-sdk.js` |
-| Config | `.env` |
+| Runtime | Python + FastAPI |
+| Entry Point | `app.main:app` |
+| Config | `.env` / hosting environment variables |
 
 ---
 
@@ -168,9 +168,9 @@ Runs at `http://localhost:5173`
 
 ```bash
 cd server
-npm install
+python -m pip install -r requirements.txt
 # Add your credentials to .env
-node server-sdk.js
+python run.py
 ```
 
 ### 3. Production Build
@@ -193,9 +193,17 @@ npm run preview   # Serve the build locally
 | `/collections` | `collections/` | Themed collection sub-pages |
 | `/cart` | `CartPage.tsx` | Shopping cart |
 | `/checkout` | `CheckoutPage.tsx` | Order checkout |
-| `/artisans` | `OurArtician.tsx` | Artisan profiles |
 | `/login` | `LoginPage.tsx` | User authentication |
 | `/profile` | `ProfilePage.tsx` | User account & orders |
+| `/terms` | `PolicyPages.tsx` | Terms and conditions |
+| `/privacy` | `PolicyPages.tsx` | Privacy policy |
+| `/shipping` | `PolicyPages.tsx` | Shipping policy |
+| `/cancellation-refund` | `PolicyPages.tsx` | Cancellation and refund policy |
+| `/returns` | `PolicyPages.tsx` | Returns policy |
+| `/contact` | `PolicyPages.tsx` | Contact and support details |
+| `/faq` | `PolicyPages.tsx` | Frequently asked questions |
+| `/cookies` | `PolicyPages.tsx` | Cookie policy |
+| `/track` | `PolicyPages.tsx` | Order tracking help |
 | `*` | `NotFound.tsx` | 404 fallback |
 
 ---

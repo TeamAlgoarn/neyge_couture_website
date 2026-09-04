@@ -27,6 +27,7 @@ uploads/
 tmp/
 *.sqlite
 *.db
+.codex-preserved-stash-files/
 
 # Editors and OS
 .vscode/

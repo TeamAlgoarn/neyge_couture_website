@@ -51,7 +51,7 @@ Your order has been initiated at Neyge Couture.
 Please complete your payment to confirm the order.
 
 Need help? Reply to this message or visit:
-www.negyecouture.com"""
+www.neygecouture.com"""
             await send_whatsapp_message(phone, message)
     except Exception as e:
         print(f"WhatsApp order notification error: {e}")
