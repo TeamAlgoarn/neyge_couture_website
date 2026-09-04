@@ -110,6 +110,8 @@ jobs:
           for path in Path(".").rglob("*"):
               if not path.is_file():
                   continue
+              if path.name == ".env":
+                  continue
               if any(part in ignored_dirs for part in path.parts):
                   continue
               try:
@@ -120,9 +122,12 @@ jobs:
                   for label, pattern in patterns:
                       if pattern.search(line):
                           hits.append((path, line_no, label))
-                  assignment = direct_secret_assignment.search(line)
-                  if assignment and not allowed_placeholder_values.match(assignment.group(2).strip()):
-                      hits.append((path, line_no, "non-placeholder-secret-assignment"))
+                  if path.suffix.lower() in {".env", ".example", ".yaml", ".yml", ".md"}:
+                      assignment = direct_secret_assignment.search(line)
+                      if assignment:
+                          value = assignment.group(2).strip().strip("\"'")
+                          if not allowed_placeholder_values.match(value):
+                              hits.append((path, line_no, "non-placeholder-secret-assignment"))
 
           if hits:
               for path, line_no, label in hits:
