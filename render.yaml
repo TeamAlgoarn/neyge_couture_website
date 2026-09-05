@@ -118,7 +118,7 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
       - key: WHATSAPP_ENABLED
-        value: "false"
+        value: "true"
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: WHATSAPP_BUSINESS_ACCOUNT_ID
@@ -130,7 +130,7 @@ services:
       - key: WHATSAPP_APP_SECRET
         sync: false
       - key: INSTAGRAM_ENABLED
-        value: "false"
+        value: "true"
       - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
         sync: false
       - key: INSTAGRAM_ACCESS_TOKEN

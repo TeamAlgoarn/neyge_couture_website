@@ -58,8 +58,8 @@ Production should use:
 ```env
 VITE_SITE_ENV=production
 VITE_API_BASE_URL=https://api.neygecouture.com/api/v1
-VITE_PAYMENTS_ENABLED=true
-VITE_RAZORPAY_ENABLED=true
+VITE_PAYMENTS_ENABLED=false
+VITE_RAZORPAY_ENABLED=false
 ```
 
 The frontend includes `vercel.json` rewrites so direct SPA URLs such as `/terms`,
