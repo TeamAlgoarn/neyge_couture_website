@@ -3,6 +3,7 @@ import uuid
 
 from fastapi import HTTPException, UploadFile, status
 
+from app.core.config import settings
 from app.core.database import get_supabase_admin
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.product_repository import ProductRepository
@@ -22,6 +23,10 @@ class UploadService:
     FESTIVE_BUCKET = "collection-images"  # keep same bucket for festive banners
 
     @staticmethod
+    def _bucket(default_bucket: str) -> str:
+        return settings.SUPABASE_STORAGE_BUCKET.strip() or default_bucket
+
+    @staticmethod
     async def upload_temp_collection_image(file: UploadFile) -> dict:
         content = await UploadService._validate_image(file)
 
@@ -29,7 +34,7 @@ class UploadService:
         path = f"collections/temp/{uuid.uuid4().hex}{extension}"
 
         image_url = UploadService._upload_to_supabase(
-            UploadService.COLLECTION_BUCKET,
+            UploadService._bucket(UploadService.COLLECTION_BUCKET),
             path,
             content,
             file.content_type or "image/jpeg",
@@ -49,7 +54,7 @@ class UploadService:
         path = f"festive/temp/{uuid.uuid4().hex}{extension}"
 
         image_url = UploadService._upload_to_supabase(
-            UploadService.FESTIVE_BUCKET,
+            UploadService._bucket(UploadService.FESTIVE_BUCKET),
             path,
             content,
             file.content_type or "image/jpeg",
@@ -118,7 +123,7 @@ class UploadService:
         path = f"products/temp/{uuid.uuid4().hex}{extension}"
 
         image_url = UploadService._upload_to_supabase(
-            UploadService.PRODUCT_BUCKET,
+            UploadService._bucket(UploadService.PRODUCT_BUCKET),
             path,
             content,
             file.content_type or "image/jpeg",
@@ -145,7 +150,7 @@ class UploadService:
         path = f"products/{product_id}/{uuid.uuid4().hex}{extension}"
 
         image_url = UploadService._upload_to_supabase(
-            UploadService.PRODUCT_BUCKET,
+            UploadService._bucket(UploadService.PRODUCT_BUCKET),
             path,
             content,
             file.content_type or "image/jpeg",
@@ -186,7 +191,7 @@ class UploadService:
         path = f"collections/{collection_id}/{uuid.uuid4().hex}{extension}"
 
         image_url = UploadService._upload_to_supabase(
-            UploadService.COLLECTION_BUCKET,
+            UploadService._bucket(UploadService.COLLECTION_BUCKET),
             path,
             content,
             file.content_type or "image/jpeg",

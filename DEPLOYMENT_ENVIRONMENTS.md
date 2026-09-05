@@ -5,7 +5,20 @@ This repository is prepared for two isolated deployment environments:
 1. Preview / staging
 2. Production
 
-Do not point preview/staging at production Supabase data or live Razorpay credentials.
+Neyge uses one Supabase project with logical schema isolation:
+
+```text
+public schema  -> Production ecommerce data
+preview schema -> Preview/Staging ecommerce data
+auth schema    -> Shared Supabase Auth
+storage schema -> Shared Supabase Storage metadata
+```
+
+This is logical isolation, not separate-infrastructure isolation. Preview must
+never run with `SUPABASE_DB_SCHEMA=public`, and Production must never run with
+`SUPABASE_DB_SCHEMA=preview`.
+
+Allowed backend application schema values are only `public` and `preview`.
 
 ## Frontend
 
@@ -77,9 +90,11 @@ DEBUG=false
 FRONTEND_URL=https://<frontend-preview-or-production-host>
 CORS_ORIGINS=https://<frontend-preview-or-production-host>
 
-SUPABASE_URL=https://<isolated-project>.supabase.co
-SUPABASE_ANON_KEY=<environment-specific-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<environment-specific-service-role-key>
+SUPABASE_URL=https://<shared-neyge-project>.supabase.co
+SUPABASE_ANON_KEY=<shared-project-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<shared-project-service-role-key>
+SUPABASE_DB_SCHEMA=<preview-or-public>
+SUPABASE_STORAGE_BUCKET=<optional-environment-specific-bucket>
 
 JWT_SECRET=<long-random-environment-specific-secret>
 JWT_ALGORITHM=HS256
@@ -103,29 +118,49 @@ For production, set `APP_ENV=production`.
 
 Both services use `/api/v1/health` as the health check and require environment-specific non-synced secrets.
 
+Preview backend must set:
+
+```env
+APP_ENV=staging
+SUPABASE_DB_SCHEMA=preview
+SUPABASE_STORAGE_BUCKET=neyge-preview
+```
+
+Production backend must set:
+
+```env
+APP_ENV=production
+SUPABASE_DB_SCHEMA=public
+```
+
 ## Payment flag matrix
 
 ```text
 Preview test mode:
 APP_ENV=staging
+SUPABASE_DB_SCHEMA=preview
 PAYMENTS_ENABLED=true
 RAZORPAY_ENABLED=true
-Use Razorpay TEST credentials and preview/disposable Supabase only.
+Use Razorpay TEST credentials only. Razorpay TEST transactions must only write
+to preview schema application tables.
 
 Fresh pre-approval production:
 APP_ENV=production
+SUPABASE_DB_SCHEMA=public
 PAYMENTS_ENABLED=false
 RAZORPAY_ENABLED=false
 No new checkout and no Razorpay reconciliation.
 
 Reconciliation-only production:
 APP_ENV=production
+SUPABASE_DB_SCHEMA=public
 PAYMENTS_ENABLED=false
 RAZORPAY_ENABLED=true
 New checkout disabled. Existing signed Razorpay payment/refund webhooks and reconciliation stay active.
 
 Live production:
 APP_ENV=production
+SUPABASE_DB_SCHEMA=public
 PAYMENTS_ENABLED=true
 RAZORPAY_ENABLED=true
 Use Razorpay LIVE credentials only after approval.
@@ -162,10 +197,16 @@ INSTAGRAM_API_VERSION=v25.0
 
 ## Database safety
 
-- Use a separate Supabase project for staging or a disposable Supabase project
-  for dry-run validation.
-- Do not run migrations against the production Supabase project until they pass
-  on the staging/disposable project and rollback behavior is understood.
+- Use the same Supabase project with schema-level isolation.
+- Production ecommerce data lives in `public.*`.
+- Preview ecommerce data lives in `preview.*`.
+- Supabase Auth is shared through `auth.*`; create dedicated Preview test users
+  such as `preview customer` and `preview admin`.
+- Do not run the existing `public.*` migrations for Preview. Use the explicit
+  Preview-only bootstrap script in
+  `HandloomSarees/server/migrations/preview/001_preview_schema_bootstrap.sql`.
+- In Supabase Dashboard, expose only the `preview` schema for Preview Data API
+  access; do not expose unrelated schemas.
 - Confirm RLS policies, service-role usage, webhook event dedupe tables, payment
   sessions, order tables, and inventory fields before enabling real payments.
 - Keep production service-role keys only in backend hosting secrets.

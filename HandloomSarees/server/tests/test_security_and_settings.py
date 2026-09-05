@@ -26,6 +26,8 @@ def settings_kwargs(**overrides):
         "SUPABASE_URL": "https://example.supabase.co",
         "SUPABASE_SERVICE_ROLE_KEY": "service-role-placeholder",
         "SUPABASE_ANON_KEY": "anon-placeholder",
+        "SUPABASE_DB_SCHEMA": "public",
+        "SUPABASE_STORAGE_BUCKET": "",
         "JWT_SECRET": "jwt-placeholder",
         "PAYMENTS_ENABLED": True,
         "RAZORPAY_ENABLED": True,
@@ -257,6 +259,7 @@ def test_staging_allows_checkout_with_razorpay_test_credentials():
         _env_file=None,
         **settings_kwargs(
             APP_ENV="staging",
+            SUPABASE_DB_SCHEMA="preview",
             PAYMENTS_ENABLED=True,
             RAZORPAY_ENABLED=True,
             RAZORPAY_KEY_ID="rzp_test_validkey",
@@ -266,8 +269,72 @@ def test_staging_allows_checkout_with_razorpay_test_credentials():
     )
 
     assert settings.APP_ENV == "staging"
+    assert settings.SUPABASE_DB_SCHEMA == "preview"
     assert settings.PAYMENTS_ENABLED is True
     assert settings.RAZORPAY_ENABLED is True
+
+
+def test_staging_requires_preview_supabase_schema():
+    with pytest.raises(ValidationError) as exc:
+        Settings(
+            _env_file=None,
+            **settings_kwargs(
+                APP_ENV="staging",
+                SUPABASE_DB_SCHEMA="public",
+            ),
+        )
+
+    assert "APP_ENV=staging requires SUPABASE_DB_SCHEMA=preview" in str(exc.value)
+
+
+def test_staging_with_preview_supabase_schema_passes():
+    settings = Settings(
+        _env_file=None,
+        **settings_kwargs(
+            APP_ENV="staging",
+            SUPABASE_DB_SCHEMA="preview",
+        ),
+    )
+
+    assert settings.APP_ENV == "staging"
+    assert settings.SUPABASE_DB_SCHEMA == "preview"
+
+
+def test_production_requires_public_supabase_schema():
+    with pytest.raises(ValidationError) as exc:
+        Settings(
+            _env_file=None,
+            **settings_kwargs(
+                APP_ENV="production",
+                SUPABASE_DB_SCHEMA="preview",
+            ),
+        )
+
+    assert "APP_ENV=production requires SUPABASE_DB_SCHEMA=public" in str(exc.value)
+
+
+def test_production_with_public_supabase_schema_passes():
+    settings = Settings(
+        _env_file=None,
+        **settings_kwargs(
+            APP_ENV="production",
+            SUPABASE_DB_SCHEMA="public",
+        ),
+    )
+
+    assert settings.APP_ENV == "production"
+    assert settings.SUPABASE_DB_SCHEMA == "public"
+
+
+def test_supabase_schema_name_rejects_unsafe_values():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            **settings_kwargs(SUPABASE_DB_SCHEMA="preview;drop schema public"),
+        )
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **settings_kwargs(SUPABASE_DB_SCHEMA="1preview"))
 
 
 def test_production_allows_razorpay_reconciliation_only_with_credentials():

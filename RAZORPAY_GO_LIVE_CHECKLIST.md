@@ -19,8 +19,10 @@ These routes are public React routes and are included in the sitemap.
 Before production keys are configured:
 
 - Deploy Preview with `APP_ENV=staging`, `PAYMENTS_ENABLED=true`,
-  `RAZORPAY_ENABLED=true`, Razorpay TEST credentials, and preview/disposable
-  Supabase.
+  `RAZORPAY_ENABLED=true`, `SUPABASE_DB_SCHEMA=preview`, and Razorpay TEST
+  credentials.
+- Confirm the backend is connected to the shared Neyge Supabase project but is
+  using the `preview` schema, not the Production `public` schema.
 - Run a real Razorpay sandbox checkout from the deployed preview frontend.
 - Confirm `/orders/create` creates exactly one Razorpay order for the cart.
 - Confirm the checkout modal opens with the expected amount and currency.
@@ -31,6 +33,11 @@ Before production keys are configured:
 - Confirm `payment.failed` leaves inventory untouched.
 - Confirm refund initiation works only for admin and does not allow duplicate refunds.
 - Confirm webhook signature failures are rejected.
+- Confirm the Razorpay TEST transaction creates/changes only `preview.*` rows:
+  `preview.orders`, `preview.payment_sessions`, `preview.inventory`, and
+  `preview.processed_webhook_events`.
+- Confirm no matching TEST transaction rows are created in `public.orders`,
+  `public.payment_sessions`, or `public.inventory`.
 
 ## Production activation
 
@@ -40,6 +47,7 @@ Only after sandbox evidence is accepted:
 2. Configure the production Razorpay webhook URL:
    `https://<production-backend>/api/v1/webhooks/razorpay`
 3. Set backend:
+   `SUPABASE_DB_SCHEMA=public`
    `PAYMENTS_ENABLED=true`
    `RAZORPAY_ENABLED=true`
 4. Set frontend:

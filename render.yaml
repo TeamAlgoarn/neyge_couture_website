@@ -22,6 +22,10 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: SUPABASE_DB_SCHEMA
+        value: preview
+      - key: SUPABASE_STORAGE_BUCKET
+        value: neyge-preview
       - key: JWT_SECRET
         sync: false
       - key: JWT_ALGORITHM
@@ -88,6 +92,10 @@ services:
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_DB_SCHEMA
+        value: public
+      - key: SUPABASE_STORAGE_BUCKET
         sync: false
       - key: JWT_SECRET
         sync: false

@@ -4,6 +4,19 @@
 
 A full-stack luxury handloom saree e-commerce platform built with **React + TypeScript + Vite** on the frontend and a **FastAPI (Python)** backend with **Supabase** as the database. The platform connects conscious buyers directly with master weavers across India, preserving GI-tagged crafts and ensuring fair wages for artisan families. It also integrates directly with **WhatsApp**, **Instagram**, and **Razorpay** to automate customer communication and payments.
 
+Supabase uses one project with logical schema isolation:
+
+- `public` schema: Production ecommerce data.
+- `preview` schema: Preview/Staging ecommerce data.
+- `auth` schema: shared Supabase Auth.
+- `storage` schema: shared Supabase Storage metadata.
+
+This is logical isolation, not separate-infrastructure isolation. Preview must
+run with `SUPABASE_DB_SCHEMA=preview`; Production must run with
+`SUPABASE_DB_SCHEMA=public`.
+
+Allowed backend application schema values are only `public` and `preview`.
+
 ---
 
 ## 📁 Project Structure
@@ -394,6 +407,8 @@ FRONTEND_URL=http://localhost:5173
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_DB_SCHEMA=public
+SUPABASE_STORAGE_BUCKET=
 
 # Auth
 JWT_SECRET=your_jwt_secret
@@ -435,6 +450,17 @@ Payment flag semantics:
 - `RAZORPAY_ENABLED` controls whether Razorpay integration is configured for callbacks, signed webhooks, reconciliation, and refunds.
 - `PAYMENTS_ENABLED=true` requires `RAZORPAY_ENABLED=true`.
 - `PAYMENTS_ENABLED=false` with `RAZORPAY_ENABLED=true` is valid for reconciliation-only production: new checkout stays blocked, but existing signed Razorpay payment/refund webhooks can still be processed.
+- Preview Razorpay TEST Mode must use `APP_ENV=staging`,
+  `SUPABASE_DB_SCHEMA=preview`, `PAYMENTS_ENABLED=true`, and
+  `RAZORPAY_ENABLED=true`.
+- Production must use `APP_ENV=production` and `SUPABASE_DB_SCHEMA=public`.
+
+Preview schema bootstrap:
+
+- Manual SQL only: `HandloomSarees/server/migrations/preview/001_preview_schema_bootstrap.sql`
+- Do not run the existing `public.*` migrations for Preview.
+- In Supabase Dashboard, expose only the required `preview` schema for Preview
+  Data API access.
 
 > ⚠️ Never commit `.env` to version control. It is already listed in `.gitignore`.
 

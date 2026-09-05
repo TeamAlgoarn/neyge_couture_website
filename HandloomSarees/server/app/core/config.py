@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str
     SUPABASE_ANON_KEY: str
+    SUPABASE_DB_SCHEMA: str = "public"
+    SUPABASE_STORAGE_BUCKET: str = ""
 
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
@@ -146,11 +148,36 @@ class Settings(BaseSettings):
 
         return origins
 
+    @field_validator("SUPABASE_DB_SCHEMA", mode="before")
+    @classmethod
+    def normalize_supabase_db_schema(cls, value: Any) -> str:
+        schema = str(value or "public").strip().lower()
+        if not schema:
+            schema = "public"
+
+        allowed = {"public", "preview"}
+        if schema not in allowed:
+            raise ValueError(
+                "SUPABASE_DB_SCHEMA must be one of public or preview"
+            )
+
+        return schema
+
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
         if self.PAYMENTS_ENABLED and not self.RAZORPAY_ENABLED:
             raise ValueError(
                 "PAYMENTS_ENABLED=true requires RAZORPAY_ENABLED=true"
+            )
+
+        if self.APP_ENV == "staging" and self.SUPABASE_DB_SCHEMA != "preview":
+            raise ValueError(
+                "APP_ENV=staging requires SUPABASE_DB_SCHEMA=preview"
+            )
+
+        if self.APP_ENV == "production" and self.SUPABASE_DB_SCHEMA != "public":
+            raise ValueError(
+                "APP_ENV=production requires SUPABASE_DB_SCHEMA=public"
             )
 
         if self.APP_ENV not in {"staging", "production"}:
