@@ -4,7 +4,7 @@ import api from '@/api/client';
 import { addressApi } from '@/api/address';
 import type { Address } from '@/types/address';
 import { authService } from '@/lib/auth';
-import { User, MapPin, Package, LogOut, Video, Sparkles, Plus, X } from 'lucide-react';
+import { User, MapPin, Package, LogOut, Video, Sparkles, Plus, X, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useVideoBooking } from "@/hooks/useVideoBooking";
 
@@ -188,6 +188,44 @@ const CSS = `
   font-size: 20px;
   font-weight: 600;
   color: #800020;
+}
+
+.pf-preference-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.pf-preference-copy { min-width: 0; }
+.pf-preference-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #3d2d22;
+  line-height: 1.35;
+}
+.pf-preference-description {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6b5344;
+  line-height: 1.5;
+}
+.pf-preference-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #5a483a;
+}
+.pf-preference-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: #128c4a;
+}
+@media(max-width:600px){
+  .pf-preference-row { align-items: flex-start; flex-direction: column; }
 }
 
 .pf-grid {
@@ -398,12 +436,24 @@ export function ProfilePage() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressForm, setAddressForm] = useState<AddressFormState>(initialForm);
+  const [whatsappPreferenceSaving, setWhatsAppPreferenceSaving] = useState(false);
 
   const { bookings, loading: bookingsLoading } = useVideoBooking();
 
   useEffect(() => {
-    const refreshedUser = authService.getCurrentUser();
-    setUser(refreshedUser);
+    let active = true;
+
+    const refreshUser = async () => {
+      const refreshedUser = await authService.fetchCurrentUser();
+      if (active && refreshedUser) {
+        setUser(refreshedUser);
+      }
+    };
+
+    void refreshUser();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const fetchAddresses = useCallback(async () => {
@@ -571,6 +621,28 @@ export function ProfilePage() {
     }
   };
 
+  const handleWhatsAppPreferenceChange = async (nextValue: boolean) => {
+    const previousUser = user;
+    setUser({ ...user, whatsapp_opt_in: nextValue });
+    setWhatsAppPreferenceSaving(true);
+
+    try {
+      const updatedUser = await authService.updateWhatsAppPreference(nextValue, 'profile');
+      setUser(updatedUser);
+      toast.success(
+        nextValue
+          ? 'WhatsApp order updates enabled'
+          : 'WhatsApp order updates disabled'
+      );
+    } catch (err: unknown) {
+      setUser(previousUser);
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      toast.error(apiErr?.response?.data?.message || 'Failed to update WhatsApp preference');
+    } finally {
+      setWhatsAppPreferenceSaving(false);
+    }
+  };
+
   return (
     <>
       <style>{CSS}</style>
@@ -610,6 +682,36 @@ export function ProfilePage() {
               <button className="pf-logout" onClick={handleLogout}>
                 <LogOut size={14} /> Logout
               </button>
+            </div>
+          </div>
+
+          <div className="pf-card pf-fadeup pf-d1">
+            <div className="pf-card-head">
+              <div className="pf-card-head-left">
+                <div className="pf-card-icon"><MessageCircle size={16} color={C.gold} /></div>
+                <h2 className="pf-card-title">Notification Preferences</h2>
+              </div>
+            </div>
+            <div className="pf-preference-row">
+              <div className="pf-preference-copy">
+                <div className="pf-preference-name">WhatsApp order &amp; shipping updates</div>
+                <p className="pf-preference-description">
+                  Receive transactional updates about your Neyge Couture orders on WhatsApp.
+                  This does not include marketing or promotional messages.
+                </p>
+              </div>
+              <label className="pf-preference-toggle" htmlFor="profile-whatsapp-opt-in">
+                <input
+                  id="profile-whatsapp-opt-in"
+                  type="checkbox"
+                  checked={user.whatsapp_opt_in === true}
+                  disabled={whatsappPreferenceSaving}
+                  onChange={(event) => {
+                    void handleWhatsAppPreferenceChange(event.target.checked);
+                  }}
+                />
+                {user.whatsapp_opt_in === true ? 'ON' : 'OFF'}
+              </label>
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 import re
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StrictBool, model_validator
 
 
 
@@ -62,6 +62,13 @@ class ChangePasswordRequest(BaseModel):
         if self.current_password == self.new_password:
             raise ValueError("New password must be different from the current password")
         return self
+
+
+class WhatsAppPreferenceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    whatsapp_opt_in: StrictBool
+    source: Literal["checkout", "profile"]
 
 
 class AuthUserResponse(BaseModel):

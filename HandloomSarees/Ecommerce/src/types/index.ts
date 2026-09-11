@@ -114,6 +114,9 @@ export interface User {
   phone?: string;
   addresses: Address[];
   role?: string;
+  whatsapp_opt_in?: boolean;
+  whatsapp_opt_in_at?: string | null;
+  whatsapp_opt_in_source?: 'checkout' | 'profile' | 'admin_import' | null;
 }
 
 export interface Address {

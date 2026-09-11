@@ -289,6 +289,7 @@
 
 
 import logging
+from datetime import datetime, timezone
 
 import jwt
 from fastapi import HTTPException, status
@@ -304,6 +305,7 @@ from app.schemas.auth import (
     LoginRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    WhatsAppPreferenceRequest,
 )
 
 
@@ -623,3 +625,58 @@ class AuthService:
             ) from exc
 
         AuthService._sign_out(client)
+
+    @staticmethod
+    def update_whatsapp_preference(
+        payload: WhatsAppPreferenceRequest,
+        current_user: dict,
+    ) -> dict:
+        """Update only the authenticated customer's transactional WhatsApp consent."""
+        profile = current_user.get("profile") or {}
+        user_id = profile.get("id")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unable to resolve authenticated user profile",
+            )
+
+        if payload.whatsapp_opt_in and profile.get("whatsapp_opt_in") is True:
+            return profile
+
+        if payload.whatsapp_opt_in:
+            update_payload = {
+                "whatsapp_opt_in": True,
+                "whatsapp_opt_in_at": datetime.now(timezone.utc).isoformat(),
+                "whatsapp_opt_in_source": payload.source,
+            }
+        else:
+            # Source describes an active grant. Clear it on revocation so a
+            # stale source cannot be mistaken for current consent.
+            update_payload = {
+                "whatsapp_opt_in": False,
+                "whatsapp_opt_in_at": None,
+                "whatsapp_opt_in_source": None,
+            }
+
+        try:
+            result = (
+                get_supabase_admin()
+                .table("profiles")
+                .update(update_payload)
+                .eq("id", str(user_id))
+                .execute()
+            )
+        except Exception as exc:
+            logger.warning("Unable to update WhatsApp notification preference")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to update notification preference",
+            ) from exc
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User profile not found",
+            )
+
+        return result.data[0]

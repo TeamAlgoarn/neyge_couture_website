@@ -890,10 +890,7 @@ def test_admin_update_video_booking_status_allows_admin_token(monkeypatch):
 
 def test_admin_whatsapp_order_confirmation_requires_token():
     response = client.post("/api/v1/whatsapp/send-order-confirmation", params={
-        "phone": "1234567890",
         "order_id": "ord-1",
-        "customer_name": "John",
-        "amount": "1000",
     })
     assert response.status_code == 401
 
@@ -901,10 +898,7 @@ def test_admin_whatsapp_order_confirmation_requires_token():
 def test_admin_whatsapp_order_confirmation_rejects_customer_token():
     app.dependency_overrides[get_current_user] = customer_user
     response = client.post("/api/v1/whatsapp/send-order-confirmation", params={
-        "phone": "1234567890",
         "order_id": "ord-1",
-        "customer_name": "John",
-        "amount": "1000",
     })
     assert response.status_code == 403
 
@@ -922,21 +916,24 @@ def test_admin_whatsapp_order_confirmation_allows_admin_token(monkeypatch):
         "send_order_confirmation_template",
         mock_send_whatsapp_template,
     )
+    monkeypatch.setattr(
+        whatsapp,
+        "_resolve_order_notification_context",
+        lambda _order_id: (
+            {"id": "ord-1", "total_amount": 1000},
+            {"name": "John", "whatsapp_opt_in": True},
+            "911234567890",
+        ),
+    )
     response = client.post("/api/v1/whatsapp/send-order-confirmation", params={
-        "phone": "1234567890",
         "order_id": "ord-1",
-        "customer_name": "John",
-        "amount": "1000",
     })
     assert response.status_code == 200
 
 
 def test_admin_whatsapp_shipping_notification_requires_token():
     response = client.post("/api/v1/whatsapp/send-shipping-notification", params={
-        "phone": "1234567890",
         "order_id": "ord-1",
-        "customer_name": "John",
-        "tracking_id": "track-1",
     })
     assert response.status_code == 401
 
@@ -944,10 +941,7 @@ def test_admin_whatsapp_shipping_notification_requires_token():
 def test_admin_whatsapp_shipping_notification_rejects_customer_token():
     app.dependency_overrides[get_current_user] = customer_user
     response = client.post("/api/v1/whatsapp/send-shipping-notification", params={
-        "phone": "1234567890",
         "order_id": "ord-1",
-        "customer_name": "John",
-        "tracking_id": "track-1",
     })
     assert response.status_code == 403
 
@@ -965,11 +959,17 @@ def test_admin_whatsapp_shipping_notification_allows_admin_token(monkeypatch):
         "send_shipping_update_template",
         mock_send_whatsapp_template,
     )
+    monkeypatch.setattr(
+        whatsapp,
+        "_resolve_order_notification_context",
+        lambda _order_id: (
+            {"id": "ord-1", "tracking_number": "track-1"},
+            {"name": "John", "whatsapp_opt_in": True},
+            "911234567890",
+        ),
+    )
     response = client.post("/api/v1/whatsapp/send-shipping-notification", params={
-        "phone": "1234567890",
         "order_id": "ord-1",
-        "customer_name": "John",
-        "tracking_id": "track-1",
     })
     assert response.status_code == 200
 

@@ -1,12 +1,16 @@
 import hashlib
 import hmac
 import logging
+import re
+
 import httpx
 from fastapi import APIRouter, Depends, Request, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse
 
 from app.core.config import settings
+from app.core.database import get_supabase_admin
 from app.core.dependencies import require_admin
+from app.repositories.order_repository import OrderRepository
 from app.repositories.payment_repository import PaymentRepository
 
 logger = logging.getLogger(__name__)
@@ -22,6 +26,22 @@ class WhatsAppProviderError(RuntimeError):
 
 class WhatsAppTemplateConfigurationError(RuntimeError):
     """Raised when a required approved WhatsApp template is not configured."""
+
+
+class WhatsAppPhoneValidationError(ValueError):
+    """Raised when a stored phone cannot safely be normalized for Meta."""
+
+
+def normalize_whatsapp_phone(phone: str) -> str:
+    """Normalize common formatting without guessing or adding a country code."""
+    raw_phone = str(phone or "").strip()
+    if not raw_phone or not re.fullmatch(r"\+?[0-9\s().-]+", raw_phone):
+        raise WhatsAppPhoneValidationError("Stored WhatsApp phone number is invalid")
+
+    normalized = re.sub(r"\D", "", raw_phone)
+    if not 8 <= len(normalized) <= 15:
+        raise WhatsAppPhoneValidationError("Stored WhatsApp phone number is invalid")
+    return normalized
 
 
 def _verify_whatsapp_signature(raw_body: bytes, signature: str) -> None:
@@ -277,9 +297,10 @@ async def send_whatsapp_message(to: str, message: str):
         logger.info("WhatsApp integration disabled; skipped outbound message")
         return {"status": "disabled", "message": "WhatsApp integration is disabled"}
 
+    normalized_phone = normalize_whatsapp_phone(to)
     payload = {
         "messaging_product": "whatsapp",
-        "to": to,
+        "to": normalized_phone,
         "type": "text",
         "text": {"body": message},
     }
@@ -302,9 +323,10 @@ async def send_template_message(
             "WhatsApp template name or language is not configured"
         )
 
+    normalized_phone = normalize_whatsapp_phone(to)
     payload = {
         "messaging_product": "whatsapp",
-        "to": to,
+        "to": normalized_phone,
         "type": "template",
         "template": {
             "name": template_name,
@@ -363,19 +385,69 @@ def _require_admin_template_setting(template_name: str, setting_name: str) -> No
         )
 
 
+def _resolve_order_notification_context(order_id: str) -> tuple[dict, dict, str]:
+    """Resolve proactive-notification data from stored order/profile records."""
+    order = OrderRepository.get_by_id(order_id)
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found",
+        )
+
+    user_id = order.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order is not linked to a customer profile",
+        )
+
+    result = (
+        get_supabase_admin()
+        .table("profiles")
+        .select("id,name,full_name,phone,whatsapp_opt_in")
+        .eq("id", str(user_id))
+        .limit(1)
+        .execute()
+    )
+    profile = result.data[0] if result.data else None
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer profile not found",
+        )
+
+    # Missing/null legacy values deliberately fail closed.
+    if profile.get("whatsapp_opt_in") is not True:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Customer has not opted in to WhatsApp order notifications",
+        )
+
+    try:
+        phone = normalize_whatsapp_phone(profile.get("phone", ""))
+    except WhatsAppPhoneValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Customer profile does not contain a valid WhatsApp phone number",
+        ) from exc
+
+    return order, profile, phone
+
+
 # ── Send Order Confirmation (API endpoint) ─────────────────────────────────
 @router.post("/send-order-confirmation")
 async def send_order_confirmation(
-    phone: str,
     order_id: str,
-    customer_name: str,
-    amount: str,
     _: dict = Depends(require_admin),
 ):
     _require_admin_template_setting(
         settings.WHATSAPP_ORDER_CONFIRMATION_TEMPLATE,
         "WHATSAPP_ORDER_CONFIRMATION_TEMPLATE",
     )
+    order, profile, phone = _resolve_order_notification_context(order_id)
+    customer_name = profile.get("name") or profile.get("full_name") or "Customer"
+    amount_value = order.get("total_amount")
+    amount = f"{float(amount_value):.2f}" if amount_value is not None else ""
     try:
         result = await send_order_confirmation_template(
             phone=phone,
@@ -399,16 +471,21 @@ async def send_order_confirmation(
 # ── Send Shipping Notification ─────────────────────────────────────────────
 @router.post("/send-shipping-notification")
 async def send_shipping_notification(
-    phone: str,
     order_id: str,
-    customer_name: str,
-    tracking_id: str = "",
     _: dict = Depends(require_admin),
 ):
     _require_admin_template_setting(
         settings.WHATSAPP_SHIPPING_UPDATE_TEMPLATE,
         "WHATSAPP_SHIPPING_UPDATE_TEMPLATE",
     )
+    order, profile, phone = _resolve_order_notification_context(order_id)
+    tracking_id = str(order.get("tracking_number") or "").strip()
+    if not tracking_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order does not have a tracking number",
+        )
+    customer_name = profile.get("name") or profile.get("full_name") or "Customer"
     try:
         result = await send_shipping_update_template(
             phone=phone,

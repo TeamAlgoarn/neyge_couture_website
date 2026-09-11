@@ -63,12 +63,20 @@ async def verify_payment(
         amount_value = data.get("total_amount")
         amount = f"{float(amount_value):.2f}" if amount_value is not None else ""
 
-        if phone:
+        if profile.get("whatsapp_opt_in") is True and phone:
             await send_order_confirmation_template(
                 phone=phone,
                 customer_name=customer_name,
                 order_id=order_id,
                 amount=amount,
+            )
+        elif profile.get("whatsapp_opt_in") is not True:
+            logger.info(
+                "Skipped post-payment WhatsApp notification: customer has not opted in"
+            )
+        else:
+            logger.info(
+                "Skipped post-payment WhatsApp notification: customer profile has no phone"
             )
     except WhatsAppTemplateConfigurationError:
         logger.warning(

@@ -255,6 +255,37 @@ const CSS = `
   margin-top: 4px;
 }
 
+.co-whatsapp-pref {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid rgba(37, 167, 88, .28);
+  border-radius: 14px;
+  background: rgba(37, 167, 88, .06);
+}
+.co-whatsapp-pref input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: #128c4a;
+  flex: 0 0 auto;
+}
+.co-whatsapp-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3d2d22;
+  line-height: 1.35;
+}
+.co-whatsapp-help {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #6b5344;
+  line-height: 1.45;
+}
+
 /* NEW ADDRESS FORM */
 .co-form-grid {
   display: grid;
@@ -542,6 +573,9 @@ export function CheckoutPage() {
   const [addressesError, setAddressesError] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [whatsappOptIn, setWhatsAppOptIn] = useState(user?.whatsapp_opt_in === true);
+  const [whatsappPreferenceLoading, setWhatsAppPreferenceLoading] = useState(true);
+  const [whatsappPreferenceSaving, setWhatsAppPreferenceSaving] = useState(false);
   const [newAddressForm, setNewAddressForm] = useState({
     full_name: '',
     phone: '',
@@ -577,6 +611,28 @@ export function CheckoutPage() {
       fetchAddresses();
     }
   }, [user?.id, fetchAddresses]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadWhatsAppPreference = async () => {
+      if (!user?.id) {
+        setWhatsAppPreferenceLoading(false);
+        return;
+      }
+
+      const refreshedUser = await authService.fetchCurrentUser();
+      if (active) {
+        setWhatsAppOptIn(refreshedUser?.whatsapp_opt_in === true);
+        setWhatsAppPreferenceLoading(false);
+      }
+    };
+
+    void loadWhatsAppPreference();
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!loading && cart.length === 0) {
@@ -696,6 +752,30 @@ export function CheckoutPage() {
       console.error('Failed to create address:', err);
       const apiErr = err as { response?: { data?: { message?: string } } };
       toast.error(apiErr?.response?.data?.message || 'Failed to save address');
+    }
+  };
+
+  const handleWhatsAppPreferenceChange = async (nextValue: boolean) => {
+    const previousValue = whatsappOptIn;
+    setWhatsAppOptIn(nextValue);
+    setWhatsAppPreferenceSaving(true);
+
+    try {
+      await authService.updateWhatsAppPreference(nextValue, 'checkout');
+      toast.success(
+        nextValue
+          ? 'WhatsApp order updates enabled'
+          : 'WhatsApp order updates disabled'
+      );
+    } catch (err: unknown) {
+      setWhatsAppOptIn(previousValue);
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      toast.error(
+        apiErr?.response?.data?.message ||
+          'Could not update your WhatsApp preference. Checkout is still available.'
+      );
+    } finally {
+      setWhatsAppPreferenceSaving(false);
     }
   };
 
@@ -1118,6 +1198,27 @@ export function CheckoutPage() {
                     })}
                   </div>
                 )}
+
+                <div className="co-whatsapp-pref">
+                  <input
+                    id="checkout-whatsapp-opt-in"
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    disabled={whatsappPreferenceLoading || whatsappPreferenceSaving}
+                    onChange={(event) => {
+                      void handleWhatsAppPreferenceChange(event.target.checked);
+                    }}
+                  />
+                  <div>
+                    <label className="co-whatsapp-label" htmlFor="checkout-whatsapp-opt-in">
+                      Send me order and shipping updates on WhatsApp.
+                    </label>
+                    <p className="co-whatsapp-help">
+                      This is your saved account preference for transactional order updates only.
+                      You can change it here or later in your profile.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="co-card co-fadeup co-d1">

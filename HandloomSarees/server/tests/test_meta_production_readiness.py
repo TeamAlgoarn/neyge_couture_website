@@ -19,8 +19,8 @@ from app.main import app
 client = TestClient(app)
 
 
-def customer_user():
-    return {
+def customer_user(whatsapp_opt_in=None):
+    user = {
         "auth": {"id": "customer-1"},
         "profile": {
             "id": "customer-1",
@@ -32,6 +32,9 @@ def customer_user():
         },
         "access_token": "synthetic-customer-token",
     }
+    if whatsapp_opt_in is not None:
+        user["profile"]["whatsapp_opt_in"] = whatsapp_opt_in
+    return user
 
 
 def admin_user():
@@ -106,7 +109,7 @@ def _verify_payment_request():
 
 
 def test_successful_payment_attempts_template_confirmation(monkeypatch):
-    app.dependency_overrides[get_current_user] = customer_user
+    app.dependency_overrides[get_current_user] = lambda: customer_user(True)
     _mock_successful_payment(monkeypatch)
     sender = AsyncMock(return_value={"messages": [{"id": "wamid.1"}]})
     monkeypatch.setattr(payments, "send_order_confirmation_template", sender)
@@ -124,7 +127,7 @@ def test_successful_payment_attempts_template_confirmation(monkeypatch):
 
 
 def test_whatsapp_failure_does_not_fail_payment(monkeypatch):
-    app.dependency_overrides[get_current_user] = customer_user
+    app.dependency_overrides[get_current_user] = lambda: customer_user(True)
     _mock_successful_payment(monkeypatch)
     monkeypatch.setattr(
         payments,
@@ -139,7 +142,7 @@ def test_whatsapp_failure_does_not_fail_payment(monkeypatch):
 
 
 def test_missing_automatic_template_is_non_blocking(monkeypatch):
-    app.dependency_overrides[get_current_user] = customer_user
+    app.dependency_overrides[get_current_user] = lambda: customer_user(True)
     _mock_successful_payment(monkeypatch)
     monkeypatch.setattr(payments, "send_order_confirmation_template", AsyncMock(
         side_effect=whatsapp.WhatsAppTemplateConfigurationError("not configured")
@@ -226,10 +229,7 @@ def test_admin_order_confirmation_reports_missing_template(monkeypatch):
     response = client.post(
         "/api/v1/whatsapp/send-order-confirmation",
         params={
-            "phone": "919876543210",
             "order_id": "order-1",
-            "customer_name": "Ananya",
-            "amount": "2499.00",
         },
     )
 
@@ -246,10 +246,7 @@ def test_admin_shipping_reports_missing_template(monkeypatch):
     response = client.post(
         "/api/v1/whatsapp/send-shipping-notification",
         params={
-            "phone": "919876543210",
             "order_id": "order-1",
-            "customer_name": "Ananya",
-            "tracking_id": "tracking-1",
         },
     )
 

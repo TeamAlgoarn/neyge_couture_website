@@ -48,6 +48,7 @@ from app.schemas.auth import (
     LoginRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    WhatsAppPreferenceRequest,
 )
 from app.services.auth_service import AuthService
 from app.utils.response import success_response
@@ -115,4 +116,18 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     return success_response(
         message="Current user fetched successfully",
         data=current_user["profile"],
+    )
+
+
+@router.patch("/preferences", response_model=dict)
+@limiter.limit("10/minute")
+async def update_preferences(
+    request: Request,
+    payload: WhatsAppPreferenceRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    profile = AuthService.update_whatsapp_preference(payload, current_user)
+    return success_response(
+        message="Notification preference updated successfully",
+        data=profile,
     )
