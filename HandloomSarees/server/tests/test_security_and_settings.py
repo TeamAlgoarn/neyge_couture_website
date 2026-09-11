@@ -128,7 +128,7 @@ async def mock_upload_temp_festive_image(file):
     return {"url": "http://example.com/festive.jpg"}
 
 
-async def mock_send_whatsapp_message(to, message):
+async def mock_send_whatsapp_template(**_kwargs):
     return {"status": "ok"}
 
 
@@ -911,7 +911,17 @@ def test_admin_whatsapp_order_confirmation_rejects_customer_token():
 
 def test_admin_whatsapp_order_confirmation_allows_admin_token(monkeypatch):
     app.dependency_overrides[get_current_user] = admin_user
-    monkeypatch.setattr(whatsapp, "send_whatsapp_message", mock_send_whatsapp_message)
+    monkeypatch.setattr(whatsapp.settings, "WHATSAPP_ENABLED", True)
+    monkeypatch.setattr(
+        whatsapp.settings,
+        "WHATSAPP_ORDER_CONFIRMATION_TEMPLATE",
+        "order_confirmation",
+    )
+    monkeypatch.setattr(
+        whatsapp,
+        "send_order_confirmation_template",
+        mock_send_whatsapp_template,
+    )
     response = client.post("/api/v1/whatsapp/send-order-confirmation", params={
         "phone": "1234567890",
         "order_id": "ord-1",
@@ -944,7 +954,17 @@ def test_admin_whatsapp_shipping_notification_rejects_customer_token():
 
 def test_admin_whatsapp_shipping_notification_allows_admin_token(monkeypatch):
     app.dependency_overrides[get_current_user] = admin_user
-    monkeypatch.setattr(whatsapp, "send_whatsapp_message", mock_send_whatsapp_message)
+    monkeypatch.setattr(whatsapp.settings, "WHATSAPP_ENABLED", True)
+    monkeypatch.setattr(
+        whatsapp.settings,
+        "WHATSAPP_SHIPPING_UPDATE_TEMPLATE",
+        "shipping_update",
+    )
+    monkeypatch.setattr(
+        whatsapp,
+        "send_shipping_update_template",
+        mock_send_whatsapp_template,
+    )
     response = client.post("/api/v1/whatsapp/send-shipping-notification", params={
         "phone": "1234567890",
         "order_id": "ord-1",

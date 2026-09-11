@@ -43,16 +43,19 @@ class Settings(BaseSettings):
     ]
 
     # WhatsApp
-    WHATSAPP_ENABLED: bool = True
+    WHATSAPP_ENABLED: bool = False
     WHATSAPP_PHONE_NUMBER_ID: str = ""
     WHATSAPP_BUSINESS_ACCOUNT_ID: str = ""
     WHATSAPP_ACCESS_TOKEN: str = ""
     WHATSAPP_WEBHOOK_VERIFY_TOKEN: str = ""
     WHATSAPP_APP_SECRET: str = ""
     WHATSAPP_API_VERSION: str = "v25.0"
+    WHATSAPP_ORDER_CONFIRMATION_TEMPLATE: str = ""
+    WHATSAPP_SHIPPING_UPDATE_TEMPLATE: str = ""
+    WHATSAPP_TEMPLATE_LANGUAGE: str = "en_US"
 
     # Instagram
-    INSTAGRAM_ENABLED: bool = True
+    INSTAGRAM_ENABLED: bool = False
     INSTAGRAM_BUSINESS_ACCOUNT_ID: str = ""
     INSTAGRAM_ACCESS_TOKEN: str = ""
     INSTAGRAM_APP_ID: str = ""
@@ -205,6 +208,9 @@ class Settings(BaseSettings):
                     "WHATSAPP_ACCESS_TOKEN",
                     "WHATSAPP_WEBHOOK_VERIFY_TOKEN",
                     "WHATSAPP_APP_SECRET",
+                    "WHATSAPP_ORDER_CONFIRMATION_TEMPLATE",
+                    "WHATSAPP_SHIPPING_UPDATE_TEMPLATE",
+                    "WHATSAPP_TEMPLATE_LANGUAGE",
                 ]
             )
         if self.INSTAGRAM_ENABLED:
@@ -215,6 +221,7 @@ class Settings(BaseSettings):
                     "INSTAGRAM_APP_ID",
                     "INSTAGRAM_APP_SECRET",
                     "INSTAGRAM_WEBHOOK_VERIFY_TOKEN",
+                    "INSTAGRAM_API_VERSION",
                 ]
             )
         missing = [name for name in required if not str(getattr(self, name, "")).strip()]

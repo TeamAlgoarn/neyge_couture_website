@@ -131,7 +131,7 @@ HandloomSarees/
 - **Product Detail Page** — High-res imagery, weave details, pricing, WhatsApp enquiry button
 - **Cart & Wishlist** — Persistent state via custom hooks (`useCarts`, `useWishlist`)
 - **Checkout Page** — Streamlined order flow with Razorpay payment
-- **Order Confirmation Page** — Post-payment success screen with WhatsApp notification trigger
+- **Order Confirmation Page** — Post-payment success screen; the backend independently attempts the approved WhatsApp confirmation template
 
 ### 👘 Brand & Culture
 - **Artisan Story** — Individual weaver profiles and narratives
@@ -160,15 +160,17 @@ Direct integration with Meta's WhatsApp Cloud API (not a third-party BSP) for tw
 
 **What it does:**
 - Receives customer messages via a webhook (`/api/v1/whatsapp/webhook`) and replies automatically based on keyword detection (greetings, pricing, order tracking, shop links)
-- Sends automated order confirmation messages once a payment is verified
-- Sends shipping notification messages with tracking details
+- Sends approved Utility template order confirmations only after payment is verified
+- Sends approved Utility template shipping notifications with tracking details
 - Uses a dedicated business phone number registered and verified through Meta Business Manager
 
 **How it works technically:**
 - Backend exposes a `GET` endpoint for Meta's webhook verification challenge and a `POST` endpoint that receives incoming message events
 - Outbound messages are sent using the Graph API (`https://graph.facebook.com/{version}/{phone_number_id}/messages`)
 - Authentication uses a permanent System User access token generated via Meta Business Manager (does not expire, unlike personal user tokens)
-- Credentials (Phone Number ID, WhatsApp Business Account ID, Access Token, Webhook Verify Token) are stored in `.env` and read via `app/core/config.py`
+- Customer-initiated keyword replies remain conversational text messages; proactive order and shipping notifications use approved templates
+- Template body variable order is `customer_name`, `order_id`, `amount` for order confirmation and `customer_name`, `order_id`, `tracking_id` for shipping updates
+- Credentials, webhook secrets, and approved template names are stored in the backend environment and read via `app/core/config.py`
 
 **Setup location:** `app/api/v1/whatsapp.py`
 
@@ -185,8 +187,9 @@ Integration with Meta's Instagram Graph API for direct message automation and li
 
 **How it works technically:**
 - Same webhook verification + receiver pattern as WhatsApp, but scoped to Instagram messaging events (`/api/v1/instagram/webhook`)
-- Requires the Instagram account to be a Business/Creator account, linked to a Facebook Page, and connected inside Meta Business Manager
-- Media fetching uses the Graph API's `/media` endpoint with fields for caption, media URL, permalink, and timestamp
+- Uses the Instagram API with Instagram Login permission model for a professional account
+- All operational requests use `https://graph.instagram.com/{version}` with bearer-token authorization
+- Media fetching uses the Instagram Login API's `/media` endpoint with fields for caption, media URL, permalink, and timestamp
 - **Current limitation:** auto-replies only work for Meta App testers/admins until Meta's App Review process is approved — required before real customers can receive automated replies
 
 **Setup location:** `app/api/v1/instagram.py`, `src/api/instagram.ts`
@@ -200,7 +203,7 @@ Secure payment processing integrated directly into the checkout flow.
 **What it does:**
 - Creates a Razorpay order when a customer proceeds to checkout
 - Verifies payment signature server-side after the customer completes payment (prevents payment tampering)
-- Triggers an automatic WhatsApp order confirmation message to the customer once payment is verified
+- Attempts an approved WhatsApp order-confirmation template only after payment is finalized; notification failure never changes payment success
 - Designed to support webhook-based events (`payment.captured`, `payment.failed`, `order.paid`, `refund.created`) for real-time payment status updates
 
 **How it works technically:**
@@ -216,8 +219,8 @@ Secure payment processing integrated directly into the checkout flow.
 
 | Integration | Status |
 |---|---|
-| WhatsApp Business API | ✅ Fully integrated, webhook verified, auto-reply and order notifications working |
-| Instagram API | ⚠️ Integrated and webhook verified — pending Meta App Review approval for production-level auto-replies to real users |
+| WhatsApp Business API | ⚠️ Production-safe code ready; remains disabled pending Meta credentials and approved Utility templates |
+| Instagram API | ⚠️ Instagram Login API code ready; remains disabled pending Meta configuration and access approval |
 | Razorpay | ⚠️ Backend code complete — pending client KYC approval and Live API key generation |
 
 ---
@@ -432,7 +435,11 @@ WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_BUSINESS_ACCOUNT_ID=your_waba_id
 WHATSAPP_ACCESS_TOKEN=your_access_token
 WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token
+WHATSAPP_APP_SECRET=your_whatsapp_app_secret
 WHATSAPP_API_VERSION=v25.0
+WHATSAPP_ORDER_CONFIRMATION_TEMPLATE=your_approved_order_confirmation_template
+WHATSAPP_SHIPPING_UPDATE_TEMPLATE=your_approved_shipping_update_template
+WHATSAPP_TEMPLATE_LANGUAGE=en_US
 
 # Instagram API
 INSTAGRAM_ENABLED=false

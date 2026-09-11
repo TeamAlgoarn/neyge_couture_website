@@ -1,11 +1,18 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
+from app.api.v1.whatsapp import (
+    WhatsAppTemplateConfigurationError,
+    send_order_confirmation_template,
+)
 from app.core.dependencies import get_current_user, require_admin
 from app.schemas.payment import PaymentFailedRequest, RefundRequest
 from app.services.payment_service import PaymentService
 from app.utils.response import success_response
-from app.api.v1.whatsapp import send_whatsapp_message
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
@@ -46,29 +53,32 @@ async def verify_payment(
         razorpay_signature=payload.razorpay_signature,
     )
 
-    # ── Send WhatsApp notification after payment ──────────────────────────
+    # Notifications are deliberately outside payment finalization. A Meta
+    # outage or missing approved template must never change payment success.
     try:
-        # data is the order dict directly (from _finalize_payment)
-        customer_name = current_user.get("profile", {}).get("full_name", "Customer")
-        phone = current_user.get("profile", {}).get("phone", "")
+        profile = current_user.get("profile", {})
+        customer_name = profile.get("name") or profile.get("full_name") or "Customer"
+        phone = profile.get("phone", "")
         order_id = data.get("id", payload.razorpay_order_id)
-        amount = str(data.get("total_amount", ""))
+        amount_value = data.get("total_amount")
+        amount = f"{float(amount_value):.2f}" if amount_value is not None else ""
 
         if phone:
-            message = f"""Hi {customer_name}! 🎉
-
-Your payment has been confirmed at Neyge Couture.
-
-Order ID: {order_id}
-Amount Paid: ₹{amount}
-
-We will notify you once your order is shipped. Thank you for shopping with us! 🛍️
-
-www.neygecouture.com"""
-            await send_whatsapp_message(phone, message)
-    except Exception as e:
-        print(f"WhatsApp notification error: {e}")
-    # ─────────────────────────────────────────────────────────────────────
+            await send_order_confirmation_template(
+                phone=phone,
+                customer_name=customer_name,
+                order_id=order_id,
+                amount=amount,
+            )
+    except WhatsAppTemplateConfigurationError:
+        logger.warning(
+            "Skipped post-payment WhatsApp notification: order confirmation template is not configured"
+        )
+    except Exception as exc:
+        logger.warning(
+            "Post-payment WhatsApp notification failed; payment remains finalized error_type=%s",
+            type(exc).__name__,
+        )
 
     return success_response("Payment verified successfully", data)
 

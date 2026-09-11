@@ -133,15 +133,11 @@ def _make_instagram_comment_payload(comment_id="comment_789", text="beautiful sa
             {
                 "id": "INSTAGRAM_BIZ_ID",
                 "time": 1700000000,
-                "changes": [
-                    {
-                        "field": "comments",
-                        "value": {
-                            "id": comment_id,
-                            "text": text,
-                        },
-                    }
-                ],
+                "field": "comments",
+                "value": {
+                    "id": comment_id,
+                    "text": text,
+                },
             }
         ],
     }
@@ -680,6 +676,8 @@ class TestProductionSettingsMissingSecretSafety:
             Settings(_env_file=None, **base_secrets)
         assert "WHATSAPP_APP_SECRET" in str(exc.value)
         assert "WHATSAPP_WEBHOOK_VERIFY_TOKEN" in str(exc.value)
+        assert "WHATSAPP_ORDER_CONFIRMATION_TEMPLATE" in str(exc.value)
+        assert "WHATSAPP_SHIPPING_UPDATE_TEMPLATE" in str(exc.value)
 
     def test_production_fails_when_instagram_secrets_missing(self):
         base_secrets = {
@@ -701,6 +699,9 @@ class TestProductionSettingsMissingSecretSafety:
             "WHATSAPP_ACCESS_TOKEN": "wa_token",
             "WHATSAPP_WEBHOOK_VERIFY_TOKEN": "wa_verify",
             "WHATSAPP_APP_SECRET": "wa_app_sec",
+            "WHATSAPP_ORDER_CONFIRMATION_TEMPLATE": "order_confirmation",
+            "WHATSAPP_SHIPPING_UPDATE_TEMPLATE": "shipping_update",
+            "WHATSAPP_TEMPLATE_LANGUAGE": "en_US",
             "WHATSAPP_ENABLED": True,
             "INSTAGRAM_ENABLED": True,
             "INSTAGRAM_BUSINESS_ACCOUNT_ID": "",

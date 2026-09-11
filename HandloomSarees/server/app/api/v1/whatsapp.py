@@ -13,6 +13,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
 
+META_HTTP_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
+
+
+class WhatsAppProviderError(RuntimeError):
+    """Safe outbound-provider error that contains no Meta response payload."""
+
+
+class WhatsAppTemplateConfigurationError(RuntimeError):
+    """Raised when a required approved WhatsApp template is not configured."""
+
 
 def _verify_whatsapp_signature(raw_body: bytes, signature: str) -> None:
     """
@@ -138,7 +148,10 @@ async def receive_webhook(request: Request):
                     try:
                         if msg_type == "text":
                             text = message.get("text", {}).get("body", "").lower()
-                            logger.info("WhatsApp message from %s: %s", phone, text)
+                            logger.info(
+                                "WhatsApp inbound text message received event=%s",
+                                dedupe_key or "unidentified",
+                            )
                             # Smart auto reply
                             if any(word in text for word in ["hi", "hello", "hey", "namaste"]):
                                 reply = "Hi! 👋 Welcome to Neyge Couture. How can we help you today?\n\nReply with:\n*SHOP* - Browse our collection\n*ORDER* - Track your order\n*HELP* - Get assistance"
@@ -212,26 +225,65 @@ async def receive_webhook(request: Request):
 
 
 # ── Send Text Message ──────────────────────────────────────────────────────
+async def _send_whatsapp_payload(payload: dict) -> dict:
+    url = (
+        f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/"
+        f"{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
+    )
+    headers = {
+        "Authorization": f"Bearer {settings.WHATSAPP_ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=META_HTTP_TIMEOUT) as client:
+            response = await client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        logger.warning(
+            "WhatsApp Graph API returned a non-success response status_code=%s",
+            exc.response.status_code,
+        )
+        raise WhatsAppProviderError("WhatsApp provider rejected the request") from exc
+    except httpx.RequestError as exc:
+        logger.warning(
+            "WhatsApp Graph API request failed error_type=%s",
+            type(exc).__name__,
+        )
+        raise WhatsAppProviderError("WhatsApp provider is temporarily unavailable") from exc
+
+    try:
+        return response.json()
+    except ValueError as exc:
+        logger.warning("WhatsApp Graph API returned an invalid success response")
+        raise WhatsAppProviderError("WhatsApp provider returned an invalid response") from exc
+
+
+def _body_template_components(*values: str) -> list[dict]:
+    """Build body variables in the exact order supplied by the caller."""
+    return [
+        {
+            "type": "body",
+            "parameters": [
+                {"type": "text", "text": str(value)}
+                for value in values
+            ],
+        }
+    ]
+
+
 async def send_whatsapp_message(to: str, message: str):
     if not settings.WHATSAPP_ENABLED:
         logger.info("WhatsApp integration disabled; skipped outbound message")
         return {"status": "disabled", "message": "WhatsApp integration is disabled"}
 
-    url = f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
-    headers = {
-        "Authorization": f"Bearer {settings.WHATSAPP_ACCESS_TOKEN}",
-        "Content-Type": "application/json",
-    }
     payload = {
         "messaging_product": "whatsapp",
         "to": to,
         "type": "text",
         "text": {"body": message},
     }
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers)
-        print(f"WhatsApp send response: {response.json()}")
-        return response.json()
+    return await _send_whatsapp_payload(payload)
 
 
 # ── Send Template Message ──────────────────────────────────────────────────
@@ -245,11 +297,11 @@ async def send_template_message(
         logger.info("WhatsApp integration disabled; skipped outbound template")
         return {"status": "disabled", "message": "WhatsApp integration is disabled"}
 
-    url = f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
-    headers = {
-        "Authorization": f"Bearer {settings.WHATSAPP_ACCESS_TOKEN}",
-        "Content-Type": "application/json",
-    }
+    if not template_name.strip() or not language.strip():
+        raise WhatsAppTemplateConfigurationError(
+            "WhatsApp template name or language is not configured"
+        )
+
     payload = {
         "messaging_product": "whatsapp",
         "to": to,
@@ -260,9 +312,55 @@ async def send_template_message(
             "components": components or [],
         },
     }
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers)
-        return response.json()
+    return await _send_whatsapp_payload(payload)
+
+
+async def send_order_confirmation_template(
+    phone: str,
+    customer_name: str,
+    order_id: str,
+    amount: str,
+):
+    """Send body parameters in order: customer_name, order_id, amount."""
+    return await send_template_message(
+        to=phone,
+        template_name=settings.WHATSAPP_ORDER_CONFIRMATION_TEMPLATE,
+        language=settings.WHATSAPP_TEMPLATE_LANGUAGE,
+        components=_body_template_components(customer_name, order_id, amount),
+    )
+
+
+async def send_shipping_update_template(
+    phone: str,
+    customer_name: str,
+    order_id: str,
+    tracking_id: str,
+):
+    """Send body parameters in order: customer_name, order_id, tracking_id."""
+    return await send_template_message(
+        to=phone,
+        template_name=settings.WHATSAPP_SHIPPING_UPDATE_TEMPLATE,
+        language=settings.WHATSAPP_TEMPLATE_LANGUAGE,
+        components=_body_template_components(customer_name, order_id, tracking_id),
+    )
+
+
+def _require_admin_template_setting(template_name: str, setting_name: str) -> None:
+    if not template_name.strip():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"{setting_name} is not configured",
+        )
+    if not settings.WHATSAPP_TEMPLATE_LANGUAGE.strip():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WHATSAPP_TEMPLATE_LANGUAGE is not configured",
+        )
+    if not settings.WHATSAPP_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WhatsApp integration is disabled for this environment",
+        )
 
 
 # ── Send Order Confirmation (API endpoint) ─────────────────────────────────
@@ -274,18 +372,27 @@ async def send_order_confirmation(
     amount: str,
     _: dict = Depends(require_admin),
 ):
-    message = f"""Hi {customer_name}! 🎉
-
-Your order has been confirmed at Neyge Couture.
-
-Order ID: {order_id}
-Amount Paid: ₹{amount}
-
-We will notify you once your order is shipped.
-Thank you for shopping with us! 🛍️
-
-www.neygecouture.com"""
-    result = await send_whatsapp_message(phone, message)
+    _require_admin_template_setting(
+        settings.WHATSAPP_ORDER_CONFIRMATION_TEMPLATE,
+        "WHATSAPP_ORDER_CONFIRMATION_TEMPLATE",
+    )
+    try:
+        result = await send_order_confirmation_template(
+            phone=phone,
+            customer_name=customer_name,
+            order_id=order_id,
+            amount=amount,
+        )
+    except WhatsAppTemplateConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except WhatsAppProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="WhatsApp provider could not send the order confirmation",
+        ) from exc
     return {"success": True, "data": result}
 
 
@@ -298,16 +405,25 @@ async def send_shipping_notification(
     tracking_id: str = "",
     _: dict = Depends(require_admin),
 ):
-    message = f"""Hi {customer_name}! 🚚
-
-Your Neyge Couture order has been shipped!
-
-Order ID: {order_id}
-{"Tracking ID: " + tracking_id if tracking_id else ""}
-
-Your saree is on its way! 🎊
-Thank you for shopping with us!
-
-www.neygecouture.com"""
-    result = await send_whatsapp_message(phone, message)
+    _require_admin_template_setting(
+        settings.WHATSAPP_SHIPPING_UPDATE_TEMPLATE,
+        "WHATSAPP_SHIPPING_UPDATE_TEMPLATE",
+    )
+    try:
+        result = await send_shipping_update_template(
+            phone=phone,
+            customer_name=customer_name,
+            order_id=order_id,
+            tracking_id=tracking_id,
+        )
+    except WhatsAppTemplateConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except WhatsAppProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="WhatsApp provider could not send the shipping update",
+        ) from exc
     return {"success": True, "data": result}
