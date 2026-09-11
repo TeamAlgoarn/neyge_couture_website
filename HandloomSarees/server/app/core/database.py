@@ -62,3 +62,12 @@ def get_supabase_public() -> Client:
             options=_supabase_client_options(),
         )
     return _supabase_public
+
+
+def create_supabase_public_client() -> Client:
+    """Create an isolated anon client for request-scoped auth operations."""
+    return create_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_ANON_KEY,
+        options=_supabase_client_options(),
+    )

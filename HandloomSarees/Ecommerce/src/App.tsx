@@ -39,6 +39,9 @@ import SkinTonePage from '@/pages/SkinTonePage';
 
 import AdminRoute from '@/admin/components/AdminRoute';
 import AdminLogin from '@/admin/pages/AdminLogin';
+import AdminForgotPassword from '@/admin/pages/AdminForgotPassword';
+import AdminResetPassword from '@/admin/pages/AdminResetPassword';
+import AdminSecurity from '@/admin/pages/AdminSecurity';
 import AdminDashboard from '@/admin/pages/AdminDashboard';
 import AdminProducts from '@/admin/pages/AdminProducts';
 import ProductForm from '@/admin/pages/ProductForm';
@@ -114,6 +117,8 @@ function AppContent() {
 
           {/* Admin public route */}
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+          <Route path="/admin/reset-password" element={<AdminResetPassword />} />
 
           {/* Admin protected routes */}
           <Route element={<AdminRoute />}>
@@ -134,6 +139,7 @@ function AppContent() {
             <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
             <Route path="/admin/video-bookings" element={<AdminVideoBookingsPage />} />
             <Route path="/admin/chatbot-leads" element={<AdminChatbotLeads />} />
+            <Route path="/admin/security" element={<AdminSecurity />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

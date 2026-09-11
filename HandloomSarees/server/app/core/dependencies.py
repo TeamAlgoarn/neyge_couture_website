@@ -85,7 +85,7 @@ async def get_current_user(
     )
 
     profile = profile_res.data
-    if not profile or not profile.get("is_active", True):
+    if not profile or profile.get("is_active") is not True:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User profile not found or inactive",
@@ -99,7 +99,8 @@ async def get_current_user(
 
 
 async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
-    if current_user["profile"].get("role") != "admin":
+    profile = current_user.get("profile") or {}
+    if profile.get("role") != "admin" or profile.get("is_active") is not True:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",

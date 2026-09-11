@@ -674,7 +674,9 @@ class TestRefundRolePermissions:
     def test_admin_refund_access_allowed(self):
         from app.core.dependencies import require_admin
 
-        admin_user = {"profile": {"id": "admin-1", "role": "admin"}}
+        admin_user = {
+            "profile": {"id": "admin-1", "role": "admin", "is_active": True}
+        }
         import asyncio
         res = asyncio.run(require_admin(admin_user))
         assert res["profile"]["role"] == "admin"

@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { adminAuth } from "../lib/adminAuth";
-import { LayoutDashboard, Package, Layers, ShoppingBag, LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, Package, Layers, ShoppingBag, LogOut, Sparkles, ShieldCheck } from "lucide-react";
 
 const C = {
   maroon: '#800020',
@@ -101,6 +101,7 @@ export default function AdminSidebar() {
     { to: "/admin/collections", label: "Collections", icon: Layers },
     { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
     { to: "/admin/chatbot-leads", label: "Chatbot Leads", icon: Sparkles },
+    { to: "/admin/security", label: "Account Security", icon: ShieldCheck },
   ];
 
   return (

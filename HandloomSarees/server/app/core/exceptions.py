@@ -6,6 +6,29 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.utils.response import error_response
 
 
+SENSITIVE_FIELD_NAMES = {
+    "password",
+    "current_password",
+    "new_password",
+    "confirm_password",
+    "access_token",
+    "refresh_token",
+    "token",
+    "secret",
+}
+
+
+def _redact_sensitive_input(value):
+    if isinstance(value, dict):
+        return {
+            key: "[redacted]" if key.lower() in SENSITIVE_FIELD_NAMES else _redact_sensitive_input(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_sensitive_input(item) for item in value]
+    return value
+
+
 def add_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
@@ -20,6 +43,11 @@ def add_exception_handlers(app: FastAPI) -> None:
         clean_errors = []
         for err in raw_errors:
             err_dict = dict(err)
+            location = {str(part).lower() for part in err_dict.get("loc", ())}
+            if location & SENSITIVE_FIELD_NAMES:
+                err_dict["input"] = "[redacted]"
+            elif "input" in err_dict:
+                err_dict["input"] = _redact_sensitive_input(err_dict["input"])
             if "ctx" in err_dict and isinstance(err_dict["ctx"], dict):
                 err_dict["ctx"] = {
                     k: str(v) if isinstance(v, Exception) else v
