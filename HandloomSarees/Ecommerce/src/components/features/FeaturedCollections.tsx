@@ -478,7 +478,7 @@ type CollectionItem = {
   image_url?: string;
   thumbnail?: string;
   is_active?: boolean;
-  is_featured?: boolean;
+  featured?: boolean;
 };
 
 type CollectionsResponse = {
@@ -521,13 +521,10 @@ export function FeaturedCollections() {
         setLoading(true);
         setError('');
 
-        const { data } = await api.get<CollectionsResponse>('/collections');
+        const { data } = await api.get<CollectionsResponse>('/collections/homepage');
 
         const items = Array.isArray(data?.data) ? data.data : [];
-        const activeItems = items.filter((item) => item.is_active !== false);
-        const featuredItems = activeItems.filter((item) => item.is_featured);
-
-        setCollections(featuredItems.length > 0 ? featuredItems : activeItems);
+        setCollections(items);
       } catch (err) {
         console.error('Failed to fetch collections', err);
         setError('Failed to load collections');
@@ -589,6 +586,11 @@ export function FeaturedCollections() {
                       src={image}
                       alt={col.name}
                       className="fc-card-img"
+                      onError={(event) => {
+                        if (event.currentTarget.src !== FALLBACK_IMAGE) {
+                          event.currentTarget.src = FALLBACK_IMAGE;
+                        }
+                      }}
                     />
 
                     <div
