@@ -146,12 +146,27 @@ const CSS = `
   background: linear-gradient(180deg, #fff, #f5e6d3);
 }
 .cart-item-img-wrap img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform .45s ease;
 }
 .cart-item-img-wrap:hover img { transform: scale(1.04); }
+.cart-item-img-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+  color: #806b59;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 12px;
+  letter-spacing: .08em;
+  background: linear-gradient(145deg, #fff9f0, #ead9c4);
+}
 
 .cart-item-body {
   display: flex;
@@ -560,7 +575,18 @@ export function CartPage() {
                   >
                     <div className="cart-item-inner">
                       <Link to={productUrl} className="cart-item-img-wrap">
-                        <img src={productImage} alt={item.saree.name} />
+                        <span className="cart-item-img-fallback" aria-hidden="true">
+                          Image unavailable
+                        </span>
+                        {productImage && (
+                          <img
+                            src={productImage}
+                            alt={item.saree.name}
+                            onError={(event) => {
+                              event.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
                       </Link>
 
                       <div className="cart-item-body">

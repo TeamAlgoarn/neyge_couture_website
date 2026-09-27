@@ -796,6 +796,7 @@ export default function ProductForm() {
   const [collectionsLoading, setCollectionsLoading] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [imageError, setImageError] = useState("");
+  const [isMultiVariant, setIsMultiVariant] = useState(false);
 
   const imagesInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -836,6 +837,14 @@ export default function ProductForm() {
         const product = res.data?.data || res.data?.product || res.data;
 
         if (product) {
+          const activeVariants = Array.isArray(product.product_variants)
+            ? product.product_variants.filter(
+                (variant: { is_active?: boolean }) => variant.is_active !== false,
+              )
+            : [];
+          setIsMultiVariant(
+            product.has_variants === true || activeVariants.length > 1,
+          );
           setForm({
             name: product.name || "",
             slug: product.slug || "",
@@ -982,13 +991,20 @@ export default function ProductForm() {
           : null,
         images: cleanedImages,
       };
+      // Variant SKUs are managed by the variant workflow. Omitting this field
+      // lets unrelated product metadata edits remain valid.
+      const requestPayload = isMultiVariant
+        ? Object.fromEntries(
+            Object.entries(payload).filter(([key]) => key !== "sku"),
+          )
+        : payload;
 
       if (isEdit && id) {
  
-        await adminApi.put(`/products/${id}`, payload);
+        await adminApi.put(`/products/${id}`, requestPayload);
       } else {
  
-        await adminApi.post("/products", payload);
+        await adminApi.post("/products", requestPayload);
  
       }
  
@@ -1208,12 +1224,15 @@ export default function ProductForm() {
                       className="form-input"
                       placeholder="e.g., NEY-SILK-001"
                       value={form.sku}
+                      disabled={isMultiVariant}
                       maxLength={100}
                       pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,99}"
                       onChange={(e) => updateField("sku", e.target.value.toUpperCase())}
                     />
                     <p className="form-hint">
-                      Optional unique SKU. Use letters, numbers, dots, hyphens, or underscores.
+                      {isMultiVariant
+                        ? "This product has multiple variants. Manage SKUs in the variant workflow."
+                        : "Optional unique SKU. Leave blank to keep the current SKU; new products receive an automatic SKU."}
                     </p>
                   </div>
 

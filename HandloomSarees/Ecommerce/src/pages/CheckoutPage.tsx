@@ -454,12 +454,32 @@ const CSS = `
   align-items: center;
   gap: 12px;
 }
-.co-item-img {
+.co-item-media {
+  position: relative;
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  object-fit: cover;
+  overflow: hidden;
   border: 1px solid rgba(196,152,10,.25);
+  flex: 0 0 48px;
+  background: linear-gradient(145deg, #fff9f0, #ead9c4);
+}
+.co-item-img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.co-item-img-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #806b59;
+  font-size: 8px;
+  line-height: 1.2;
+  text-align: center;
 }
 .co-item-name {
   font-family: 'Josefin Sans', sans-serif;
@@ -1304,11 +1324,21 @@ export function CheckoutPage() {
                 <div className="co-item-list">
                   {cart.map((item) => (
                     <div key={item.saree.id} className="co-item-row">
-                      <img
-                        src={item.saree.image || item.saree.images?.[0] || ''}
-                        alt={item.saree.name}
-                        className="co-item-img"
-                      />
+                      <div className="co-item-media">
+                        <span className="co-item-img-fallback" aria-hidden="true">
+                          No image
+                        </span>
+                        {(item.saree.image || item.saree.images?.[0]) && (
+                          <img
+                            src={item.saree.image || item.saree.images?.[0]}
+                            alt={item.saree.name}
+                            className="co-item-img"
+                            onError={(event) => {
+                              event.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div className="co-item-name">{item.saree.name}</div>
                         <div className="co-item-qty">Qty: {item.quantity}</div>

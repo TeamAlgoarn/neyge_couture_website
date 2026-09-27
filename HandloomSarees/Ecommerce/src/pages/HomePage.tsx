@@ -1660,7 +1660,7 @@ function LoomStory() {
             <div style={{ position: "absolute", bottom: -16, right: -16, width: 56, height: 56, borderBottom: `2px solid ${C.forest}`, borderRight: `2px solid ${C.forest}`, opacity: .55, pointerEvents: "none", zIndex: 3 }} />
 
             <div style={{ position: "relative", zIndex: 1, overflow: "hidden", boxShadow: "0 44px 88px rgba(0,0,0,.15)" }}>
-              <img src={IMG.loom} alt="Handloom weaving" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", display: "block" }} />
+              <img src={IMG.loom} alt="Three generations of Neyge Couture women in handwoven sarees" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", display: "block" }} />
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(20,64,42,.04) 0%, transparent 50%)", pointerEvents: "none" }} />
             </div>
 

@@ -379,6 +379,20 @@ const CSS = `
   transition: transform 1s cubic-bezier(.4,0,.2,1);
 }
 .fc-card:hover .fc-card-img { transform: scale(1.08); }
+.fc-card-img-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  text-align: center;
+  color: rgba(128,0,32,.72);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(196,152,10,.24), transparent 36%),
+    linear-gradient(145deg, #fff9f0, #dfc7aa);
+}
 
 .fc-card-overlay {
   position: absolute; inset: 0;
@@ -493,9 +507,6 @@ const OVERLAYS = [
   'linear-gradient(to top, rgba(10,4,2,.90) 0%, rgba(128,0,32,.55) 45%, transparent 80%)',
 ];
 
-const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop';
-
 export function FeaturedCollections() {
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -572,8 +583,7 @@ export function FeaturedCollections() {
                   col.banner_image ||
                   col.image ||
                   col.image_url ||
-                  col.thumbnail ||
-                  FALLBACK_IMAGE;
+                  col.thumbnail;
 
                 return (
                   <Link
@@ -582,16 +592,19 @@ export function FeaturedCollections() {
                     className={`fc-card ${isVisible ? 'visible' : 'hidden'}`}
                     style={{ transitionDelay: `${i * 180}ms` }}
                   >
-                    <img
-                      src={image}
-                      alt={col.name}
-                      className="fc-card-img"
-                      onError={(event) => {
-                        if (event.currentTarget.src !== FALLBACK_IMAGE) {
-                          event.currentTarget.src = FALLBACK_IMAGE;
-                        }
-                      }}
-                    />
+                    <div className="fc-card-img-fallback" aria-hidden="true">
+                      {col.name}
+                    </div>
+                    {image && (
+                      <img
+                        src={image}
+                        alt={col.name}
+                        className="fc-card-img"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
 
                     <div
                       className="fc-card-overlay"
