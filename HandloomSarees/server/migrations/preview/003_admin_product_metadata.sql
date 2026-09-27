@@ -8,11 +8,33 @@ ALTER TABLE preview.products
 CREATE OR REPLACE FUNCTION preview.require_active_sku_reference()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = preview, pg_temp AS $$
+DECLARE
+    v_product_id UUID;
 BEGIN
     IF NEW.sku IS NULL THEN RETURN NEW; END IF;
-    PERFORM p.id FROM preview.product_variants v
-    JOIN preview.products p ON p.id = v.product_id
-    WHERE v.sku = NEW.sku AND v.is_active = TRUE FOR SHARE OF p;
+
+    -- Resolve without locking, then always lock PRODUCT -> VARIANT. The active
+    -- check must be a separate statement after the product-lock wait: values
+    -- read by the original statement are not refreshed merely because it waits.
+    SELECT product_id INTO v_product_id
+    FROM preview.product_variants
+    WHERE sku = NEW.sku;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'SKU is not active' USING ERRCODE = '23503';
+    END IF;
+
+    PERFORM 1 FROM preview.products
+    WHERE id = v_product_id
+    FOR SHARE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'SKU is not active' USING ERRCODE = '23503';
+    END IF;
+
+    PERFORM 1 FROM preview.product_variants
+    WHERE sku = NEW.sku
+      AND product_id = v_product_id
+      AND is_active = TRUE
+    FOR SHARE;
     IF NOT FOUND THEN
         RAISE EXCEPTION 'SKU is not active' USING ERRCODE = '23503';
     END IF;
