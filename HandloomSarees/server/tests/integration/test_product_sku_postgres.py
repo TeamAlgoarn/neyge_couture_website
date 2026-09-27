@@ -151,6 +151,73 @@ def test_atomic_create_default_generation_and_inventory(pg):
             (product["id"],),
         )
         assert cur.fetchone() == (True, 7, 0)
+        cur.execute(
+            f"""SELECT quantity_change, reason, reference_id
+                FROM {schema}.inventory_transactions WHERE sku = %s""",
+            (product["sku"],),
+        )
+        assert cur.fetchone() == (
+            7,
+            "initial_stock",
+            f"product-create:{product['id']}",
+        )
+        cur.execute(
+            f"SELECT SUM(quantity_change) FROM {schema}.inventory_transactions WHERE sku = %s",
+            (product["sku"],),
+        )
+        assert cur.fetchone()[0] == 7
+
+
+def test_zero_stock_create_has_inventory_without_zero_ledger_entry(pg):
+    conn, schema = pg
+    with conn.cursor() as cur:
+        product = _create(cur, schema, "zero-stock", "NEY-ZERO", stock=0)
+        cur.execute(
+            f"SELECT quantity_available, quantity_reserved FROM {schema}.inventory WHERE sku=%s",
+            (product["sku"],),
+        )
+        assert cur.fetchone() == (0, 0)
+        cur.execute(
+            f"SELECT COUNT(*) FROM {schema}.inventory_transactions WHERE sku=%s",
+            (product["sku"],),
+        )
+        assert cur.fetchone()[0] == 0
+
+
+def test_initial_ledger_failure_rolls_back_entire_create(pg):
+    conn, schema = pg
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""CREATE FUNCTION {schema}.reject_inventory_transaction()
+                RETURNS TRIGGER LANGUAGE plpgsql AS $$
+                BEGIN
+                    RAISE EXCEPTION 'forced ledger failure' USING ERRCODE = '23505';
+                END;
+                $$"""
+        )
+        cur.execute(
+            f"""CREATE TRIGGER reject_inventory_transaction
+                BEFORE INSERT ON {schema}.inventory_transactions
+                FOR EACH ROW EXECUTE FUNCTION {schema}.reject_inventory_transaction()"""
+        )
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            _create(cur, schema, "ledger-failure", "NEY-LEDGER-FAIL", stock=5)
+        cur.execute(
+            f"""SELECT
+                    (SELECT COUNT(*) FROM {schema}.products WHERE slug='ledger-failure'),
+                    (SELECT COUNT(*) FROM {schema}.product_variants WHERE sku='NEY-LEDGER-FAIL'),
+                    (SELECT COUNT(*) FROM {schema}.inventory WHERE sku='NEY-LEDGER-FAIL'),
+                    (SELECT COUNT(*) FROM {schema}.inventory_transactions
+                     WHERE sku='NEY-LEDGER-FAIL')"""
+        )
+        assert cur.fetchone() == (0, 0, 0, 0)
+
+
+def test_migration_rerun_does_not_create_ledger_events(pg):
+    conn, schema = pg
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT COUNT(*) FROM {schema}.inventory_transactions")
+        assert cur.fetchone()[0] == 0
 
 
 def test_duplicate_sku_rolls_back_and_retry_succeeds(pg):
@@ -227,7 +294,7 @@ def test_multi_variant_metadata_edit_and_sku_restriction(pg):
 def test_rename_preserves_historical_skus_and_fk_integrity(pg):
     conn, schema = pg
     with conn.cursor() as cur:
-        product = _create(cur, schema, "history", "NEY-OLD", stock=4)
+        product = _create(cur, schema, "history", "NEY-OLD", stock=7)
         cur.execute(f"INSERT INTO {schema}.orders(order_status) VALUES ('delivered') RETURNING id")
         order_id = cur.fetchone()[0]
         cur.execute(
@@ -235,10 +302,11 @@ def test_rename_preserves_historical_skus_and_fk_integrity(pg):
             (order_id, product["id"]),
         )
         cur.execute(
-            f"""INSERT INTO {schema}.inventory_transactions
-                (sku,quantity_change,reason,reference_id)
-                VALUES ('NEY-OLD',-1,'sale','completed-order')"""
+            f"""SELECT id, sku, quantity_change, reason, reference_id, created_at
+                FROM {schema}.inventory_transactions
+                WHERE sku='NEY-OLD' AND reason='initial_stock'"""
         )
+        historical_transaction = cur.fetchone()
         cur.execute(
             f"SELECT {schema}.update_product_with_sku(%s,%s::jsonb,%s)",
             (product["id"], json.dumps({"design": "Updated"}), "NEY-NEW"),
@@ -246,14 +314,113 @@ def test_rename_preserves_historical_skus_and_fk_integrity(pg):
         assert cur.fetchone()[0]["sku"] == "NEY-NEW"
         cur.execute(f"SELECT sku FROM {schema}.order_items")
         assert cur.fetchone()[0] == "NEY-OLD"
-        cur.execute(f"SELECT sku FROM {schema}.inventory_transactions")
-        assert cur.fetchone()[0] == "NEY-OLD"
+        cur.execute(
+            f"""SELECT id, sku, quantity_change, reason, reference_id, created_at
+                FROM {schema}.inventory_transactions WHERE id=%s""",
+            (historical_transaction[0],),
+        )
+        assert cur.fetchone() == historical_transaction
         cur.execute(
             f"""SELECT v.sku,v.is_active,i.quantity_available
                 FROM {schema}.product_variants v JOIN {schema}.inventory i USING(sku)
                 ORDER BY v.sku"""
         )
-        assert cur.fetchall() == [("NEY-NEW", True, 4), ("NEY-OLD", False, 0)]
+        assert cur.fetchall() == [("NEY-NEW", True, 7), ("NEY-OLD", False, 0)]
+        cur.execute(
+            f"""SELECT sku, quantity_change, reference_id
+                FROM {schema}.inventory_transactions
+                WHERE reason='sku_rename_transfer' ORDER BY sku"""
+        )
+        transfers = cur.fetchall()
+        transfer_reference = (
+            f"sku-rename:{product['id']}:NEY-OLD:NEY-NEW"
+        )
+        assert transfers == [
+            ("NEY-NEW", 7, transfer_reference),
+            ("NEY-OLD", -7, transfer_reference),
+        ]
+        cur.execute(
+            f"""SELECT i.sku, i.quantity_available, SUM(t.quantity_change)
+                FROM {schema}.inventory i
+                JOIN {schema}.inventory_transactions t ON t.sku=i.sku
+                WHERE i.sku IN ('NEY-OLD', 'NEY-NEW')
+                GROUP BY i.sku, i.quantity_available ORDER BY i.sku"""
+        )
+        assert cur.fetchall() == [("NEY-NEW", 7, 7), ("NEY-OLD", 0, 0)]
+
+        # A client retry observes the already-renamed SKU and cannot duplicate transfers.
+        cur.execute(
+            f"SELECT {schema}.set_product_sku(%s,%s)",
+            (product["id"], "NEY-NEW"),
+        )
+        assert cur.fetchone()[0]["created"] is False
+        cur.execute(
+            f"""SELECT COUNT(*) FROM {schema}.inventory_transactions
+                WHERE reason='sku_rename_transfer' AND reference_id=%s""",
+            (transfer_reference,),
+        )
+        assert cur.fetchone()[0] == 2
+
+
+def test_zero_stock_rename_skips_transfer_ledger_entries(pg):
+    conn, schema = pg
+    with conn.cursor() as cur:
+        product = _create(cur, schema, "zero-rename", "NEY-ZERO-OLD", stock=0)
+        cur.execute(
+            f"SELECT {schema}.set_product_sku(%s,%s)",
+            (product["id"], "NEY-ZERO-NEW"),
+        )
+        assert cur.fetchone()[0]["sku"] == "NEY-ZERO-NEW"
+        cur.execute(
+            f"""SELECT sku, quantity_available FROM {schema}.inventory
+                WHERE sku IN ('NEY-ZERO-OLD','NEY-ZERO-NEW') ORDER BY sku"""
+        )
+        assert cur.fetchall() == [("NEY-ZERO-NEW", 0), ("NEY-ZERO-OLD", 0)]
+        cur.execute(
+            f"""SELECT COUNT(*) FROM {schema}.inventory_transactions
+                WHERE sku IN ('NEY-ZERO-OLD','NEY-ZERO-NEW')"""
+        )
+        assert cur.fetchone()[0] == 0
+
+
+def test_transfer_ledger_failure_rolls_back_entire_rename(pg):
+    conn, schema = pg
+    with conn.cursor() as cur:
+        product = _create(cur, schema, "rename-ledger-failure", "NEY-FAIL-OLD", stock=6)
+        cur.execute(
+            f"""CREATE FUNCTION {schema}.reject_new_sku_transfer()
+                RETURNS TRIGGER LANGUAGE plpgsql AS $$
+                BEGIN
+                    IF NEW.sku = 'NEY-FAIL-NEW' THEN
+                        RAISE EXCEPTION 'forced transfer failure' USING ERRCODE = '23505';
+                    END IF;
+                    RETURN NEW;
+                END;
+                $$"""
+        )
+        cur.execute(
+            f"""CREATE TRIGGER reject_new_sku_transfer
+                BEFORE INSERT ON {schema}.inventory_transactions
+                FOR EACH ROW EXECUTE FUNCTION {schema}.reject_new_sku_transfer()"""
+        )
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            cur.execute(
+                f"SELECT {schema}.set_product_sku(%s,%s)",
+                (product["id"], "NEY-FAIL-NEW"),
+            )
+        cur.execute(
+            f"""SELECT v.sku, v.is_active, i.quantity_available
+                FROM {schema}.product_variants v
+                JOIN {schema}.inventory i USING (sku)
+                WHERE v.product_id=%s""",
+            (product["id"],),
+        )
+        assert cur.fetchall() == [("NEY-FAIL-OLD", True, 6)]
+        cur.execute(
+            f"""SELECT sku, quantity_change, reason
+                FROM {schema}.inventory_transactions ORDER BY created_at"""
+        )
+        assert cur.fetchall() == [("NEY-FAIL-OLD", 6, "initial_stock")]
 
 
 def test_rename_rejects_reservations_carts_and_active_orders(pg):

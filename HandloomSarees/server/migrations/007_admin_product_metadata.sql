@@ -64,6 +64,7 @@ DECLARE
     v_variant public.product_variants%ROWTYPE;
     v_inventory public.inventory%ROWTYPE;
     v_active_count INT;
+    v_transfer_reference TEXT;
 BEGIN
     PERFORM 1 FROM public.products WHERE id = p_product_id FOR UPDATE;
     IF NOT FOUND THEN
@@ -111,7 +112,18 @@ BEGIN
         END LOOP;
         INSERT INTO public.inventory (sku, quantity_available, quantity_reserved)
         SELECT v_sku, GREATEST(0, COALESCE(stock, 0)), 0
-        FROM public.products WHERE id = p_product_id;
+        FROM public.products WHERE id = p_product_id
+        RETURNING * INTO v_inventory;
+        IF v_inventory.quantity_available > 0 THEN
+            INSERT INTO public.inventory_transactions
+                (sku, quantity_change, reason, reference_id)
+            VALUES (
+                v_sku,
+                v_inventory.quantity_available,
+                'initial_stock',
+                'product-create:' || p_product_id::TEXT
+            );
+        END IF;
         UPDATE public.products SET has_variants = FALSE, updated_at = NOW()
         WHERE id = p_product_id;
         RETURN jsonb_build_object('sku', v_sku, 'created', TRUE);
@@ -150,6 +162,17 @@ BEGIN
             v_variant.price_override, TRUE);
     INSERT INTO public.inventory (sku, quantity_available, quantity_reserved)
     VALUES (v_sku, v_inventory.quantity_available, 0);
+    IF v_inventory.quantity_available > 0 THEN
+        v_transfer_reference := 'sku-rename:' || p_product_id::TEXT || ':'
+            || v_variant.sku || ':' || v_sku;
+        INSERT INTO public.inventory_transactions
+            (sku, quantity_change, reason, reference_id)
+        VALUES
+            (v_variant.sku, -v_inventory.quantity_available,
+             'sku_rename_transfer', v_transfer_reference),
+            (v_sku, v_inventory.quantity_available,
+             'sku_rename_transfer', v_transfer_reference);
+    END IF;
     -- Old rows remain as historical FK anchors. Never rewrite order/ledger SKUs.
     UPDATE public.inventory SET quantity_available = 0, quantity_reserved = 0,
         updated_at = NOW() WHERE sku = v_variant.sku;

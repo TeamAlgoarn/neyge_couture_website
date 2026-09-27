@@ -60,6 +60,7 @@ DECLARE
     v_variant preview.product_variants%ROWTYPE;
     v_inventory preview.inventory%ROWTYPE;
     v_active_count INT;
+    v_transfer_reference TEXT;
 BEGIN
     PERFORM 1 FROM preview.products WHERE id = p_product_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Product not found' USING ERRCODE = 'P0002'; END IF;
@@ -101,7 +102,18 @@ BEGIN
         END LOOP;
         INSERT INTO preview.inventory (sku, quantity_available, quantity_reserved)
         SELECT v_sku, GREATEST(0, COALESCE(stock, 0)), 0
-        FROM preview.products WHERE id = p_product_id;
+        FROM preview.products WHERE id = p_product_id
+        RETURNING * INTO v_inventory;
+        IF v_inventory.quantity_available > 0 THEN
+            INSERT INTO preview.inventory_transactions
+                (sku, quantity_change, reason, reference_id)
+            VALUES (
+                v_sku,
+                v_inventory.quantity_available,
+                'initial_stock',
+                'product-create:' || p_product_id::TEXT
+            );
+        END IF;
         UPDATE preview.products SET has_variants = FALSE, updated_at = NOW()
         WHERE id = p_product_id;
         RETURN jsonb_build_object('sku', v_sku, 'created', TRUE);
@@ -138,6 +150,17 @@ BEGIN
             v_variant.price_override, TRUE);
     INSERT INTO preview.inventory (sku, quantity_available, quantity_reserved)
     VALUES (v_sku, v_inventory.quantity_available, 0);
+    IF v_inventory.quantity_available > 0 THEN
+        v_transfer_reference := 'sku-rename:' || p_product_id::TEXT || ':'
+            || v_variant.sku || ':' || v_sku;
+        INSERT INTO preview.inventory_transactions
+            (sku, quantity_change, reason, reference_id)
+        VALUES
+            (v_variant.sku, -v_inventory.quantity_available,
+             'sku_rename_transfer', v_transfer_reference),
+            (v_sku, v_inventory.quantity_available,
+             'sku_rename_transfer', v_transfer_reference);
+    END IF;
     UPDATE preview.inventory SET quantity_available = 0, quantity_reserved = 0,
         updated_at = NOW() WHERE sku = v_variant.sku;
     UPDATE preview.product_variants SET is_active = FALSE, updated_at = NOW()
