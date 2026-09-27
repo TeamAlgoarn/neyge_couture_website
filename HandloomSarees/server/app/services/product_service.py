@@ -199,6 +199,17 @@ from app.utils.slug import slugify
 
 class ProductService:
     @staticmethod
+    def _sku_from_product(product: dict) -> str | None:
+        if product.get("sku"):
+            return str(product["sku"])
+        variants = product.get("product_variants") or []
+        active_variants = [variant for variant in variants if variant.get("is_active", True)]
+        if not active_variants:
+            return None
+        active_variants.sort(key=lambda variant: variant.get("created_at") or "")
+        return active_variants[0].get("sku")
+
+    @staticmethod
     def _resolve_collection_filter(collection: str | None) -> str | None:
         if not collection:
             return None
@@ -221,7 +232,7 @@ class ProductService:
         )
 
     @staticmethod
-    def _to_public_product(product: dict) -> dict:
+    def _to_public_product(product: dict, *, include_sku: bool = False) -> dict:
         collection_summary = None
         collection_id = product.get("collection_id")
 
@@ -245,6 +256,15 @@ class ProductService:
             "short_description": product.get("short_description"),
             "fabric": product.get("fabric"),
             "technique": product.get("technique"),
+            "design": product.get("design"),
+            "zari": product.get("zari"),
+            "certification": product.get("certification"),
+            "brand": product.get("brand"),
+            "sku": (
+                ProductService._sku_from_product(product)
+                if include_sku
+                else None
+            ),
             "origin": product.get("origin"),
             "color": product.get("color"),
             "occasion": product.get("occasion") or [],
@@ -278,12 +298,34 @@ class ProductService:
                 )
 
         data = payload.model_dump()
+        sku = data.pop("sku", None)
+        images = data.get("images") or []
+        data["images"] = images
+        data["thumbnail"] = data.get("thumbnail") if data.get("thumbnail") in images else (images[0] if images else None)
+        data["brand"] = data.get("brand") or "Neyge Couture"
         data["slug"] = slug
+
+        if sku and ProductRepository.exists_by_sku(sku):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="SKU already exists",
+            )
 
         if payload.artisan:
             data["artisan"] = payload.artisan.model_dump()
 
-        return ProductRepository.create(data)
+        product = ProductRepository.create(data)
+        if sku:
+            try:
+                product["sku"] = ProductRepository.set_product_sku(product["id"], sku)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Unable to assign SKU; it may already be in use",
+                ) from exc
+        else:
+            product["sku"] = None
+        return product
 
     @staticmethod
     def list_filtered(
@@ -352,7 +394,7 @@ class ProductService:
                 detail="Product not found",
             )
 
-        return ProductService._to_public_product(product)
+        return ProductService._to_public_product(product, include_sku=True)
 
     @staticmethod
     def get_by_id(product_id: str) -> dict:
@@ -362,6 +404,7 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found",
             )
+        product["sku"] = ProductService._sku_from_product(product)
         return product
 
     @staticmethod
@@ -374,6 +417,28 @@ class ProductService:
             )
 
         data = payload.model_dump(exclude_unset=True)
+        sku = data.pop("sku", None)
+
+        if sku and ProductRepository.exists_by_sku(sku, exclude_product_id=product_id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="SKU already exists",
+            )
+
+        if sku and existing.get("has_variants"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="SKU must be managed at variant level for products with multiple variants",
+            )
+
+        if "images" in data:
+            images = data.get("images") or []
+            data["images"] = images
+            requested_thumbnail = data.get("thumbnail", existing.get("thumbnail"))
+            data["thumbnail"] = requested_thumbnail if requested_thumbnail in images else (images[0] if images else None)
+
+        if "brand" in data and not data["brand"]:
+            data["brand"] = "Neyge Couture"
 
         if "collection_id" in data and data["collection_id"]:
             collection = CollectionRepository.get_by_id(data["collection_id"])
@@ -407,12 +472,23 @@ class ProductService:
         if "artisan" in data and data["artisan"] is not None:
             data["artisan"] = data["artisan"].model_dump()
 
-        updated = ProductRepository.update(product_id, data)
+        updated = ProductRepository.update(product_id, data) if data else existing
         if not updated:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update product",
             )
+
+        if sku:
+            try:
+                updated["sku"] = ProductRepository.set_product_sku(product_id, sku)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Unable to update SKU; it may already be in use",
+                ) from exc
+        else:
+            updated["sku"] = ProductService._sku_from_product(existing)
 
         return updated
 

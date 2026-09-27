@@ -16,7 +16,7 @@ class ProductRepository:
         client = get_supabase_admin()
         result = (
             client.table("products")
-            .select("*")
+            .select("*, product_variants(sku,is_active,created_at)")
             .eq("id", product_id)
             .single()
             .execute()
@@ -28,7 +28,7 @@ class ProductRepository:
         client = get_supabase_admin()
         result = (
             client.table("products")
-            .select("*")
+            .select("*, product_variants(sku,is_active,created_at)")
             .eq("id", product_id)
             .eq("is_active", True)
             .limit(1)
@@ -41,7 +41,7 @@ class ProductRepository:
         client = get_supabase_admin()
         result = (
             client.table("products")
-            .select("*")
+            .select("*, product_variants(sku,is_active,created_at)")
             .eq("slug", slug)
             .limit(1)
             .execute()
@@ -89,6 +89,42 @@ class ProductRepository:
             query = query.neq("id", exclude_id)
         result = query.limit(1).execute()
         return bool(result.data)
+
+    @staticmethod
+    def get_sku_by_product_id(product_id: str) -> str | None:
+        client = get_supabase_admin()
+        result = (
+            client.table("product_variants")
+            .select("sku")
+            .eq("product_id", product_id)
+            .eq("is_active", True)
+            .order("created_at")
+            .limit(1)
+            .execute()
+        )
+        return result.data[0]["sku"] if result.data else None
+
+    @staticmethod
+    def exists_by_sku(sku: str, exclude_product_id: str | None = None) -> bool:
+        client = get_supabase_admin()
+        query = client.table("product_variants").select("product_id").eq("sku", sku)
+        if exclude_product_id:
+            query = query.neq("product_id", exclude_product_id)
+        result = query.limit(1).execute()
+        return bool(result.data)
+
+    @staticmethod
+    def set_product_sku(product_id: str, sku: str) -> str:
+        """Create or rename the default variant SKU transactionally in Postgres."""
+        client = get_supabase_admin()
+        result = client.rpc(
+            "set_product_sku",
+            {"p_product_id": product_id, "p_new_sku": sku},
+        ).execute()
+        data = result.data
+        if isinstance(data, dict):
+            return str(data.get("sku") or sku)
+        return sku
 
     @staticmethod
     def decrement_stock_optimistic(

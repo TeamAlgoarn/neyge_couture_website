@@ -364,6 +364,13 @@ import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
 import { uploadProductImage } from "../lib/uploadProductImage";
 import {
+  IMAGE_ACCEPT,
+  MAX_PRODUCT_IMAGES,
+  PRODUCT_MIN_DIMENSIONS,
+  getImageErrorMessage,
+  validateImageFile,
+} from "../lib/imageValidation";
+import {
   Package,
   Sparkles,
   Save,
@@ -708,6 +715,11 @@ type ProductPayload = {
   fabric: string[];
   // ─────────────────────────────────────────────────────────────────────────
   technique: string;
+  design: string;
+  zari: string;
+  certification: string;
+  brand: string;
+  sku: string;
   stock: number;
   collection_id: string;
   collection_slug: string;
@@ -749,6 +761,11 @@ const initialForm: ProductPayload = {
   color: [],
   fabric: [],
   technique: "",
+  design: "",
+  zari: "",
+  certification: "",
+  brand: "Neyge Couture",
+  sku: "",
   stock: 0,
   collection_id: "",
   collection_slug: "",
@@ -778,6 +795,7 @@ export default function ProductForm() {
   const [pageLoading, setPageLoading] = useState(isEdit);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [imageError, setImageError] = useState("");
 
   const imagesInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -834,6 +852,11 @@ export default function ProductForm() {
             fabric: toArray(product.fabric),
             // ─────────────────────────────────────────────────────────────────
             technique: product.technique || "",
+            design: product.design || "",
+            zari: product.zari || "",
+            certification: product.certification || "",
+            brand: product.brand || "Neyge Couture",
+            sku: product.sku || "",
             stock: Math.max(0, Number(product.stock || 0)),
             collection_id:
               product.collection_id || product.collection?.id || "",
@@ -872,8 +895,20 @@ export default function ProductForm() {
   ) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+    const remainingSlots = MAX_PRODUCT_IMAGES - form.images.length;
+    if (files.length > remainingSlots) {
+      setImageError(
+        `You can add ${Math.max(0, remainingSlots)} more image${remainingSlots === 1 ? "" : "s"}. Maximum is ${MAX_PRODUCT_IMAGES}.`,
+      );
+      if (imagesInputRef.current) imagesInputRef.current.value = "";
+      return;
+    }
     try {
       setUploadingImages(true);
+      setImageError("");
+      await Promise.all(
+        files.map((file) => validateImageFile(file, PRODUCT_MIN_DIMENSIONS)),
+      );
       const uploadedUrls: string[] = [];
       for (const file of files) {
         const url = await uploadProductImage(file);
@@ -886,7 +921,7 @@ export default function ProductForm() {
       }));
     } catch (error) {
       console.error("Images upload failed", error);
-      alert("Images upload failed");
+      setImageError(getImageErrorMessage(error));
     } finally {
       setUploadingImages(false);
       if (imagesInputRef.current) imagesInputRef.current.value = "";
@@ -916,8 +951,14 @@ export default function ProductForm() {
     try {
       const cleanedImages = form.images.filter((url) => url.trim() !== "");
 
-      if (cleanedImages.length < 6) {
-        alert("Please upload at least 6 product images.");
+      if (cleanedImages.length > MAX_PRODUCT_IMAGES) {
+        setImageError(`A product can have at most ${MAX_PRODUCT_IMAGES} images.`);
+        setLoading(false);
+        return;
+      }
+
+      if (Number(form.price) <= 0) {
+        alert("Price must be greater than zero.");
         setLoading(false);
         return;
       }
@@ -936,7 +977,9 @@ export default function ProductForm() {
         stock: Math.max(0, Number(form.stock)),
         collection_id: form.collection_id || null,
         collection_slug: form.collection_slug || null,
-        thumbnail: form.thumbnail || cleanedImages[0] || "",
+        thumbnail: cleanedImages.length
+          ? (cleanedImages.includes(form.thumbnail) ? form.thumbnail : cleanedImages[0])
+          : null,
         images: cleanedImages,
       };
 
@@ -1078,6 +1121,7 @@ export default function ProductForm() {
                         <button
                           type="button"
                           className="upload-btn"
+                          disabled={uploadingImages || form.images.length >= MAX_PRODUCT_IMAGES}
                           onClick={() => imagesInputRef.current?.click()}
                         >
                           <ImageIcon size={15} />
@@ -1089,23 +1133,21 @@ export default function ProductForm() {
                       <input
                         ref={imagesInputRef}
                         type="file"
-                        accept="image/*"
+                        accept={IMAGE_ACCEPT}
                         multiple
                         onChange={handleImagesUpload}
                         style={{ display: "none" }}
                       />
                       <p className="upload-hint">
-                        Upload product images from your local folder. The first
-                        image is automatically saved as the cover thumbnail.
+                        Optional. JPG, JPEG, PNG, or WEBP; maximum 5 MB each;
+                        minimum 800 × 800px. The first image becomes the cover.
                       </p>
                       <p className="upload-hint">
-                        Uploaded images:{" "}
-                        <strong>{form.images.length}</strong> / minimum{" "}
-                        <strong>6</strong> required
+                        <strong>{form.images.length}</strong> / {MAX_PRODUCT_IMAGES} images
                       </p>
-                      {form.images.length > 0 && form.images.length < 6 && (
+                      {imageError && (
                         <p className="upload-warning">
-                          Please upload at least 6 images for this product.
+                          {imageError}
                         </p>
                       )}
                       {form.thumbnail ? (
@@ -1161,10 +1203,26 @@ export default function ProductForm() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <div>
+                    <label className="form-label">SKU</label>
+                    <input
+                      className="form-input"
+                      placeholder="e.g., NEY-SILK-001"
+                      value={form.sku}
+                      maxLength={100}
+                      pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,99}"
+                      onChange={(e) => updateField("sku", e.target.value.toUpperCase())}
+                    />
+                    <p className="form-hint">
+                      Optional unique SKU. Use letters, numbers, dots, hyphens, or underscores.
+                    </p>
+                  </div>
+
+                  <div>
                     <label className="form-label">Price (₹)</label>
                     <input
                       type="number"
-                      min={0}
+                      min={0.01}
+                      step={0.01}
                       className="form-input"
                       value={form.price}
                       onChange={(e) =>
@@ -1215,7 +1273,7 @@ export default function ProductForm() {
 
                   {/* ── NEW: Color tag input ───────────────────────────────── */}
                   <TagInput
-                    label="Color"
+                    label="Colour"
                     values={form.color}
                     onChange={(v) => updateField("color", v)}
                     suggestions={COLOR_SUGGESTIONS}
@@ -1242,6 +1300,57 @@ export default function ProductForm() {
                       }
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-card" style={{ marginTop: 28 }}>
+              <div className="form-title">
+                <Sparkles size={20} color={C.gold} />
+                Product Details / Specifications
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gap: 20,
+                }}
+              >
+                <div>
+                  <label className="form-label">Design</label>
+                  <input
+                    className="form-input"
+                    placeholder="e.g., Floral buta"
+                    value={form.design}
+                    onChange={(e) => updateField("design", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Zari</label>
+                  <input
+                    className="form-input"
+                    placeholder="e.g., Pure Zari"
+                    value={form.zari}
+                    onChange={(e) => updateField("zari", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Certification</label>
+                  <input
+                    className="form-input"
+                    placeholder="e.g., Silk Mark"
+                    value={form.certification}
+                    onChange={(e) => updateField("certification", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Brand</label>
+                  <input
+                    className="form-input"
+                    placeholder="e.g., Neyge Couture"
+                    value={form.brand}
+                    onChange={(e) => updateField("brand", e.target.value)}
+                  />
                 </div>
               </div>
             </div>

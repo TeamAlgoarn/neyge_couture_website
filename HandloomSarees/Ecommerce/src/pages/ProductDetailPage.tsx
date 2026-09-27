@@ -790,6 +790,7 @@ const CSS = `
 .pd-gallery-card{padding:20px}
 .pd-main-image-wrap{position:relative;border-radius:22px;overflow:hidden;background:#f5eee7;max-width:320px;margin:0 auto;height:auto;max-height:420px}
 .pd-main-image{width:100%;height:auto;object-fit:cover;display:block}
+.pd-image-empty{min-height:320px;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#8b735f;font-family:'Josefin Sans',sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
 .pd-nav-btn{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:none;border-radius:999px;background:rgba(255,255,255,.88);color:${C.maroon};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.08)}
 .pd-nav-btn.left{left:14px}
 .pd-nav-btn.right{right:14px}
@@ -874,6 +875,11 @@ type BackendProduct = {
   fabric?: string | null;
   stock?: number | null;
   technique?: string | null;
+  design?: string | null;
+  zari?: string | null;
+  certification?: string | null;
+  brand?: string | null;
+  sku?: string | null;
   artisan?: {
     name?: string;
     region?: string;
@@ -935,6 +941,11 @@ function mapProductToSaree(product: BackendProduct): Saree {
     fabric: product.fabric || '',
     occasion: product.occasion || [],
     weavingTechnique: product.technique || '',
+    design: product.design || '',
+    zari: product.zari || '',
+    certification: product.certification || '',
+    brand: product.brand || '',
+    sku: product.sku || '',
     artisanDetails: product.artisan?.name
       ? `${product.artisan.name}${product.artisan.region ? ` - ${product.artisan.region}` : ''}${product.artisan.experience ? ` · ${product.artisan.experience}` : ''}`
       : '',
@@ -1257,11 +1268,21 @@ export function ProductDetailPage() {
           <div className="pd-main-grid">
             <div className="pd-gallery-card pd-fadeup">
               <div className="pd-main-image-wrap">
-                <img
-                  src={activeImage}
-                  alt={saree.name}
-                  className="pd-main-image"
-                />
+                {activeImage ? (
+                  <img
+                    src={activeImage}
+                    alt={saree.name}
+                    className="pd-main-image"
+                    onError={(event) => {
+                      event.currentTarget.style.display = 'none';
+                      const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div className="pd-image-empty" style={{ display: activeImage ? 'none' : 'flex' }}>
+                  Image unavailable
+                </div>
 
                 {safeImages.length > 1 && (
                   <>
@@ -1559,7 +1580,12 @@ export function ProductDetailPage() {
                   ['Length', saree.length || '5.5 meters'],
                   ['Blouse Piece', saree.blousePiece ? 'Included' : 'Not Included'],
                   ['Weaving Technique', saree.weavingTechnique || 'Traditional handloom'],
-                ].map(([k, v]) => (
+                  ['Design', saree.design],
+                  ['Zari', saree.zari],
+                  ['Certification', saree.certification],
+                  ['Brand', saree.brand],
+                  ['SKU', saree.sku],
+                ].filter(([, value]) => Boolean(value)).map(([k, v]) => (
                   <div key={k} className="pd-spec-row">
                     <span className="pd-spec-key">{k}</span>
                     <span className="pd-spec-val">{v}</span>
@@ -1595,7 +1621,11 @@ export function ProductDetailPage() {
               <div className="pd-related-grid">
                 {relatedSarees.map((item) => (
                   <Link key={item.id} to={getProductUrl(item)} className="pd-related-card">
-                    <img src={item.image} alt={item.name} />
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} />
+                    ) : (
+                      <div className="pd-image-empty">Image unavailable</div>
+                    )}
                     <div className="pd-related-body">
                       <div className="pd-related-name">{item.name}</div>
                       <div className="pd-related-price">{formatCurrency(item.price)}</div>

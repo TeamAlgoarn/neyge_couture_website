@@ -150,6 +150,11 @@ export interface Saree {
   image?: string;
   description: string;
   weavingTechnique: string;
+  design?: string;
+  zari?: string;
+  certification?: string;
+  brand?: string;
+  sku?: string;
   artisanDetails: string;
   careInstructions: string;
   length?: string;
