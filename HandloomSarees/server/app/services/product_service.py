@@ -204,10 +204,50 @@ class ProductService:
             return str(product["sku"])
         variants = product.get("product_variants") or []
         active_variants = [variant for variant in variants if variant.get("is_active", True)]
-        if not active_variants:
+        if len(active_variants) != 1:
             return None
         active_variants.sort(key=lambda variant: variant.get("created_at") or "")
         return active_variants[0].get("sku")
+
+    @staticmethod
+    def _raise_product_write_error(exc: Exception) -> None:
+        message = str(exc)
+        if "Product not found" in message:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            ) from exc
+        if "multiple variants" in message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="SKU must be managed at variant level for products with multiple variants",
+            ) from exc
+        if "cannot be renamed" in message:
+            reason = next(
+                (
+                    text
+                    for text in (
+                        "SKU cannot be renamed while stock is reserved",
+                        "SKU cannot be renamed while it is referenced by a cart",
+                        "SKU cannot be renamed while it is referenced by an active order",
+                    )
+                    if text in message
+                ),
+                "SKU cannot be renamed while it has active references",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=reason,
+            ) from exc
+        if "SKU already exists" in message or "duplicate key" in message:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="SKU already exists",
+            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Unable to save product",
+        ) from exc
 
     @staticmethod
     def _resolve_collection_filter(collection: str | None) -> str | None:
@@ -305,27 +345,13 @@ class ProductService:
         data["brand"] = data.get("brand") or "Neyge Couture"
         data["slug"] = slug
 
-        if sku and ProductRepository.exists_by_sku(sku):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="SKU already exists",
-            )
-
         if payload.artisan:
             data["artisan"] = payload.artisan.model_dump()
 
-        product = ProductRepository.create(data)
-        if sku:
-            try:
-                product["sku"] = ProductRepository.set_product_sku(product["id"], sku)
-            except Exception as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Unable to assign SKU; it may already be in use",
-                ) from exc
-        else:
-            product["sku"] = None
-        return product
+        try:
+            return ProductRepository.create_with_sku(data, sku)
+        except Exception as exc:
+            ProductService._raise_product_write_error(exc)
 
     @staticmethod
     def list_filtered(
@@ -419,18 +445,6 @@ class ProductService:
         data = payload.model_dump(exclude_unset=True)
         sku = data.pop("sku", None)
 
-        if sku and ProductRepository.exists_by_sku(sku, exclude_product_id=product_id):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="SKU already exists",
-            )
-
-        if sku and existing.get("has_variants"):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="SKU must be managed at variant level for products with multiple variants",
-            )
-
         if "images" in data:
             images = data.get("images") or []
             data["images"] = images
@@ -469,28 +483,15 @@ class ProductService:
                 detail="discount_price cannot be greater than price",
             )
 
-        if "artisan" in data and data["artisan"] is not None:
-            data["artisan"] = data["artisan"].model_dump()
+        if "artisan" in data and payload.artisan is not None:
+            data["artisan"] = payload.artisan.model_dump()
 
-        updated = ProductRepository.update(product_id, data) if data else existing
-        if not updated:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update product",
-            )
-
-        if sku:
-            try:
-                updated["sku"] = ProductRepository.set_product_sku(product_id, sku)
-            except Exception as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Unable to update SKU; it may already be in use",
-                ) from exc
-        else:
-            updated["sku"] = ProductService._sku_from_product(existing)
-
-        return updated
+        try:
+            # A missing/blank SKU is intentionally passed as NULL: the database
+            # leaves an existing default SKU unchanged and repairs a missing one.
+            return ProductRepository.update_with_sku(product_id, data, sku)
+        except Exception as exc:
+            ProductService._raise_product_write_error(exc)
 
     @staticmethod
     def soft_delete(product_id: str) -> dict:

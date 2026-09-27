@@ -1,6 +1,7 @@
 import asyncio
 import os
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 from fastapi import HTTPException, UploadFile
@@ -25,6 +26,9 @@ from app.schemas.product import ProductCreateRequest, ProductUpdateRequest
 from app.services.collection_service import CollectionService
 from app.services.product_service import ProductService
 from app.services.upload_service import UploadService
+
+
+MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "migrations"
 
 
 def product_payload(**overrides):
@@ -63,14 +67,11 @@ def test_product_metadata_and_sku_persist_on_create(monkeypatch):
     captured = {}
 
     monkeypatch.setattr(ProductRepository, "exists_by_slug", lambda *_args, **_kwargs: False)
-    monkeypatch.setattr(ProductRepository, "exists_by_sku", lambda *_args, **_kwargs: False)
-
-    def fake_create(payload):
+    def fake_create(payload, sku):
         captured.update(payload)
-        return {"id": "product-1", **payload}
+        return {"id": "product-1", **payload, "sku": sku or "NEY-GENERATED"}
 
-    monkeypatch.setattr(ProductRepository, "create", fake_create)
-    monkeypatch.setattr(ProductRepository, "set_product_sku", lambda product_id, sku: sku)
+    monkeypatch.setattr(ProductRepository, "create_with_sku", fake_create)
 
     result = ProductService.create(ProductCreateRequest(**product_payload(sku="ney-silk-001")))
 
@@ -91,14 +92,11 @@ def test_product_metadata_and_sku_persist_on_update(monkeypatch):
 
     monkeypatch.setattr(ProductRepository, "get_by_id", lambda *_args: existing.copy())
     monkeypatch.setattr(ProductRepository, "exists_by_slug", lambda *_args, **_kwargs: False)
-    monkeypatch.setattr(ProductRepository, "exists_by_sku", lambda *_args, **_kwargs: False)
-
-    def fake_update(_product_id, payload):
+    def fake_update(_product_id, payload, sku):
         captured.update(payload)
-        return {**existing, **payload}
+        return {**existing, **payload, "sku": sku}
 
-    monkeypatch.setattr(ProductRepository, "update", fake_update)
-    monkeypatch.setattr(ProductRepository, "set_product_sku", lambda product_id, sku: sku)
+    monkeypatch.setattr(ProductRepository, "update_with_sku", fake_update)
 
     result = ProductService.update(
         "product-1",
@@ -130,13 +128,87 @@ def test_product_level_sku_edit_rejects_multi_variant_product(monkeypatch):
         "has_variants": True,
     }
     monkeypatch.setattr(ProductRepository, "get_by_id", lambda *_args: existing)
-    monkeypatch.setattr(ProductRepository, "exists_by_sku", lambda *_args, **_kwargs: False)
+    def reject_variant_sku(*_args, **_kwargs):
+        raise RuntimeError(
+            "SKU must be managed at variant level for products with multiple variants"
+        )
+
+    monkeypatch.setattr(ProductRepository, "update_with_sku", reject_variant_sku)
 
     with pytest.raises(HTTPException, match="variant level"):
         ProductService.update(
             "product-variants",
             ProductUpdateRequest(sku="NEY-VARIANT-001"),
         )
+
+
+def test_multi_variant_metadata_update_omits_sku_and_succeeds(monkeypatch):
+    existing = {
+        "id": "product-variants",
+        "name": "Variant Saree",
+        "slug": "variant-saree",
+        "price": 1000,
+        "images": [],
+        "has_variants": True,
+    }
+    captured = {}
+    monkeypatch.setattr(ProductRepository, "get_by_id", lambda *_args: existing)
+
+    def fake_update(product_id, payload, sku):
+        captured.update({"product_id": product_id, "payload": payload, "sku": sku})
+        return {**existing, **payload, "sku": None}
+
+    monkeypatch.setattr(ProductRepository, "update_with_sku", fake_update)
+    result = ProductService.update(
+        "product-variants", ProductUpdateRequest(design="Peacock")
+    )
+
+    assert captured == {
+        "product_id": "product-variants",
+        "payload": {"design": "Peacock"},
+        "sku": None,
+    }
+    assert result["design"] == "Peacock"
+
+
+def test_blank_sku_update_means_unchanged(monkeypatch):
+    existing = {
+        "id": "product-1",
+        "name": "Saree",
+        "slug": "saree",
+        "price": 1000,
+        "images": [],
+    }
+    monkeypatch.setattr(ProductRepository, "get_by_id", lambda *_args: existing)
+    captured = {}
+
+    def fake_update(_product_id, payload, sku):
+        captured.update({"payload": payload, "sku": sku})
+        return {**existing, **payload, "sku": "NEY-EXISTING"}
+
+    monkeypatch.setattr(ProductRepository, "update_with_sku", fake_update)
+    result = ProductService.update(
+        "product-1", ProductUpdateRequest(brand="Neyge Couture", sku=" ")
+    )
+    assert captured["sku"] is None
+    assert "sku" not in captured["payload"]
+    assert result["sku"] == "NEY-EXISTING"
+
+
+@pytest.mark.parametrize(
+    "migration",
+    [
+        MIGRATIONS_DIR / "007_admin_product_metadata.sql",
+        MIGRATIONS_DIR / "preview" / "003_admin_product_metadata.sql",
+    ],
+)
+def test_sku_migrations_preserve_historical_commercial_records(migration):
+    sql = migration.read_text(encoding="utf-8").lower()
+    assert "update public.order_items set sku" not in sql
+    assert "update preview.order_items set sku" not in sql
+    assert "update public.inventory_transactions set sku" not in sql
+    assert "update preview.inventory_transactions set sku" not in sql
+    assert "is_active = false" in sql
 
 
 def make_upload(filename: str, content: bytes, content_type: str) -> UploadFile:

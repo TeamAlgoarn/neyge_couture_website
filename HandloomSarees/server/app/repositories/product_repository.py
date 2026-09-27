@@ -6,6 +6,16 @@ from app.core.database import get_supabase_admin
 
 class ProductRepository:
     @staticmethod
+    def create_with_sku(payload: dict, requested_sku: str | None) -> dict:
+        """Create the product, default variant, and inventory in one DB transaction."""
+        client = get_supabase_admin()
+        result = client.rpc(
+            "create_product_with_sku",
+            {"p_product": payload, "p_requested_sku": requested_sku},
+        ).execute()
+        return result.data
+
+    @staticmethod
     def create(payload: dict) -> dict:
         client = get_supabase_admin()
         result = client.table("products").insert(payload).execute()
@@ -58,6 +68,22 @@ class ProductRepository:
             .execute()
         )
         return result.data[0] if result.data else None
+
+    @staticmethod
+    def update_with_sku(
+        product_id: str, payload: dict, requested_sku: str | None
+    ) -> dict:
+        """Update product metadata and its default SKU in one DB transaction."""
+        client = get_supabase_admin()
+        result = client.rpc(
+            "update_product_with_sku",
+            {
+                "p_product_id": product_id,
+                "p_changes": payload,
+                "p_requested_sku": requested_sku,
+            },
+        ).execute()
+        return result.data
 
     @staticmethod
     def update_by_id(product_id: str, payload: dict) -> dict | None:

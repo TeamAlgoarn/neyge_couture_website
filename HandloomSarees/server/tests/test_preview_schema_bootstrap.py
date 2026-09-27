@@ -133,10 +133,12 @@ def test_backend_rpc_calls_exist_in_preview_bootstrap():
     backend_rpcs = _backend_rpc_names()
 
     assert backend_rpcs == {
+        "create_product_with_sku",
         "increment_product_stock",
         "set_default_address",
         "delete_address_and_promote",
         "set_product_sku",
+        "update_product_with_sku",
     }
     for function_name in backend_rpcs:
         assert f"CREATE OR REPLACE FUNCTION preview.{function_name}" in sql
@@ -185,6 +187,18 @@ def test_preview_product_sku_rpc_matches_production_contract():
     assert _normalize_sql(preview["args"]) == _normalize_sql(production["args"])
     assert preview["returns"].upper() == production["returns"].upper() == "JSONB"
     assert "SET search_path = preview, pg_temp" in preview["attrs"]
+
+
+def test_preview_atomic_product_rpcs_match_production_contracts():
+    preview_sql = _preview_sql()
+    production_sql = _read(ADMIN_PRODUCT_MIGRATION)
+    for function_name in ["create_product_with_sku", "update_product_with_sku"]:
+        preview = _extract_function(preview_sql, "preview", function_name)
+        production = _extract_function(production_sql, "public", function_name)
+        assert _normalize_sql(preview["args"]) == _normalize_sql(production["args"])
+        assert preview["returns"].upper() == production["returns"].upper() == "JSONB"
+        assert "SECURITY DEFINER" in preview["attrs"].upper()
+        assert "SET search_path = preview, pg_temp" in preview["attrs"]
 
 
 def test_preview_sku_rpc_jsonb_contract_and_table_targets():
@@ -289,6 +303,9 @@ def test_security_definer_functions_use_safe_preview_search_path():
         "release_sku_stock",
         "commit_sku_stock",
         "set_product_sku",
+        "require_active_sku_reference",
+        "create_product_with_sku",
+        "update_product_with_sku",
     }
 
 
