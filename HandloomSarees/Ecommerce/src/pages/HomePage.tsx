@@ -1052,7 +1052,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Link } from "react-router-dom";
 import heroImg from "@/assets/bd3.png";
-import loomimg from "@/assets/g1.png";
+import loomimg from "@/assets/g1_updated.jpeg";
 import img3 from "@/assets/g3.png";
 import img5 from "@/assets/g5.png";
 import img6 from "@/assets/g6.png";
