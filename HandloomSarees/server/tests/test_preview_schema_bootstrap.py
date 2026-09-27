@@ -9,6 +9,7 @@ PREVIEW_BOOTSTRAP = (
 )
 ADDRESS_MIGRATION = SERVER_ROOT / "migrations" / "001_create_addresses_table.sql"
 SKU_MIGRATION = SERVER_ROOT / "migrations" / "004_sku_inventory_schema.sql"
+ADMIN_PRODUCT_MIGRATION = SERVER_ROOT / "migrations" / "007_admin_product_metadata.sql"
 
 REQUIRED_TABLES = [
     "profiles",
@@ -38,7 +39,10 @@ def _read(path: Path) -> str:
 
 
 def _preview_sql() -> str:
-    return _read(PREVIEW_BOOTSTRAP)
+    return "\n".join(
+        _read(path)
+        for path in sorted((SERVER_ROOT / "migrations" / "preview").glob("*.sql"))
+    )
 
 
 def _extract_function(sql: str, schema: str | None, name: str) -> dict[str, str]:
@@ -132,6 +136,7 @@ def test_backend_rpc_calls_exist_in_preview_bootstrap():
         "increment_product_stock",
         "set_default_address",
         "delete_address_and_promote",
+        "set_product_sku",
     }
     for function_name in backend_rpcs:
         assert f"CREATE OR REPLACE FUNCTION preview.{function_name}" in sql
@@ -169,6 +174,17 @@ def test_preview_sku_rpc_contracts_match_production_signatures_and_return_types(
         assert preview["returns"].upper() == production["returns"].upper() == "JSONB"
         assert "SECURITY DEFINER" in preview["attrs"].upper()
         assert "SET search_path = preview, pg_temp" in preview["attrs"]
+
+
+def test_preview_product_sku_rpc_matches_production_contract():
+    preview = _extract_function(_preview_sql(), "preview", "set_product_sku")
+    production = _extract_function(
+        _read(ADMIN_PRODUCT_MIGRATION), "public", "set_product_sku"
+    )
+
+    assert _normalize_sql(preview["args"]) == _normalize_sql(production["args"])
+    assert preview["returns"].upper() == production["returns"].upper() == "JSONB"
+    assert "SET search_path = preview, pg_temp" in preview["attrs"]
 
 
 def test_preview_sku_rpc_jsonb_contract_and_table_targets():
@@ -272,6 +288,7 @@ def test_security_definer_functions_use_safe_preview_search_path():
         "reserve_sku_stock",
         "release_sku_stock",
         "commit_sku_stock",
+        "set_product_sku",
     }
 
 
