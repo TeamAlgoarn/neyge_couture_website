@@ -51,17 +51,20 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class CollectionCreateRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=150)
     slug: Optional[str] = Field(default=None, max_length=180)
-    banner_image: Optional[str] = None
+    banner_image: Optional[str] = Field(default=None, max_length=1000)
     description: Optional[str] = None
     story: Optional[str] = None
     is_active: bool = True
-    featured: bool = False
+    featured: bool = Field(
+        default=False,
+        description="Whether this collection is shown in the homepage Collections section",
+    )
     # ── NEW: category lets admin tag the collection type ──────────────────────
     # This drives the filter sidebar in CollectionsPage without name-guessing
     category: Optional[str] = Field(
@@ -70,16 +73,26 @@ class CollectionCreateRequest(BaseModel):
         description="e.g. Wedding, Party & Festive, Casual, Formal, Heritage"
     )
 
+    @field_validator("banner_image", mode="before")
+    @classmethod
+    def empty_banner_to_none(cls, value):
+        return value.strip() or None if isinstance(value, str) else value
+
 
 class CollectionUpdateRequest(BaseModel):
     name: Optional[str] = Field(default=None, min_length=2, max_length=150)
     slug: Optional[str] = Field(default=None, max_length=180)
-    banner_image: Optional[str] = None
+    banner_image: Optional[str] = Field(default=None, max_length=1000)
     description: Optional[str] = None
     story: Optional[str] = None
     is_active: Optional[bool] = None
     featured: Optional[bool] = None
     category: Optional[str] = Field(default=None, max_length=80)
+
+    @field_validator("banner_image", mode="before")
+    @classmethod
+    def empty_banner_to_none(cls, value):
+        return value.strip() or None if isinstance(value, str) else value
 
 
 class CollectionResponse(BaseModel):

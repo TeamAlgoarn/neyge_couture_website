@@ -199,6 +199,57 @@ from app.utils.slug import slugify
 
 class ProductService:
     @staticmethod
+    def _sku_from_product(product: dict) -> str | None:
+        if product.get("sku"):
+            return str(product["sku"])
+        variants = product.get("product_variants") or []
+        active_variants = [variant for variant in variants if variant.get("is_active", True)]
+        if len(active_variants) != 1:
+            return None
+        active_variants.sort(key=lambda variant: variant.get("created_at") or "")
+        return active_variants[0].get("sku")
+
+    @staticmethod
+    def _raise_product_write_error(exc: Exception) -> None:
+        message = str(exc)
+        if "Product not found" in message:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            ) from exc
+        if "multiple variants" in message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="SKU must be managed at variant level for products with multiple variants",
+            ) from exc
+        if "cannot be renamed" in message:
+            reason = next(
+                (
+                    text
+                    for text in (
+                        "SKU cannot be renamed while stock is reserved",
+                        "SKU cannot be renamed while it is referenced by a cart",
+                        "SKU cannot be renamed while it is referenced by an active order",
+                    )
+                    if text in message
+                ),
+                "SKU cannot be renamed while it has active references",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=reason,
+            ) from exc
+        if "SKU already exists" in message or "duplicate key" in message:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="SKU already exists",
+            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Unable to save product",
+        ) from exc
+
+    @staticmethod
     def _resolve_collection_filter(collection: str | None) -> str | None:
         if not collection:
             return None
@@ -221,7 +272,7 @@ class ProductService:
         )
 
     @staticmethod
-    def _to_public_product(product: dict) -> dict:
+    def _to_public_product(product: dict, *, include_sku: bool = False) -> dict:
         collection_summary = None
         collection_id = product.get("collection_id")
 
@@ -245,6 +296,15 @@ class ProductService:
             "short_description": product.get("short_description"),
             "fabric": product.get("fabric"),
             "technique": product.get("technique"),
+            "design": product.get("design"),
+            "zari": product.get("zari"),
+            "certification": product.get("certification"),
+            "brand": product.get("brand"),
+            "sku": (
+                ProductService._sku_from_product(product)
+                if include_sku
+                else None
+            ),
             "origin": product.get("origin"),
             "color": product.get("color"),
             "occasion": product.get("occasion") or [],
@@ -278,12 +338,20 @@ class ProductService:
                 )
 
         data = payload.model_dump()
+        sku = data.pop("sku", None)
+        images = data.get("images") or []
+        data["images"] = images
+        data["thumbnail"] = data.get("thumbnail") if data.get("thumbnail") in images else (images[0] if images else None)
+        data["brand"] = data.get("brand") or "Neyge Couture"
         data["slug"] = slug
 
         if payload.artisan:
             data["artisan"] = payload.artisan.model_dump()
 
-        return ProductRepository.create(data)
+        try:
+            return ProductRepository.create_with_sku(data, sku)
+        except Exception as exc:
+            ProductService._raise_product_write_error(exc)
 
     @staticmethod
     def list_filtered(
@@ -352,7 +420,7 @@ class ProductService:
                 detail="Product not found",
             )
 
-        return ProductService._to_public_product(product)
+        return ProductService._to_public_product(product, include_sku=True)
 
     @staticmethod
     def get_by_id(product_id: str) -> dict:
@@ -362,6 +430,7 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found",
             )
+        product["sku"] = ProductService._sku_from_product(product)
         return product
 
     @staticmethod
@@ -374,6 +443,16 @@ class ProductService:
             )
 
         data = payload.model_dump(exclude_unset=True)
+        sku = data.pop("sku", None)
+
+        if "images" in data:
+            images = data.get("images") or []
+            data["images"] = images
+            requested_thumbnail = data.get("thumbnail", existing.get("thumbnail"))
+            data["thumbnail"] = requested_thumbnail if requested_thumbnail in images else (images[0] if images else None)
+
+        if "brand" in data and not data["brand"]:
+            data["brand"] = "Neyge Couture"
 
         if "collection_id" in data and data["collection_id"]:
             collection = CollectionRepository.get_by_id(data["collection_id"])
@@ -404,17 +483,15 @@ class ProductService:
                 detail="discount_price cannot be greater than price",
             )
 
-        if "artisan" in data and data["artisan"] is not None:
-            data["artisan"] = data["artisan"].model_dump()
+        if "artisan" in data and payload.artisan is not None:
+            data["artisan"] = payload.artisan.model_dump()
 
-        updated = ProductRepository.update(product_id, data)
-        if not updated:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update product",
-            )
-
-        return updated
+        try:
+            # A missing/blank SKU is intentionally passed as NULL: the database
+            # leaves an existing default SKU unchanged and repairs a missing one.
+            return ProductRepository.update_with_sku(product_id, data, sku)
+        except Exception as exc:
+            ProductService._raise_product_write_error(exc)
 
     @staticmethod
     def soft_delete(product_id: str) -> dict:

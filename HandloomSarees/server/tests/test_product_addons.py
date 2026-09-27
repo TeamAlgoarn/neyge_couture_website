@@ -164,16 +164,17 @@ def test_api_get_product_by_slug_includes_addons(monkeypatch):
 def test_api_create_product_with_addons(monkeypatch):
     app.dependency_overrides[require_admin] = lambda: {"profile": {"role": "admin"}}
 
-    def mock_create(payload):
+    def mock_create(payload, sku):
         return {
             "id": "prod-202",
             **payload,
+            "sku": sku or "NEY-GENERATED",
             "created_at": "2026-01-01T00:00:00Z",
             "updated_at": "2026-01-01T00:00:00Z",
         }
 
     monkeypatch.setattr(ProductRepository, "exists_by_slug", staticmethod(lambda s, exclude_id=None: False))
-    monkeypatch.setattr(ProductRepository, "create", staticmethod(mock_create))
+    monkeypatch.setattr(ProductRepository, "create_with_sku", staticmethod(mock_create))
 
     payload = {
         "name": "Paithani Silk Saree",
@@ -212,13 +213,13 @@ def test_api_update_product_addons(monkeypatch):
         "in_skirt_price": 0.0,
     }
 
-    def mock_update(pid, payload):
-        updated = {**existing, **payload}
+    def mock_update(pid, payload, sku):
+        updated = {**existing, **payload, "sku": sku or "NEY-EXISTING"}
         return updated
 
     monkeypatch.setattr(ProductRepository, "get_by_id", staticmethod(lambda pid: existing))
     monkeypatch.setattr(ProductRepository, "exists_by_slug", staticmethod(lambda s, exclude_id=None: False))
-    monkeypatch.setattr(ProductRepository, "update", staticmethod(mock_update))
+    monkeypatch.setattr(ProductRepository, "update_with_sku", staticmethod(mock_update))
 
     update_payload = {
         "has_fall": True,

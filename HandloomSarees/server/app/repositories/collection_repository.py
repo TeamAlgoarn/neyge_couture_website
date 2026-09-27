@@ -332,6 +332,20 @@ class CollectionRepository:
         return result.data or []
 
     @staticmethod
+    def list_homepage() -> list[dict]:
+        client = get_supabase_admin()
+        result = (
+            client.table("collections")
+            .select("*")
+            .eq("is_active", True)
+            .eq("featured", True)
+            .order("sort_order")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return result.data or []
+
+    @staticmethod
     def exists_by_slug(slug: str, exclude_id: str | None = None) -> bool:
         client = get_supabase_admin()
         query = client.table("collections").select("id").eq("slug", slug)

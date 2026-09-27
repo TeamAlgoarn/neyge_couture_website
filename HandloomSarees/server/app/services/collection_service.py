@@ -205,8 +205,22 @@ class CollectionService:
         return CollectionRepository.list_active()
 
     @staticmethod
+    def list_homepage() -> list[dict]:
+        return CollectionRepository.list_homepage()
+
+    @staticmethod
     def get_by_slug(slug: str) -> dict:
         collection = CollectionRepository.get_by_slug(slug)
+        if not collection:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Collection not found",
+            )
+        return collection
+
+    @staticmethod
+    def get_by_id(collection_id: str) -> dict:
+        collection = CollectionRepository.get_by_id(collection_id)
         if not collection:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

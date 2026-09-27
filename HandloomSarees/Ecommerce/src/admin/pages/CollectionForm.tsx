@@ -4,6 +4,12 @@ import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
 import { Layers, Sparkles, Save, X, Upload } from "lucide-react";
 import { uploadCollectionImage } from "../lib/uploadCollectionImage";
+import {
+  COLLECTION_MIN_DIMENSIONS,
+  IMAGE_ACCEPT,
+  getImageErrorMessage,
+  validateImageFile,
+} from "../lib/imageValidation";
 
 const C = {
   maroon: '#800020',
@@ -250,6 +256,7 @@ export default function CollectionForm() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(isEdit);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
   const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const updateField = <K extends keyof CollectionPayload>(
@@ -263,7 +270,7 @@ export default function CollectionForm() {
 
     const fetchCollection = async () => {
       try {
-        const res = await adminApi.get<CollectionResponse>(`/collections/${id}`);
+        const res = await adminApi.get<CollectionResponse>(`/collections/id/${id}`);
         const collection = res.data?.data || res.data?.collection || res.data;
 
         if (collection) {
@@ -299,11 +306,13 @@ export default function CollectionForm() {
     if (!file) return;
     try {
       setUploadingImage(true);
+      setImageError("");
+      await validateImageFile(file, COLLECTION_MIN_DIMENSIONS);
       const imageUrl = await uploadCollectionImage(file);
       setForm((prev) => ({ ...prev, banner_image: imageUrl }));
     } catch (error) {
       console.error("Collection image upload failed", error);
-      alert("Image upload failed");
+      setImageError(getImageErrorMessage(error));
     } finally {
       setUploadingImage(false);
       if (imageInputRef.current) imageInputRef.current.value = "";
@@ -438,11 +447,12 @@ export default function CollectionForm() {
 
                   {/* Image upload */}
                   <div>
-                    <label className="form-label">Collection Image</label>
+                    <label className="form-label">Collection Cover Image</label>
                     <div className="upload-box">
                       <button
                         type="button"
                         className="upload-btn"
+                        disabled={uploadingImage}
                         onClick={() => imageInputRef.current?.click()}
                       >
                         <Upload size={14} />
@@ -452,22 +462,38 @@ export default function CollectionForm() {
                       <input
                         ref={imageInputRef}
                         type="file"
-                        accept="image/*"
+                        accept={IMAGE_ACCEPT}
                         onChange={handleCollectionImageUpload}
                         style={{ display: "none" }}
                       />
 
                       <p className="upload-hint">
-                        Select image from your device. It will be uploaded
-                        automatically.
+                        Optional. JPG, JPEG, PNG, or WEBP; maximum 5 MB;
+                        minimum 800 × 600px.
                       </p>
 
+                      {imageError && (
+                        <p className="upload-hint" style={{ color: "#b42318", fontWeight: 600 }}>
+                          {imageError}
+                        </p>
+                      )}
+
                       {form.banner_image && (
-                        <img
-                          src={form.banner_image}
-                          alt="Collection preview"
-                          className="preview-img"
-                        />
+                        <>
+                          <img
+                            src={form.banner_image}
+                            alt="Collection cover preview"
+                            className="preview-img"
+                          />
+                          <button
+                            type="button"
+                            className="upload-btn"
+                            style={{ marginTop: 10 }}
+                            onClick={() => updateField("banner_image", "")}
+                          >
+                            <X size={14} /> Remove Cover Image
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -494,7 +520,7 @@ export default function CollectionForm() {
                         updateField("featured", e.target.checked)
                       }
                     />
-                    Featured Collection
+                    Show this collection on homepage
                   </label>
 
                   <label className="form-checkbox-label">

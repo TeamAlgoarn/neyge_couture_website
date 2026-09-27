@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
-import logo from '@/assets/Client_NC_Logo-03.png';
+import logo from '@/assets/Client_NC_Logo-01.png';
 import patternBg from '@/assets/Client_NC_Pattern-01.png';
 
 const WHATSAPP_NUMBER = "919113991711";
