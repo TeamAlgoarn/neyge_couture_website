@@ -1072,8 +1072,10 @@ export default function ProductForm() {
                       placeholder="e.g., Banarasi Silk Saree"
                       value={form.name}
                       onChange={(e) => updateField("name", e.target.value)}
-                      required
                     />
+                    <p className="form-hint">
+                      Optional. Blank products are saved as Untitled Product.
+                    </p>
                   </div>
 
                   <div>
@@ -1083,10 +1085,9 @@ export default function ProductForm() {
                       placeholder="e.g., banarasi-silk-saree"
                       value={form.slug}
                       onChange={(e) => updateField("slug", e.target.value)}
-                      required
                     />
                     <p className="slug-hint">
-                      URL-friendly identifier (lowercase, hyphens)
+                      Optional. A unique URL identifier is generated automatically.
                     </p>
                   </div>
 
@@ -1237,7 +1238,7 @@ export default function ProductForm() {
                   </div>
 
                   <div>
-                    <label className="form-label">Price (₹)</label>
+                    <label className="form-label">Price * (₹)</label>
                     <input
                       type="number"
                       min={0.01}

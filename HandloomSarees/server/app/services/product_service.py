@@ -188,6 +188,8 @@
 
 
 
+from uuid import uuid4
+
 from fastapi import HTTPException, status
 
 from app.repositories.collection_repository import CollectionRepository
@@ -198,6 +200,15 @@ from app.utils.slug import slugify
 
 
 class ProductService:
+    DEFAULT_PRODUCT_NAME = "Untitled Product"
+
+    @staticmethod
+    def _generated_slug(name: str) -> str:
+        """Return a routable identifier without coupling uniqueness to display text."""
+        base = slugify(name) or "product"
+        suffix = uuid4().hex
+        return f"{base[: 220 - len(suffix) - 1]}-{suffix}"
+
     @staticmethod
     def _sku_from_product(product: dict) -> str | None:
         if product.get("sku"):
@@ -321,9 +332,14 @@ class ProductService:
 
     @staticmethod
     def create(payload: ProductCreateRequest) -> dict:
-        slug = payload.slug.strip().lower() if payload.slug else slugify(payload.name)
+        name = payload.name or ProductService.DEFAULT_PRODUCT_NAME
+        requested_slug = slugify(payload.slug) if payload.slug else None
+        slug = requested_slug or ProductService._generated_slug(name)
 
-        if ProductRepository.exists_by_slug(slug):
+        # Explicit slugs are system identifiers and remain unique. Generated
+        # slugs carry a suffix so duplicate display names do not contend for
+        # the same identifier during concurrent product creation.
+        if requested_slug and ProductRepository.exists_by_slug(slug):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Product slug already exists",
@@ -339,6 +355,7 @@ class ProductService:
 
         data = payload.model_dump()
         sku = data.pop("sku", None)
+        data["name"] = name
         images = data.get("images") or []
         data["images"] = images
         data["thumbnail"] = data.get("thumbnail") if data.get("thumbnail") in images else (images[0] if images else None)
@@ -462,10 +479,19 @@ class ProductService:
                     detail="Invalid collection_id",
                 )
 
-        if "slug" in data and data["slug"]:
-            data["slug"] = slugify(data["slug"])
-        elif "name" in data and data["name"]:
-            data["slug"] = slugify(data["name"])
+        if "name" in data and not data["name"]:
+            # Blank identity fields on edit mean unchanged. Creation supplies
+            # safe values for the database's NOT NULL columns above.
+            data.pop("name")
+
+        if "slug" in data and not data["slug"]:
+            data.pop("slug")
+        elif "slug" in data:
+            normalised_slug = slugify(data["slug"])
+            if normalised_slug:
+                data["slug"] = normalised_slug
+            else:
+                data.pop("slug")
 
         if data.get("slug") and ProductRepository.exists_by_slug(
             data["slug"], exclude_id=product_id
