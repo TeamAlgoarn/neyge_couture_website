@@ -21,7 +21,7 @@ os.environ.setdefault("CLOUDINARY_API_SECRET", "cloud-secret")
 
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.product_repository import ProductRepository
-from app.schemas.collection import CollectionCreateRequest
+from app.schemas.collection import CollectionCreateRequest, CollectionUpdateRequest
 from app.schemas.product import ProductCreateRequest, ProductUpdateRequest
 from app.services.collection_service import CollectionService
 from app.services.product_service import ProductService
@@ -404,11 +404,13 @@ def test_collection_visibility_and_cover_persist(monkeypatch):
             name="Wedding Silks",
             banner_image="https://img/cover.webp",
             featured=True,
+            sort_order=4,
         )
     )
 
     assert captured["featured"] is True
     assert captured["banner_image"] == "https://img/cover.webp"
+    assert captured["sort_order"] == 4
     assert result["featured"] is True
 
 
@@ -422,6 +424,13 @@ def test_homepage_collection_query_enforces_active_and_featured(monkeypatch):
     class Query:
         def __init__(self):
             self.filters = []
+            self.orders = []
+            self.items = [
+                {"id": "later", "is_active": True, "featured": True, "sort_order": 20},
+                {"id": "hidden", "is_active": True, "featured": False, "sort_order": 0},
+                {"id": "inactive", "is_active": False, "featured": True, "sort_order": 0},
+                {"id": "first", "is_active": True, "featured": True, "sort_order": 10},
+            ]
 
         def select(self, *_args, **_kwargs):
             return self
@@ -430,11 +439,19 @@ def test_homepage_collection_query_enforces_active_and_featured(monkeypatch):
             self.filters.append((field, value))
             return self
 
-        def order(self, *_args, **_kwargs):
+        def order(self, field, **kwargs):
+            self.orders.append((field, kwargs.get("desc", False)))
             return self
 
         def execute(self):
-            return type("Result", (), {"data": [{"id": "visible", "featured": True}]})()
+            items = [
+                item
+                for item in self.items
+                if all(item.get(field) == value for field, value in self.filters)
+            ]
+            for field, desc in reversed(self.orders):
+                items.sort(key=lambda item: item.get(field, 0), reverse=desc)
+            return type("Result", (), {"data": items})()
 
     query = Query()
     client = type("Client", (), {"table": lambda self, name: query})()
@@ -447,4 +464,12 @@ def test_homepage_collection_query_enforces_active_and_featured(monkeypatch):
 
     assert ("is_active", True) in query.filters
     assert ("featured", True) in query.filters
-    assert result == [{"id": "visible", "featured": True}]
+    assert query.orders[0] == ("sort_order", False)
+    assert [item["id"] for item in result] == ["first", "later"]
+
+
+def test_collection_sort_order_schema_supports_create_and_edit():
+    assert CollectionCreateRequest(name="First", sort_order=3).sort_order == 3
+    assert CollectionUpdateRequest(sort_order=1).sort_order == 1
+    with pytest.raises(ValidationError):
+        CollectionCreateRequest(name="Invalid", sort_order=-1)

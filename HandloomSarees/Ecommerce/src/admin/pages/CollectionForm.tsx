@@ -218,6 +218,7 @@ type CollectionPayload = {
   slug: string;
   description: string;
   banner_image: string;
+  sort_order: number;
   is_active: boolean;
   featured: boolean;
   // ── NEW: category field sent to backend ────────────────────────────────────
@@ -242,6 +243,7 @@ const initialForm: CollectionPayload = {
   slug: "",
   description: "",
   banner_image: "",
+  sort_order: 0,
   is_active: true,
   featured: false,
   category: "",      // ← new
@@ -283,6 +285,7 @@ export default function CollectionForm() {
               collection.image ||
               collection.thumbnail ||
               "",
+            sort_order: Math.max(0, Number(collection.sort_order || 0)),
             is_active: collection.is_active ?? true,
             featured: collection.featured ?? false,
             category: collection.category || "",   // ← load saved category
@@ -534,6 +537,26 @@ export default function CollectionForm() {
                     />
                     Active Collection
                   </label>
+
+                  <div>
+                    <label className="form-label">Homepage Sort Order</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      className="form-input"
+                      value={form.sort_order}
+                      onChange={(e) =>
+                        updateField(
+                          "sort_order",
+                          Math.max(0, Number(e.target.value) || 0),
+                        )
+                      }
+                    />
+                    <p className="form-hint">
+                      Lower numbers appear first in the homepage collection section.
+                    </p>
+                  </div>
 
                   {form.banner_image && (
                     <div style={{ marginTop: 8 }}>

@@ -360,7 +360,14 @@ const CSS = `
 .fc-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;
 }
-@media(max-width:900px){ .fc-grid { grid-template-columns: 1fr; gap: 22px; } }
+.fc-grid.fc-count-1 { grid-template-columns: minmax(280px, 720px); justify-content: center; }
+.fc-grid.fc-count-2 { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+.fc-grid .fc-card:nth-child(even) { margin-top: 36px; }
+@media(max-width:900px){
+  .fc-grid,
+  .fc-grid.fc-count-1,
+  .fc-grid.fc-count-2 { grid-template-columns: 1fr; gap: 22px; }
+}
 
 .fc-card {
   position: relative; border-radius: 24px; overflow: hidden;
@@ -479,6 +486,7 @@ const CSS = `
 
 @media(max-width:480px){
   .fc-card-panel { padding: 20px 20px; }
+  .fc-grid .fc-card:nth-child(even) { margin-top: 0; }
 }
 `;
 
@@ -493,6 +501,7 @@ type CollectionItem = {
   thumbnail?: string;
   is_active?: boolean;
   featured?: boolean;
+  sort_order?: number;
 };
 
 type CollectionsResponse = {
@@ -524,7 +533,7 @@ export function FeaturedCollections() {
 
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [collections.length]);
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -535,7 +544,11 @@ export function FeaturedCollections() {
         const { data } = await api.get<CollectionsResponse>('/collections/homepage');
 
         const items = Array.isArray(data?.data) ? data.data : [];
-        setCollections(items);
+        setCollections(
+          items
+            .filter((item) => item.is_active !== false && item.featured !== false)
+            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+        );
       } catch (err) {
         console.error('Failed to fetch collections', err);
         setError('Failed to load collections');
@@ -546,6 +559,8 @@ export function FeaturedCollections() {
 
     fetchCollections();
   }, []);
+
+  if (loading || error || collections.length === 0) return null;
 
   return (
     <>
@@ -570,14 +585,7 @@ export function FeaturedCollections() {
             </p>
           </div>
 
-          {loading ? (
-            <div className="fc-loading">Loading collections...</div>
-          ) : error ? (
-            <div className="fc-error">{error}</div>
-          ) : collections.length === 0 ? (
-            <div className="fc-empty">No collections available right now.</div>
-          ) : (
-            <div className="fc-grid">
+          <div className={`fc-grid fc-count-${Math.min(collections.length, 3)}`}>
               {collections.map((col, i) => {
                 const image =
                   col.banner_image ||
@@ -632,8 +640,7 @@ export function FeaturedCollections() {
                   </Link>
                 );
               })}
-            </div>
-          )}
+          </div>
         </div>
       </section>
     </>
