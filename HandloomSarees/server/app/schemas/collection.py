@@ -60,6 +60,7 @@ class CollectionCreateRequest(BaseModel):
     banner_image: Optional[str] = Field(default=None, max_length=1000)
     description: Optional[str] = None
     story: Optional[str] = None
+    sort_order: int = Field(default=0, ge=0)
     is_active: bool = True
     featured: bool = Field(
         default=False,
@@ -85,6 +86,7 @@ class CollectionUpdateRequest(BaseModel):
     banner_image: Optional[str] = Field(default=None, max_length=1000)
     description: Optional[str] = None
     story: Optional[str] = None
+    sort_order: Optional[int] = Field(default=None, ge=0)
     is_active: Optional[bool] = None
     featured: Optional[bool] = None
     category: Optional[str] = Field(default=None, max_length=80)
@@ -102,6 +104,7 @@ class CollectionResponse(BaseModel):
     banner_image: Optional[str] = None
     description: Optional[str] = None
     story: Optional[str] = None
+    sort_order: int = 0
     is_active: bool
     featured: bool = False
     # ── NEW ──────────────────────────────────────────────────────────────────
