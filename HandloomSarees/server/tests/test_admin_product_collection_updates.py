@@ -63,6 +63,118 @@ def test_product_schema_requires_positive_price():
         ProductCreateRequest(**product_payload(price=0))
 
 
+@pytest.mark.parametrize("price", [None, 0, -1])
+def test_product_schema_rejects_missing_or_non_positive_price(price):
+    payload = {"price": price} if price is not None else {}
+    with pytest.raises(ValidationError):
+        ProductCreateRequest(**payload)
+
+
+def test_product_schema_accepts_price_as_the_only_admin_supplied_value():
+    model = ProductCreateRequest(price=4999, stock="", sku=" ", brand=" ")
+
+    assert model.name is None
+    assert model.slug is None
+    assert model.sku is None
+    assert model.brand is None
+    assert model.stock == 0
+    assert model.images == []
+    assert model.collection_id is None
+
+
+def test_optional_product_text_is_trimmed_or_normalised_to_none():
+    model = ProductCreateRequest(
+        price=4999,
+        name="  Kanjivaram Silk Saree  ",
+        fabric=" ",
+        color=" ",
+        design=" ",
+        zari=" ",
+        certification=" ",
+        short_description=" ",
+    )
+
+    assert model.name == "Kanjivaram Silk Saree"
+    assert model.fabric is None
+    assert model.color is None
+    assert model.design is None
+    assert model.zari is None
+    assert model.certification is None
+    assert model.short_description is None
+
+
+def test_duplicate_visible_values_receive_distinct_system_identifiers(monkeypatch):
+    created = []
+
+    def fake_create(payload, sku):
+        product = {
+            "id": f"product-{len(created) + 1}",
+            **payload,
+            "sku": sku or f"NEY-GENERATED-{len(created) + 1}",
+        }
+        created.append(product)
+        return product
+
+    monkeypatch.setattr(ProductRepository, "create_with_sku", fake_create)
+    duplicate = ProductCreateRequest(
+        name="Kanjivaram Silk Saree",
+        price=4999,
+        fabric="Silk",
+        color="Red",
+        design="Temple",
+        brand="Neyge Couture",
+    )
+
+    first = ProductService.create(duplicate)
+    second = ProductService.create(duplicate)
+
+    assert first["name"] == second["name"]
+    assert first["price"] == second["price"] == 4999
+    assert first["fabric"] == second["fabric"] == "Silk"
+    assert first["color"] == second["color"] == "Red"
+    assert first["slug"] != second["slug"]
+    assert first["sku"] != second["sku"]
+
+
+def test_blank_name_gets_safe_display_and_routable_slug(monkeypatch):
+    monkeypatch.setattr(
+        ProductRepository,
+        "create_with_sku",
+        lambda payload, sku: {"id": "product-1", **payload, "sku": "NEY-GENERATED"},
+    )
+
+    product = ProductService.create(ProductCreateRequest(price=4999))
+
+    assert product["name"] == "Untitled Product"
+    assert product["slug"].startswith("untitled-product-")
+
+
+def test_duplicate_name_slugs_route_to_the_correct_product(monkeypatch):
+    products = {
+        "kanjivaram-silk-saree-111": {
+            "id": "product-1",
+            "name": "Kanjivaram Silk Saree",
+            "slug": "kanjivaram-silk-saree-111",
+            "price": 4999,
+            "is_active": True,
+        },
+        "kanjivaram-silk-saree-222": {
+            "id": "product-2",
+            "name": "Kanjivaram Silk Saree",
+            "slug": "kanjivaram-silk-saree-222",
+            "price": 4999,
+            "is_active": True,
+        },
+    }
+    monkeypatch.setattr(ProductRepository, "get_by_slug", products.get)
+
+    first = ProductService.get_public_by_slug("kanjivaram-silk-saree-111")
+    second = ProductService.get_public_by_slug("kanjivaram-silk-saree-222")
+
+    assert first["id"] == "product-1"
+    assert second["id"] == "product-2"
+
+
 def test_product_metadata_and_sku_persist_on_create(monkeypatch):
     captured = {}
 

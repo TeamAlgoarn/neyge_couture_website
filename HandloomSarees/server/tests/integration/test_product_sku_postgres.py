@@ -486,6 +486,52 @@ def test_direct_product_variant_inventory_and_fk_invariants(pg):
             assert cur.fetchone()[0] == 0
 
 
+def test_duplicate_visible_values_keep_unique_skus_slugs_and_edit_isolation(pg):
+    conn, schema = pg
+    duplicate_values = {
+        "name": "Kanjivaram Silk Saree",
+        "price": 4999,
+        "fabric": "Silk",
+        "color": "Red",
+        "design": "Temple",
+        "zari": "Pure Zari",
+        "certification": "Silk Mark",
+        "brand": "Neyge Couture",
+    }
+    with conn.cursor() as cur:
+        first = _create(
+            cur,
+            schema,
+            "kanjivaram-silk-saree-a1b2c3d4e5f6",
+            None,
+            **duplicate_values,
+        )
+        second = _create(
+            cur,
+            schema,
+            "kanjivaram-silk-saree-b1c2d3e4f5a6",
+            None,
+            **duplicate_values,
+        )
+
+        assert first["id"] != second["id"]
+        assert first["slug"] != second["slug"]
+        assert first["sku"] != second["sku"]
+
+        cur.execute(
+            f"SELECT {schema}.update_product_with_sku(%s,%s::jsonb,NULL)",
+            (first["id"], json.dumps({"design": "Edited first product"})),
+        )
+        assert cur.fetchone()[0]["design"] == "Edited first product"
+        cur.execute(
+            f"SELECT id, slug, design FROM {schema}.products WHERE id IN (%s,%s) ORDER BY id",
+            (first["id"], second["id"]),
+        )
+        rows = {str(row[0]): (row[1], row[2]) for row in cur.fetchall()}
+        assert rows[first["id"]] == (first["slug"], "Edited first product")
+        assert rows[second["id"]] == (second["slug"], "Temple")
+
+
 def _run_in_thread(action):
     outcome = {}
     started = threading.Event()

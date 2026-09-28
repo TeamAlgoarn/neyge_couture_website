@@ -44,7 +44,7 @@ def _split(v: Any) -> list[str]:
 
 
 class ProductCreateRequest(BaseModel):
-    name: str = Field(..., min_length=2, max_length=180)
+    name: Optional[str] = Field(default=None, min_length=2, max_length=180)
     slug: Optional[str] = Field(default=None, max_length=220)
     price: float = Field(..., gt=0)
     discount_price: Optional[float] = Field(default=None, ge=0)
@@ -88,7 +88,23 @@ class ProductCreateRequest(BaseModel):
     def normalise_to_string(cls, v):
         return _join(v)
 
-    @field_validator("design", "zari", "certification", "brand", "sku", mode="before")
+    @field_validator(
+        "name",
+        "slug",
+        "thumbnail",
+        "short_description",
+        "story",
+        "technique",
+        "design",
+        "zari",
+        "certification",
+        "brand",
+        "sku",
+        "origin",
+        "collection_id",
+        "care_instructions",
+        mode="before",
+    )
     @classmethod
     def normalise_optional_text(cls, value):
         if value is None:
@@ -101,6 +117,11 @@ class ProductCreateRequest(BaseModel):
     @classmethod
     def normalise_sku(cls, value):
         return value.upper() if value else None
+
+    @field_validator("stock", mode="before")
+    @classmethod
+    def default_blank_stock_to_zero(cls, value):
+        return 0 if value is None or value == "" else value
 
     @field_validator("discount_price")
     @classmethod
@@ -155,7 +176,23 @@ class ProductUpdateRequest(BaseModel):
     def normalise_to_string(cls, v):
         return _join(v)
 
-    @field_validator("design", "zari", "certification", "brand", "sku", mode="before")
+    @field_validator(
+        "name",
+        "slug",
+        "thumbnail",
+        "short_description",
+        "story",
+        "technique",
+        "design",
+        "zari",
+        "certification",
+        "brand",
+        "sku",
+        "origin",
+        "collection_id",
+        "care_instructions",
+        mode="before",
+    )
     @classmethod
     def normalise_optional_text(cls, value):
         if value is None:
