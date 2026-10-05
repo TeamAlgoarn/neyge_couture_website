@@ -249,14 +249,35 @@
 
 
 from typing import Optional
+
+from postgrest.exceptions import APIError
+
 from app.core.database import get_supabase_admin
+
+
+def _is_missing_sort_order_error(exc: APIError) -> bool:
+    """Recognize the legacy Production schema that predates sort_order."""
+    message = str(exc).lower()
+    return "sort_order" in message and (
+        "pgrst204" in message
+        or "schema cache" in message
+        or "column" in message
+    )
 
 
 class CollectionRepository:
     @staticmethod
     def create(payload: dict) -> dict:
         client = get_supabase_admin()
-        result = client.table("collections").insert(payload).execute()
+        try:
+            result = client.table("collections").insert(payload).execute()
+        except APIError as exc:
+            if "sort_order" not in payload or not _is_missing_sort_order_error(exc):
+                raise
+            compatible_payload = {
+                key: value for key, value in payload.items() if key != "sort_order"
+            }
+            result = client.table("collections").insert(compatible_payload).execute()
         return result.data[0]
 
     @staticmethod
@@ -300,12 +321,25 @@ class CollectionRepository:
     @staticmethod
     def update(collection_id: str, payload: dict) -> dict | None:
         client = get_supabase_admin()
-        result = (
-            client.table("collections")
-            .update(payload)
-            .eq("id", collection_id)
-            .execute()
-        )
+        try:
+            result = (
+                client.table("collections")
+                .update(payload)
+                .eq("id", collection_id)
+                .execute()
+            )
+        except APIError as exc:
+            if "sort_order" not in payload or not _is_missing_sort_order_error(exc):
+                raise
+            compatible_payload = {
+                key: value for key, value in payload.items() if key != "sort_order"
+            }
+            result = (
+                client.table("collections")
+                .update(compatible_payload)
+                .eq("id", collection_id)
+                .execute()
+            )
         return result.data[0] if result.data else None
 
     @staticmethod
@@ -334,15 +368,27 @@ class CollectionRepository:
     @staticmethod
     def list_homepage() -> list[dict]:
         client = get_supabase_admin()
-        result = (
-            client.table("collections")
-            .select("*")
-            .eq("is_active", True)
-            .eq("featured", True)
-            .order("sort_order")
-            .order("created_at", desc=True)
-            .execute()
-        )
+        try:
+            result = (
+                client.table("collections")
+                .select("*")
+                .eq("is_active", True)
+                .eq("featured", True)
+                .order("sort_order")
+                .order("created_at", desc=True)
+                .execute()
+            )
+        except APIError as exc:
+            if not _is_missing_sort_order_error(exc):
+                raise
+            result = (
+                client.table("collections")
+                .select("*")
+                .eq("is_active", True)
+                .eq("featured", True)
+                .order("created_at", desc=True)
+                .execute()
+            )
         return result.data or []
 
     @staticmethod

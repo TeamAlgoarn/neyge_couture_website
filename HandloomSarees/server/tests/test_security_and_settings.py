@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
+from starlette.middleware.cors import CORSMiddleware
 
 from app.api.v1 import chatbot
 from app.core.config import Settings
@@ -17,6 +18,26 @@ from app.api.v1 import instagram
 
 
 client = TestClient(app)
+
+
+def test_cors_wraps_server_error_middleware():
+    assert isinstance(app, CORSMiddleware)
+
+
+def test_unhandled_error_response_keeps_cors_header(monkeypatch):
+    def fail_homepage_query():
+        raise RuntimeError("simulated database error")
+
+    monkeypatch.setattr(CollectionService, "list_homepage", fail_homepage_query)
+    error_client = TestClient(app, raise_server_exceptions=False)
+
+    response = error_client.get(
+        "/api/v1/collections/homepage",
+        headers={"Origin": "http://localhost:5173"},
+    )
+
+    assert response.status_code == 500
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
 
 
 def settings_kwargs(**overrides):

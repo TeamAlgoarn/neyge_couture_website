@@ -107,29 +107,21 @@ from app.core.config import settings
 from app.core.exceptions import add_exception_handlers
 from app.core.rate_limit import limiter
 
-app = FastAPI(
+api_app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     debug=settings.DEBUG,
 )
 
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+api_app.state.limiter = limiter
+api_app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+add_exception_handlers(api_app)
 
-add_exception_handlers(app)
-
-app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+api_app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
-@app.get("/")
+@api_app.get("/")
 async def root():
     return {
         "success": True,
@@ -138,3 +130,18 @@ async def root():
             "environment": settings.APP_ENV,
         },
     }
+
+
+# Keep CORS outside FastAPI's ServerErrorMiddleware so even unexpected 500
+# responses carry the allow-origin header for an explicitly allowed origin.
+app = CORSMiddleware(
+    app=api_app,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Preserve FastAPI's dependency override hook for tests and local tooling that
+# import the public ASGI application object.
+app.dependency_overrides = api_app.dependency_overrides
