@@ -65,6 +65,17 @@ def test_admin_collection_form_reuses_cover_visibility_active_and_sort_fields():
     assert "Homepage Sort Order" in source
 
 
+def test_admin_collection_form_does_not_force_default_sort_order_payload():
+    source = (
+        FRONTEND_SRC / "admin" / "pages" / "CollectionForm.tsx"
+    ).read_text(encoding="utf-8")
+
+    assert 'sort_order: ""' in source
+    assert 'if (form.sort_order !== "")' in source
+    assert "delete payload.sort_order" in source
+    assert "sort_order: Math.max(0, Number(form.sort_order) || 0)" not in source
+
+
 def test_admin_collection_form_allows_generated_slug_and_optional_cover():
     source = (
         FRONTEND_SRC / "admin" / "pages" / "CollectionForm.tsx"

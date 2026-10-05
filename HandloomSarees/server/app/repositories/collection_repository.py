@@ -387,6 +387,8 @@ class CollectionRepository:
                 .eq("is_active", True)
                 .eq("featured", True)
                 .order("created_at", desc=True)
+                .order("name")
+                .order("id")
                 .execute()
             )
         return result.data or []
