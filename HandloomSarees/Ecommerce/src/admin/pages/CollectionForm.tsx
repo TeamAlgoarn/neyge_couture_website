@@ -218,7 +218,7 @@ type CollectionPayload = {
   slug: string;
   description: string;
   banner_image: string;
-  sort_order: number;
+  sort_order: number | "";
   is_active: boolean;
   featured: boolean;
   // ── NEW: category field sent to backend ────────────────────────────────────
@@ -243,7 +243,7 @@ const initialForm: CollectionPayload = {
   slug: "",
   description: "",
   banner_image: "",
-  sort_order: 0,
+  sort_order: "",
   is_active: true,
   featured: false,
   category: "",      // ← new
@@ -285,7 +285,10 @@ export default function CollectionForm() {
               collection.image ||
               collection.thumbnail ||
               "",
-            sort_order: Math.max(0, Number(collection.sort_order || 0)),
+            sort_order:
+              collection.sort_order === undefined || collection.sort_order === null
+                ? ""
+                : Math.max(0, Number(collection.sort_order) || 0),
             is_active: collection.is_active ?? true,
             featured: collection.featured ?? false,
             category: collection.category || "",   // ← load saved category
@@ -327,15 +330,19 @@ export default function CollectionForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         ...form,
         name: form.name.trim(),
         slug: form.slug.trim() || undefined,
         description: form.description.trim() || null,
         banner_image: form.banner_image.trim() || null,
         category: form.category || null,
-        sort_order: Math.max(0, Number(form.sort_order) || 0),
       };
+      if (form.sort_order !== "") {
+        payload.sort_order = Math.max(0, Number(form.sort_order) || 0);
+      } else {
+        delete payload.sort_order;
+      }
       if (isEdit && id) {
         await adminApi.put(`/collections/${id}`, payload);
       } else {
@@ -556,7 +563,9 @@ export default function CollectionForm() {
                       onChange={(e) =>
                         updateField(
                           "sort_order",
-                          Math.max(0, Number(e.target.value) || 0),
+                          e.target.value === ""
+                            ? ""
+                            : Math.max(0, Number(e.target.value) || 0),
                         )
                       }
                     />

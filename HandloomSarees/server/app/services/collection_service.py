@@ -208,6 +208,8 @@ class CollectionService:
         slug = CollectionService._unique_slug(slug_source)
 
         data = payload.model_dump()
+        if "sort_order" not in payload.model_fields_set:
+            data.pop("sort_order", None)
         data["slug"] = slug
         return CollectionRepository.create(data)
 

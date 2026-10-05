@@ -560,3 +560,164 @@ def test_collection_sort_order_schema_supports_create_and_edit():
     assert CollectionUpdateRequest(sort_order=1).sort_order == 1
     with pytest.raises(ValidationError):
         CollectionCreateRequest(name="Invalid", sort_order=-1)
+
+
+def test_collection_create_omits_default_sort_order_when_client_does_not_send_it(monkeypatch):
+    attempted_payloads = []
+
+    def fake_unique_slug(_slug_source, exclude_id=None):
+        assert exclude_id is None
+        return "unranked-collection"
+
+    def fake_create(payload):
+        attempted_payloads.append(payload)
+        return {"id": "collection-1", **payload}
+
+    monkeypatch.setattr(CollectionService, "_unique_slug", fake_unique_slug)
+    monkeypatch.setattr(CollectionRepository, "create", fake_create)
+
+    result = CollectionService.create(CollectionCreateRequest(name="Unranked Collection"))
+
+    assert result["slug"] == "unranked-collection"
+    assert "sort_order" not in attempted_payloads[0]
+
+
+def test_collection_create_keeps_explicit_sort_order(monkeypatch):
+    attempted_payloads = []
+
+    monkeypatch.setattr(CollectionService, "_unique_slug", lambda *_args, **_kwargs: "ranked")
+    monkeypatch.setattr(
+        CollectionRepository,
+        "create",
+        lambda payload: attempted_payloads.append(payload) or {"id": "collection-1"},
+    )
+
+    CollectionService.create(CollectionCreateRequest(name="Ranked", sort_order=4))
+
+    assert attempted_payloads[0]["sort_order"] == 4
+
+
+def test_collection_create_retries_without_sort_order_for_legacy_schema(monkeypatch):
+    from postgrest.exceptions import APIError
+
+    attempted_payloads = []
+
+    class Query:
+        def insert(self, payload):
+            attempted_payloads.append(payload)
+            return self
+
+        def execute(self):
+            if "sort_order" in attempted_payloads[-1]:
+                raise APIError(
+                    {
+                        "code": "PGRST204",
+                        "message": "Could not find the 'sort_order' column in the schema cache",
+                        "details": None,
+                        "hint": None,
+                    }
+                )
+            return type("Result", (), {"data": [{"id": "collection-1"}]})()
+
+    client = type("Client", (), {"table": lambda self, _name: Query()})()
+    monkeypatch.setattr(
+        "app.repositories.collection_repository.get_supabase_admin",
+        lambda: client,
+    )
+
+    result = CollectionRepository.create(
+        {"name": "Collection", "slug": "collection", "sort_order": 0}
+    )
+
+    assert result == {"id": "collection-1"}
+    assert attempted_payloads == [
+        {"name": "Collection", "slug": "collection", "sort_order": 0},
+        {"name": "Collection", "slug": "collection"},
+    ]
+
+
+def test_collection_update_retries_without_sort_order_for_legacy_schema(monkeypatch):
+    from postgrest.exceptions import APIError
+
+    attempted_payloads = []
+
+    class Query:
+        def update(self, payload):
+            attempted_payloads.append(payload)
+            return self
+
+        def eq(self, *_args):
+            return self
+
+        def execute(self):
+            if "sort_order" in attempted_payloads[-1]:
+                raise APIError(
+                    {
+                        "code": "PGRST204",
+                        "message": "Could not find the 'sort_order' column in the schema cache",
+                        "details": None,
+                        "hint": None,
+                    }
+                )
+            return type("Result", (), {"data": [{"id": "collection-1"}]})()
+
+    client = type("Client", (), {"table": lambda self, _name: Query()})()
+    monkeypatch.setattr(
+        "app.repositories.collection_repository.get_supabase_admin",
+        lambda: client,
+    )
+
+    result = CollectionRepository.update(
+        "collection-1", {"featured": True, "sort_order": 0}
+    )
+
+    assert result == {"id": "collection-1"}
+    assert attempted_payloads == [
+        {"featured": True, "sort_order": 0},
+        {"featured": True},
+    ]
+
+
+def test_homepage_query_falls_back_when_legacy_schema_has_no_sort_order(monkeypatch):
+    from postgrest.exceptions import APIError
+
+    attempted_orders = []
+
+    class Query:
+        def __init__(self):
+            self.orders = []
+
+        def select(self, *_args):
+            return self
+
+        def eq(self, *_args):
+            return self
+
+        def order(self, field, **_kwargs):
+            self.orders.append(field)
+            return self
+
+        def execute(self):
+            attempted_orders.append(self.orders)
+            if "sort_order" in self.orders:
+                raise APIError(
+                    {
+                        "code": "42703",
+                        "message": "column collections.sort_order does not exist",
+                        "details": None,
+                        "hint": None,
+                    }
+                )
+            return type("Result", (), {"data": [{"id": "collection-1"}]})()
+
+    client = type("Client", (), {"table": lambda self, _name: Query()})()
+    monkeypatch.setattr(
+        "app.repositories.collection_repository.get_supabase_admin",
+        lambda: client,
+    )
+
+    assert CollectionRepository.list_homepage() == [{"id": "collection-1"}]
+    assert attempted_orders == [
+        ["sort_order", "created_at"],
+        ["created_at", "name", "id"],
+    ]
