@@ -327,7 +327,15 @@ export default function CollectionForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = { ...form };
+      const payload = {
+        ...form,
+        name: form.name.trim(),
+        slug: form.slug.trim() || undefined,
+        description: form.description.trim() || null,
+        banner_image: form.banner_image.trim() || null,
+        category: form.category || null,
+        sort_order: Math.max(0, Number(form.sort_order) || 0),
+      };
       if (isEdit && id) {
         await adminApi.put(`/collections/${id}`, payload);
       } else {
@@ -399,10 +407,9 @@ export default function CollectionForm() {
                       placeholder="e.g., summer-silks"
                       value={form.slug}
                       onChange={(e) => updateField("slug", e.target.value)}
-                      required
                     />
                     <p className="form-hint">
-                      URL-friendly identifier (lowercase, hyphens)
+                      Optional. Leave blank to generate a unique URL-friendly identifier.
                     </p>
                   </div>
 

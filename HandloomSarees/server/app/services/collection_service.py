@@ -187,14 +187,25 @@ from app.utils.slug import slugify
 
 class CollectionService:
     @staticmethod
-    def create(payload: CollectionCreateRequest) -> dict:
-        slug = payload.slug.strip().lower() if payload.slug else slugify(payload.name)
+    def _unique_slug(base_slug: str, exclude_id: str | None = None) -> str:
+        base = slugify(base_slug) or "collection"
+        if not CollectionRepository.exists_by_slug(base, exclude_id=exclude_id):
+            return base
 
-        if CollectionRepository.exists_by_slug(slug):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Collection slug already exists",
-            )
+        for suffix in range(2, 10000):
+            candidate = f"{base}-{suffix}"
+            if not CollectionRepository.exists_by_slug(candidate, exclude_id=exclude_id):
+                return candidate
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Unable to generate a unique collection slug",
+        )
+
+    @staticmethod
+    def create(payload: CollectionCreateRequest) -> dict:
+        slug_source = payload.slug or payload.name
+        slug = CollectionService._unique_slug(slug_source)
 
         data = payload.model_dump()
         data["slug"] = slug
@@ -239,18 +250,13 @@ class CollectionService:
 
         data = payload.model_dump(exclude_unset=True)
 
-        if "slug" in data and data["slug"]:
-            data["slug"] = slugify(data["slug"])
-        elif "name" in data and data["name"]:
-            data["slug"] = slugify(data["name"])
-
-        if data.get("slug") and CollectionRepository.exists_by_slug(
-            data["slug"], exclude_id=collection_id
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Collection slug already exists",
-            )
+        if "slug" in data:
+            if data["slug"]:
+                data["slug"] = CollectionService._unique_slug(
+                    data["slug"], exclude_id=collection_id
+                )
+            else:
+                data.pop("slug")
 
         updated = CollectionRepository.update(collection_id, data)
         if not updated:

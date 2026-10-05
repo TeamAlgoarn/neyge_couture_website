@@ -63,3 +63,15 @@ def test_admin_collection_form_reuses_cover_visibility_active_and_sort_fields():
     assert "Remove Cover Image" in source
     assert "Show this collection on homepage" in source
     assert "Homepage Sort Order" in source
+
+
+def test_admin_collection_form_allows_generated_slug_and_optional_cover():
+    source = (
+        FRONTEND_SRC / "admin" / "pages" / "CollectionForm.tsx"
+    ).read_text(encoding="utf-8")
+
+    slug_block = source.split("{/* Slug */}", 1)[1].split("{/*", 1)[0]
+    assert "required" not in slug_block
+    assert "Leave blank to generate a unique URL-friendly identifier" in slug_block
+    assert "slug: form.slug.trim() || undefined" in source
+    assert "banner_image: form.banner_image.trim() || null" in source

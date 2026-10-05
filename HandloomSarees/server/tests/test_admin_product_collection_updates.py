@@ -414,6 +414,93 @@ def test_collection_visibility_and_cover_persist(monkeypatch):
     assert result["featured"] is True
 
 
+def test_collection_duplicate_visible_names_generate_unique_slugs(monkeypatch):
+    slugs = set()
+    created = []
+
+    def fake_exists(slug, exclude_id=None):
+        return slug in slugs
+
+    def fake_create(payload):
+        slugs.add(payload["slug"])
+        created.append(payload)
+        return {"id": f"collection-{len(created)}", **payload}
+
+    monkeypatch.setattr(CollectionRepository, "exists_by_slug", fake_exists)
+    monkeypatch.setattr(CollectionRepository, "create", fake_create)
+
+    first = CollectionService.create(
+        CollectionCreateRequest(name="Silk Collection", featured=True)
+    )
+    second = CollectionService.create(
+        CollectionCreateRequest(name="Silk Collection", featured=True)
+    )
+
+    assert first["name"] == second["name"] == "Silk Collection"
+    assert first["slug"] == "silk-collection"
+    assert second["slug"] == "silk-collection-2"
+
+
+def test_collection_create_without_slug_uses_name_and_optional_cover(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(CollectionRepository, "exists_by_slug", lambda *_args, **_kwargs: False)
+
+    def fake_create(payload):
+        captured.update(payload)
+        return {"id": "collection-1", **payload}
+
+    monkeypatch.setattr(CollectionRepository, "create", fake_create)
+
+    result = CollectionService.create(
+        CollectionCreateRequest(
+            name="New UAT Collection",
+            banner_image=None,
+            featured=True,
+            sort_order=2,
+        )
+    )
+
+    assert captured["slug"] == "new-uat-collection"
+    assert captured["banner_image"] is None
+    assert result["featured"] is True
+    assert result["sort_order"] == 2
+
+
+def test_collection_metadata_edit_does_not_rewrite_slug_when_slug_blank(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(
+        CollectionRepository,
+        "get_by_id",
+        lambda _collection_id: {"id": "collection-1", "slug": "silk-collection"},
+    )
+
+    def fake_update(collection_id, payload):
+        captured.update(payload)
+        return {"id": collection_id, "slug": "silk-collection", **payload}
+
+    monkeypatch.setattr(CollectionRepository, "update", fake_update)
+    monkeypatch.setattr(
+        CollectionRepository,
+        "exists_by_slug",
+        lambda *_args, **_kwargs: pytest.fail("blank slug must preserve current slug"),
+    )
+
+    result = CollectionService.update(
+        "collection-1",
+        CollectionUpdateRequest(
+            name="Silk Collection",
+            slug="",
+            featured=False,
+            banner_image="",
+        ),
+    )
+
+    assert "slug" not in captured
+    assert captured["featured"] is False
+    assert captured["banner_image"] is None
+    assert result["slug"] == "silk-collection"
+
+
 def test_collection_allows_missing_cover_image():
     model = CollectionCreateRequest(name="Uncovered Collection", banner_image="", featured=False)
     assert model.banner_image is None
