@@ -20,7 +20,7 @@ export const SAREES: Saree[] = [
     price: 18999,
     originalPrice: 24999,
     fabric: 'Silk',
-    occasion: 'Wedding',
+    occasion: ['Wedding'],
     color: 'Red',
     images: [
       img1,
@@ -45,7 +45,7 @@ export const SAREES: Saree[] = [
     price: 22499,
     originalPrice: 28999,
     fabric: 'Silk',
-    occasion: 'Wedding',
+    occasion: ['Wedding'],
     color: 'Gold',
     images: [
       img4,
@@ -70,7 +70,7 @@ export const SAREES: Saree[] = [
     price: 3499,
     originalPrice: 4999,
     fabric: 'Cotton',
-    occasion: 'Casual',
+    occasion: ['Casual'],
     color: 'Blue',
     images: [
       img6,
@@ -93,7 +93,7 @@ export const SAREES: Saree[] = [
     price: 8999,
     originalPrice: 12999,
     fabric: 'Silk',
-    occasion: 'Festive',
+    occasion: ['Festive'],
     color: 'Green',
     images: [
       img8,
@@ -117,7 +117,7 @@ export const SAREES: Saree[] = [
     name: 'Pure Khadi Cotton Saree',
     price: 2999,
     fabric: 'Khadi',
-    occasion: 'Casual',
+    occasion: ['Casual'],
     color: 'White',
     images: [
       img10,
@@ -138,7 +138,7 @@ export const SAREES: Saree[] = [
     price: 4999,
     originalPrice: 6999,
     fabric: 'Linen',
-    occasion: 'Party',
+    occasion: ['Party'],
     color: 'Pink',
     images: [
       img11,
@@ -160,7 +160,7 @@ export const SAREES: Saree[] = [
     price: 6499,
     originalPrice: 8999,
     fabric: 'Silk',
-    occasion: 'Festive',
+    occasion: ['Festive'],
     color: 'Purple',
     images: [
       img12,
@@ -183,7 +183,7 @@ export const SAREES: Saree[] = [
     price: 45999,
     originalPrice: 59999,
     fabric: 'Silk',
-    occasion: 'Wedding',
+    occasion: ['Wedding'],
     color: 'Multicolor',
     images: [
       img13,
