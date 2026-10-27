@@ -60,6 +60,15 @@ async def list_products(
     return success_response("Products fetched successfully", data)
 
 
+@router.get("/admin/all", response_model=dict)
+async def list_admin_products(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=12, ge=1, le=50),
+    _: dict = Depends(require_admin),
+):
+    data = ProductService.list_admin(page, page_size)
+    return success_response("Admin products fetched successfully", data)
+
 @router.get("/slug/{slug}", response_model=dict)
 async def get_product_by_slug(slug: str):
     data = ProductService.get_public_by_slug(slug)

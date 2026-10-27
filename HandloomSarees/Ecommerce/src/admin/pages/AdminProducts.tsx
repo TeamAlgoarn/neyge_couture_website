@@ -262,6 +262,8 @@ type Product = {
   is_active?: boolean;
 };
 
+const PAGE_SIZE = 12;
+
 export default function AdminProducts() {
   // ✅ Scroll to top when this page loads
   useEffect(() => {
@@ -271,13 +273,23 @@ export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(totalProducts / PAGE_SIZE));
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const res = await adminApi.get("/products");
+      const res = await adminApi.get("/products/admin/all", {
+        params: {
+          page,
+          page_size: PAGE_SIZE,
+          sort_by: "created_at",
+          sort_order: "desc",
+        },
+      });
       console.log("PRODUCTS API RESPONSE:", res.data);
 
       let items: Product[] = [];
@@ -295,6 +307,10 @@ export default function AdminProducts() {
       }
 
       setProducts(items);
+      const total = res.data?.data?.pagination?.total;
+      setTotalProducts(
+        Number.isInteger(total) && total >= 0 ? total : items.length
+      );
     } catch (err: any) {
       console.error("Failed to fetch products:", err);
       setError(err?.message || "Failed to fetch products");
@@ -318,7 +334,7 @@ export default function AdminProducts() {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [page]);
 
   return (
     <>
@@ -344,7 +360,7 @@ export default function AdminProducts() {
             <>
               <div className="admin-stats">
                 <span className="admin-stats-text">
-                  Total products: <span className="admin-stats-number">{products.length}</span>
+                  Total products: <span className="admin-stats-number">{totalProducts}</span>
                 </span>
               </div>
 
@@ -421,6 +437,37 @@ export default function AdminProducts() {
                   ))
                 )}
               </div>
+
+              {totalProducts > PAGE_SIZE && (
+                <div style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 16,
+                  marginTop: 24,
+                  flexWrap: "wrap",
+                }}>
+                  <button
+                    type="button"
+                    disabled={loading || page <= 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </button>
+
+                  <span>
+                    Page {page} of {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={loading || page >= totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

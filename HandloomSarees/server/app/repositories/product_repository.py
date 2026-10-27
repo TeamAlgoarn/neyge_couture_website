@@ -12,6 +12,24 @@ class ProductRepository:
         return result.data[0]
 
     @staticmethod
+    def list_admin(page: int, page_size: int) -> tuple[list[dict], int]:
+        client = get_supabase_admin()
+
+        start = (page - 1) * page_size
+        end = start + page_size - 1
+
+        result = (
+            client.table("products")
+            .select("*", count="exact")
+            .order("created_at", desc=True)
+            .order("id", desc=True)
+            .range(start, end)
+            .execute()
+        )
+
+        return result.data or [], result.count or 0
+
+    @staticmethod
     def get_by_id(product_id: str) -> Optional[dict]:
         client = get_supabase_admin()
         result = (

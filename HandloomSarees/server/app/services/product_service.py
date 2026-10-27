@@ -199,6 +199,15 @@ from app.utils.slug import slugify
 
 class ProductService:
     @staticmethod
+    def list_admin(page: int, page_size: int) -> dict:
+        products, total = ProductRepository.list_admin(page, page_size)
+
+        return {
+            "items": products,
+            "pagination": build_pagination(page, page_size, total),
+        }
+
+    @staticmethod
     def _resolve_collection_filter(collection: str | None) -> str | None:
         if not collection:
             return None
