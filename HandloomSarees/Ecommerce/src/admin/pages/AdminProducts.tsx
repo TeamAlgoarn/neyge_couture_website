@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
@@ -277,7 +277,7 @@ export default function AdminProducts() {
   const [totalProducts, setTotalProducts] = useState(0);
   const totalPages = Math.max(1, Math.ceil(totalProducts / PAGE_SIZE));
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -286,11 +286,8 @@ export default function AdminProducts() {
         params: {
           page,
           page_size: PAGE_SIZE,
-          sort_by: "created_at",
-          sort_order: "desc",
         },
       });
-      console.log("PRODUCTS API RESPONSE:", res.data);
 
       let items: Product[] = [];
 
@@ -311,13 +308,13 @@ export default function AdminProducts() {
       setTotalProducts(
         Number.isInteger(total) && total >= 0 ? total : items.length
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch products:", err);
-      setError(err?.message || "Failed to fetch products");
+      setError(err instanceof Error ? err.message : "Failed to fetch products");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   const handleDelete = async (id: string) => {
     const ok = window.confirm("Are you sure you want to delete this product?");
@@ -332,9 +329,7 @@ export default function AdminProducts() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, [page]);
+  useEffect(() => { void fetchProducts(); }, [fetchProducts]);
 
   return (
     <>

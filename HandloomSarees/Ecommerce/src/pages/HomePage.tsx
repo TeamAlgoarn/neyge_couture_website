@@ -1839,9 +1839,7 @@ function FeaturedSarees() {
         setLoading(true);
         const res = (await getProducts({ page: 1, page_size: 4, featured: true, sort_by: "created_at", sort_order: "desc" })) as ProductsApiResponse;
         const mapped = (res?.data?.items || []).map(mapProductToSaree);
-        if (mapped.length > 0) { setProducts(mapped); return; }
-        const fb = (await getProducts({ page: 1, page_size: 4, sort_by: "created_at", sort_order: "desc" })) as ProductsApiResponse;
-        setProducts((fb?.data?.items || []).map(mapProductToSaree));
+        setProducts(mapped);
       } catch (e) {
         console.error("Failed to load featured products", e);
         setProducts([]);

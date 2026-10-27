@@ -75,6 +75,14 @@ async def get_product_by_slug(slug: str):
     return success_response("Product fetched successfully", data)
 
 
+@router.get("/admin/{product_id}", response_model=dict)
+async def get_admin_product(
+    product_id: str,
+    _: dict = Depends(require_admin),
+):
+    data = ProductService.get_admin_by_id(product_id)
+    return success_response("Admin product fetched successfully", data)
+
 @router.get("/{product_id}", response_model=dict)
 async def get_product(product_id: str):
     data = ProductService.get_by_id(product_id)

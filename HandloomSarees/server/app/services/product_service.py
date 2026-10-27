@@ -449,6 +449,17 @@ class ProductService:
         return ProductService._to_public_product(product, include_sku=True)
 
     @staticmethod
+    def get_admin_by_id(product_id: str) -> dict:
+        product = ProductRepository.get_by_id(product_id)
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found",
+            )
+        product["sku"] = ProductService._sku_from_product(product)
+        return product
+
+    @staticmethod
     def get_by_id(product_id: str) -> dict:
         product = ProductRepository.get_by_id(product_id)
         if not product or not product.get("is_active", False):
