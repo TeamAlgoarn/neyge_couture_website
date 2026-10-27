@@ -6,6 +6,16 @@ from app.core.database import get_supabase_admin
 
 class ProductRepository:
     @staticmethod
+    def create_with_sku(payload: dict, requested_sku: str | None) -> dict:
+        """Create the product, default variant, and inventory in one DB transaction."""
+        client = get_supabase_admin()
+        result = client.rpc(
+            "create_product_with_sku",
+            {"p_product": payload, "p_requested_sku": requested_sku},
+        ).execute()
+        return result.data
+
+    @staticmethod
     def create(payload: dict) -> dict:
         client = get_supabase_admin()
         result = client.table("products").insert(payload).execute()
@@ -34,7 +44,7 @@ class ProductRepository:
         client = get_supabase_admin()
         result = (
             client.table("products")
-            .select("*")
+            .select("*, product_variants(sku,is_active,created_at)")
             .eq("id", product_id)
             .single()
             .execute()
@@ -46,7 +56,7 @@ class ProductRepository:
         client = get_supabase_admin()
         result = (
             client.table("products")
-            .select("*")
+            .select("*, product_variants(sku,is_active,created_at)")
             .eq("id", product_id)
             .eq("is_active", True)
             .limit(1)
@@ -59,7 +69,7 @@ class ProductRepository:
         client = get_supabase_admin()
         result = (
             client.table("products")
-            .select("*")
+            .select("*, product_variants(sku,is_active,created_at)")
             .eq("slug", slug)
             .limit(1)
             .execute()
@@ -76,6 +86,22 @@ class ProductRepository:
             .execute()
         )
         return result.data[0] if result.data else None
+
+    @staticmethod
+    def update_with_sku(
+        product_id: str, payload: dict, requested_sku: str | None
+    ) -> dict:
+        """Update product metadata and its default SKU in one DB transaction."""
+        client = get_supabase_admin()
+        result = client.rpc(
+            "update_product_with_sku",
+            {
+                "p_product_id": product_id,
+                "p_changes": payload,
+                "p_requested_sku": requested_sku,
+            },
+        ).execute()
+        return result.data
 
     @staticmethod
     def update_by_id(product_id: str, payload: dict) -> dict | None:
@@ -107,6 +133,85 @@ class ProductRepository:
             query = query.neq("id", exclude_id)
         result = query.limit(1).execute()
         return bool(result.data)
+
+    @staticmethod
+    def get_sku_by_product_id(product_id: str) -> str | None:
+        client = get_supabase_admin()
+        result = (
+            client.table("product_variants")
+            .select("sku")
+            .eq("product_id", product_id)
+            .eq("is_active", True)
+            .order("created_at")
+            .limit(1)
+            .execute()
+        )
+        return result.data[0]["sku"] if result.data else None
+
+    @staticmethod
+    def exists_by_sku(sku: str, exclude_product_id: str | None = None) -> bool:
+        client = get_supabase_admin()
+        query = client.table("product_variants").select("product_id").eq("sku", sku)
+        if exclude_product_id:
+            query = query.neq("product_id", exclude_product_id)
+        result = query.limit(1).execute()
+        return bool(result.data)
+
+    @staticmethod
+    def set_product_sku(product_id: str, sku: str) -> str:
+        """Create or rename the default variant SKU transactionally in Postgres."""
+        client = get_supabase_admin()
+        result = client.rpc(
+            "set_product_sku",
+            {"p_product_id": product_id, "p_new_sku": sku},
+        ).execute()
+        data = result.data
+        if isinstance(data, dict):
+            return str(data.get("sku") or sku)
+        return sku
+
+    @staticmethod
+    def decrement_stock_optimistic(
+        product_id: str, quantity: int, expected_stock: int
+    ) -> dict | None:
+        """
+        Optimistic concurrency: decrement stock ONLY if it still equals
+        expected_stock. Returns the updated product or None if another
+        request modified the stock first (caller should abort/retry).
+        """
+        new_stock = expected_stock - quantity
+        if new_stock < 0:
+            return None
+        client = get_supabase_admin()
+        result = (
+            client.table("products")
+            .update({"stock": new_stock})
+            .eq("id", product_id)
+            .eq("stock", expected_stock)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+
+    @staticmethod
+    def increment_stock(product_id: str, quantity: int) -> None:
+        """
+        Atomic compensation rollback: restore stock using a Postgres RPC
+        function that performs SET stock = stock + qty in a single SQL
+        statement, avoiding the read-modify-write race condition.
+        """
+        client = get_supabase_admin()
+        try:
+            client.rpc(
+                "increment_product_stock",
+                {"p_id": product_id, "qty": quantity},
+            ).execute()
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).error(
+                "Atomic increment_stock RPC failed for product %s: %s",
+                product_id, exc,
+            )
+            raise
 
     # ─────────────────────────────────────────────────────────────────────────
     # HOW MULTI-VALUE COLOR / FABRIC FILTERING WORKS

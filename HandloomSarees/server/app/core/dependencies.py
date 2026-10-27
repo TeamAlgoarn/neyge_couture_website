@@ -58,12 +58,19 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.core.database import get_supabase_admin
 from app.core.security import verify_supabase_token
 
-bearer_scheme = HTTPBearer(auto_error=True)
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> dict:
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication credentials were not provided",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
 
     auth_user = verify_supabase_token(token)
@@ -78,7 +85,7 @@ async def get_current_user(
     )
 
     profile = profile_res.data
-    if not profile or not profile.get("is_active", True):
+    if not profile or profile.get("is_active") is not True:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User profile not found or inactive",
@@ -92,7 +99,8 @@ async def get_current_user(
 
 
 async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
-    if current_user["profile"].get("role") != "admin":
+    profile = current_user.get("profile") or {}
+    if profile.get("role") != "admin" or profile.get("is_active") is not True:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",

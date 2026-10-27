@@ -768,12 +768,15 @@ export default function SkinToneAnalyzer() {
     await new Promise(r => setTimeout(r, 1400));
 
     try {
-      let rgb: { r: number; g: number; b: number } | null = null;
+      let analysisResult: AnalysisResult;
 
       // Camera path: pixels were already sampled at capture time
       if (capturedRGBRef.current) {
-        rgb = capturedRGBRef.current;
+        const { r, g, b } = capturedRGBRef.current;
         capturedRGBRef.current = null;
+        const { toneCategory, undertone } = classifySkinTone(r, g, b);
+        const palette = PALETTE_DB[toneCategory]?.[undertone] ?? PALETTE_DB.medium.warm;
+        analysisResult = { ...palette, undertone, toneCategory };
       } else {
         // Upload path: sample from the <img> element
         const img = imgRef.current;
@@ -783,13 +786,8 @@ export default function SkinToneAnalyzer() {
           img.onload = () => resolve();
           img.onerror = () => reject(new Error("Image failed to load for analysis"));
         });
-        rgb = sampleSkinPixels(img);
+        analysisResult = analyzePixels(img);
       }
-
-      const { r, g, b } = rgb ?? { r: 180, g: 130, b: 95 };
-      const { toneCategory, undertone } = classifySkinTone(r, g, b);
-      const palette = PALETTE_DB[toneCategory]?.[undertone] ?? PALETTE_DB.medium.warm;
-      const analysisResult: AnalysisResult = { ...palette, undertone, toneCategory };
 
       setResult(analysisResult);
       if (analysisResult.recommendedColors?.length) setActiveColor(analysisResult.recommendedColors[0]);

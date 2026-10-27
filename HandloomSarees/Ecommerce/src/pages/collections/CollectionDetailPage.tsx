@@ -278,7 +278,7 @@ export function CollectionDetailPage() {
           api.get('/collections'),
         ]);
 
-        let collectionData: Collection | null =
+        const collectionData: Collection | null =
           collectionRes.data?.data || collectionRes.data?.collection || collectionRes.data || null;
 
         const rawAll = allCollectionsRes.data;
@@ -307,6 +307,10 @@ export function CollectionDetailPage() {
 
         setCollection(collectionData);
         setProducts(filteredProducts);
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(
           err?.response?.data?.detail ||

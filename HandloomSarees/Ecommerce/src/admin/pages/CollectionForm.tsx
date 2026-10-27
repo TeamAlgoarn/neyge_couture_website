@@ -4,6 +4,12 @@ import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
 import { Layers, Sparkles, Save, X, Upload } from "lucide-react";
 import { uploadCollectionImage } from "../lib/uploadCollectionImage";
+import {
+  COLLECTION_MIN_DIMENSIONS,
+  IMAGE_ACCEPT,
+  getImageErrorMessage,
+  validateImageFile,
+} from "../lib/imageValidation";
 
 const C = {
   maroon: '#800020',
@@ -212,6 +218,7 @@ type CollectionPayload = {
   slug: string;
   description: string;
   banner_image: string;
+  sort_order: number | "";
   is_active: boolean;
   featured: boolean;
   // ── NEW: category field sent to backend ────────────────────────────────────
@@ -219,7 +226,15 @@ type CollectionPayload = {
 };
 
 type CollectionResponse = {
+
+
+
+
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   collection?: any;
 };
 
@@ -228,6 +243,7 @@ const initialForm: CollectionPayload = {
   slug: "",
   description: "",
   banner_image: "",
+  sort_order: "",
   is_active: true,
   featured: false,
   category: "",      // ← new
@@ -242,6 +258,7 @@ export default function CollectionForm() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(isEdit);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
   const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const updateField = <K extends keyof CollectionPayload>(
@@ -255,7 +272,7 @@ export default function CollectionForm() {
 
     const fetchCollection = async () => {
       try {
-        const res = await adminApi.get<CollectionResponse>(`/collections/${id}`);
+        const res = await adminApi.get<CollectionResponse>(`/collections/id/${id}`);
         const collection = res.data?.data || res.data?.collection || res.data;
 
         if (collection) {
@@ -268,6 +285,10 @@ export default function CollectionForm() {
               collection.image ||
               collection.thumbnail ||
               "",
+            sort_order:
+              collection.sort_order === undefined || collection.sort_order === null
+                ? ""
+                : Math.max(0, Number(collection.sort_order) || 0),
             is_active: collection.is_active ?? true,
             featured: collection.featured ?? false,
             category: collection.category || "",   // ← load saved category
@@ -291,11 +312,13 @@ export default function CollectionForm() {
     if (!file) return;
     try {
       setUploadingImage(true);
+      setImageError("");
+      await validateImageFile(file, COLLECTION_MIN_DIMENSIONS);
       const imageUrl = await uploadCollectionImage(file);
       setForm((prev) => ({ ...prev, banner_image: imageUrl }));
     } catch (error) {
       console.error("Collection image upload failed", error);
-      alert("Image upload failed");
+      setImageError(getImageErrorMessage(error));
     } finally {
       setUploadingImage(false);
       if (imageInputRef.current) imageInputRef.current.value = "";
@@ -307,7 +330,19 @@ export default function CollectionForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = { ...form };
+      const payload: Record<string, unknown> = {
+        ...form,
+        name: form.name.trim(),
+        slug: form.slug.trim() || undefined,
+        description: form.description.trim() || null,
+        banner_image: form.banner_image.trim() || null,
+        category: form.category || null,
+      };
+      if (form.sort_order !== "") {
+        payload.sort_order = Math.max(0, Number(form.sort_order) || 0);
+      } else {
+        delete payload.sort_order;
+      }
       if (isEdit && id) {
         await adminApi.put(`/collections/${id}`, payload);
       } else {
@@ -379,10 +414,9 @@ export default function CollectionForm() {
                       placeholder="e.g., summer-silks"
                       value={form.slug}
                       onChange={(e) => updateField("slug", e.target.value)}
-                      required
                     />
                     <p className="form-hint">
-                      URL-friendly identifier (lowercase, hyphens)
+                      Optional. Leave blank to generate a unique URL-friendly identifier.
                     </p>
                   </div>
 
@@ -430,11 +464,12 @@ export default function CollectionForm() {
 
                   {/* Image upload */}
                   <div>
-                    <label className="form-label">Collection Image</label>
+                    <label className="form-label">Collection Cover Image</label>
                     <div className="upload-box">
                       <button
                         type="button"
                         className="upload-btn"
+                        disabled={uploadingImage}
                         onClick={() => imageInputRef.current?.click()}
                       >
                         <Upload size={14} />
@@ -444,22 +479,38 @@ export default function CollectionForm() {
                       <input
                         ref={imageInputRef}
                         type="file"
-                        accept="image/*"
+                        accept={IMAGE_ACCEPT}
                         onChange={handleCollectionImageUpload}
                         style={{ display: "none" }}
                       />
 
                       <p className="upload-hint">
-                        Select image from your device. It will be uploaded
-                        automatically.
+                        Optional. JPG, JPEG, PNG, or WEBP; maximum 5 MB;
+                        minimum 800 × 600px.
                       </p>
 
+                      {imageError && (
+                        <p className="upload-hint" style={{ color: "#b42318", fontWeight: 600 }}>
+                          {imageError}
+                        </p>
+                      )}
+
                       {form.banner_image && (
-                        <img
-                          src={form.banner_image}
-                          alt="Collection preview"
-                          className="preview-img"
-                        />
+                        <>
+                          <img
+                            src={form.banner_image}
+                            alt="Collection cover preview"
+                            className="preview-img"
+                          />
+                          <button
+                            type="button"
+                            className="upload-btn"
+                            style={{ marginTop: 10 }}
+                            onClick={() => updateField("banner_image", "")}
+                          >
+                            <X size={14} /> Remove Cover Image
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -486,7 +537,7 @@ export default function CollectionForm() {
                         updateField("featured", e.target.checked)
                       }
                     />
-                    Featured Collection
+                    Show this collection on homepage
                   </label>
 
                   <label className="form-checkbox-label">
@@ -500,6 +551,28 @@ export default function CollectionForm() {
                     />
                     Active Collection
                   </label>
+
+                  <div>
+                    <label className="form-label">Homepage Sort Order</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      className="form-input"
+                      value={form.sort_order}
+                      onChange={(e) =>
+                        updateField(
+                          "sort_order",
+                          e.target.value === ""
+                            ? ""
+                            : Math.max(0, Number(e.target.value) || 0),
+                        )
+                      }
+                    />
+                    <p className="form-hint">
+                      Lower numbers appear first in the homepage collection section.
+                    </p>
+                  </div>
 
                   {form.banner_image && (
                     <div style={{ marginTop: 8 }}>

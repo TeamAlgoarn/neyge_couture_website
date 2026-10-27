@@ -271,6 +271,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   const extractArray = (data: any) => {
     if (Array.isArray(data)) return data;
     if (Array.isArray(data?.data)) return data.data;
@@ -315,9 +319,13 @@ export default function AdminDashboard() {
 
         setTotalProducts(productTotal);
         setCollections(extractArray(collectionsRes.data));
+
         setFestiveCollections(extractArray(festiveCollectionsRes.data));
+
         setOrders(extractArray(ordersRes.data));
+
         setVideoBookings(extractArray(videoBookingsRes.data));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error("Failed to load dashboard data", err);
         setError(err?.message || "Failed to load dashboard data");

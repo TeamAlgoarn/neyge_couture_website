@@ -1,0 +1,49 @@
+name: Feature task
+description: Planned implementation task
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots/API evidence
+  - type: textarea
+    id: security
+    attributes:
+      label: Security considerations
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+    validations:
+      required: true

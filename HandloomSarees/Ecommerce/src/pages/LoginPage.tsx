@@ -479,6 +479,10 @@ export function LoginPage() {
         toast.success("Account created successfully!");
         navigate("/");
       }
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
 
@@ -559,12 +563,13 @@ export function LoginPage() {
             <form onSubmit={handleSubmit}>
               {FIELDS.map(({ key, type, label, placeholder, Icon }) => (
                 <div key={key} className="ln-field">
-                  <label className="ln-label">{label}</label>
+                  <label htmlFor={`input-${key}`} className="ln-label">{label}</label>
                   <div className="ln-input-wrap">
                     <div className="ln-input-icon">
                       <Icon size={16} color={C.gold} />
                     </div>
                     <input
+                      id={`input-${key}`}
                       type={type}
                       required
                       placeholder={placeholder}

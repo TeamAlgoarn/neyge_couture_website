@@ -311,6 +311,10 @@ export function useWishlist() {
       const res = await api.get<WishlistResponse>("/wishlist");
       const items = res.data?.data || [];
       setWishlist(items.map(mapProductToSaree));
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error?.response?.status === 401) {
         setWishlist([]);

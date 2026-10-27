@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
-import logo from '@/assets/Client_NC_Logo-03.png';
+import logo from '@/assets/Client_NC_Logo-01.png';
 import patternBg from '@/assets/Client_NC_Pattern-01.png';
 
 const WHATSAPP_NUMBER = "919113991711";
@@ -290,8 +290,8 @@ export function Footer() {
                 ))}
               </ul>
               <div style={{ marginTop: 14 }}>
-                <a href="https://www.negyecouture.com" className="ft-link" style={{ color: 'rgba(196,152,10,.80)', letterSpacing: '.10em' }}>
-                  www.negyecouture.com
+                <a href="https://www.neygecouture.com" className="ft-link" style={{ color: 'rgba(196,152,10,.80)', letterSpacing: '.10em' }}>
+                  www.neygecouture.com
                 </a>
               </div>
               {/* WhatsApp Button */}

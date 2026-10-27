@@ -77,6 +77,24 @@ class CartRepository:
         ).execute()
 
     @staticmethod
+    def get_cart_item_by_id(cart_id: str, item_id: str) -> dict | None:
+        client = get_supabase_admin()
+        result = (
+            client.table("cart_items")
+            .select("*")
+            .eq("cart_id", cart_id)
+            .eq("id", item_id)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+
+    @staticmethod
+    def delete_cart_item_by_id(cart_id: str, item_id: str) -> None:
+        client = get_supabase_admin()
+        client.table("cart_items").delete().eq("cart_id", cart_id).eq("id", item_id).execute()
+
+    @staticmethod
     def clear_cart(cart_id: str) -> None:
         client = get_supabase_admin()
         client.table("cart_items").delete().eq("cart_id", cart_id).execute()

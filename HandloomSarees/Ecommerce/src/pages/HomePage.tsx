@@ -1048,11 +1048,11 @@
 
 
 import FestiveCollectionsSection from "@/components/features/FestiveCollectionsSection";
+import { FeaturedCollections } from "@/components/features/FeaturedCollections";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Link } from "react-router-dom";
-import heroImg from "@/assets/bd3.png";
-import loomimg from "@/assets/g1.png";
+import loomimg from "@/assets/g1_updated.jpeg";
 import img3 from "@/assets/g3.png";
 import img5 from "@/assets/g5.png";
 import img6 from "@/assets/g6.png";
@@ -1065,7 +1065,6 @@ import img12 from "@/assets/g12.png";
 import img15 from "@/assets/g15.png";
 import img16 from "@/assets/g16.jpg";
 import img17 from "@/assets/i.png";
-import img18 from "@/assets/i2.png";
 import { getProducts } from "@/api/products";
 import { SareeCard } from "@/components/features/SareeCard";
 import type { Saree } from "@/types";
@@ -1142,8 +1141,6 @@ const T = {
 const IMG = {
   hero:        img3,
   loom:        loomimg,
-  collection1: heroImg,
-  collection2: img18,
   artisan:     img5,
   artisan2:    img6,
   texture:     img15,
@@ -1515,7 +1512,7 @@ const CSS = `
 function GoldenThread({ className = "" }: { className?: string }) {
   const pA = "M0,28 C220,5 330,52 550,28 C770,5 880,52 1100,28 C1210,8 1260,38 1320,28";
   const pB = "M0,40 C180,16 400,58 660,36 C920,12 1100,54 1320,36";
-  const Half = () => (
+  const halfSvg = (
     <svg className="thread-svg-half" viewBox="0 0 1320 58" preserveAspectRatio="none" style={{ height: 52, display: "block" }}>
       <path d={pA} stroke="rgba(196,152,10,0.62)" strokeWidth="1.2" fill="none" />
       <path d={pB} stroke="rgba(196,152,10,0.38)" strokeWidth="0.8" fill="none" />
@@ -1523,7 +1520,7 @@ function GoldenThread({ className = "" }: { className?: string }) {
   );
   return (
     <div className={className} style={{ width: "100%", overflow: "hidden", lineHeight: 0, pointerEvents: "none", background: "var(--cream-lt)" }}>
-      <div className="thread-track"><Half /><Half /></div>
+      <div className="thread-track">{halfSvg}{halfSvg}</div>
     </div>
   );
 }
@@ -1660,13 +1657,14 @@ function LoomStory() {
             <div style={{ position: "absolute", bottom: -16, right: -16, width: 56, height: 56, borderBottom: `2px solid ${C.forest}`, borderRight: `2px solid ${C.forest}`, opacity: .55, pointerEvents: "none", zIndex: 3 }} />
 
             <div style={{ position: "relative", zIndex: 1, overflow: "hidden", boxShadow: "0 44px 88px rgba(0,0,0,.15)" }}>
-              <img src={IMG.loom} alt="Handloom weaving" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", display: "block" }} />
+              <img src={IMG.loom} alt="Three generations of Neyge Couture women in handwoven sarees" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", display: "block" }} />
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(20,64,42,.04) 0%, transparent 50%)", pointerEvents: "none" }} />
             </div>
 
-            <div className="stat-pill" style={{ position: "absolute", bottom: -22, left: -14, zIndex: 2 }}>
-              <div className="cinzel" style={{ fontSize: 22, color: C.maroon, fontWeight: 500, lineHeight: 1 }}>3 Generations</div>
-              <div style={{ fontFamily: FONT.body, fontSize: 9, letterSpacing: ".18em", color: C.warmGrey, marginTop: 6, textTransform: "uppercase", fontWeight: 500 }}>of weaving mastery</div>
+            <div className="stat-pill" style={{ position: "absolute", bottom: -22, left: -14, zIndex: 2, maxWidth: "calc(100% - 12px)" }}>
+              <div className="cinzel" style={{ fontSize: "clamp(14px, 3.4vw, 18px)", color: C.maroon, fontWeight: 500, lineHeight: 1.25 }}>
+                Generations of weaving mastery
+              </div>
             </div>
 
             <svg ref={svgRef} style={{ position: "absolute", bottom: -34, right: -26, width: 76, height: 76, overflow: "visible", color: C.gold, zIndex: 2 }} viewBox="0 0 100 100">
@@ -1716,54 +1714,6 @@ function LoomStory() {
         </div>
       </div>
     </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. COLLECTION BLOCK — parallax, maroon + navy gradient overlay
-// ─────────────────────────────────────────────────────────────────────────────
-function CollectionBlock({ img, title, subtitle }: { img: string; title: string; subtitle: string; slug: string }) {
-  const [ref, on] = useInView<HTMLDivElement>(0.08);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const h = () => {
-      const r = el.getBoundingClientRect();
-      const prog = -r.top / window.innerHeight;
-      const imgEl = el.querySelector("img") as HTMLImageElement | null;
-      if (imgEl) imgEl.style.transform = `translateY(${Math.min(Math.max(prog * 9, -8), 8)}%)`;
-    };
-    window.addEventListener("scroll", h, { passive: true });
-    return () => window.removeEventListener("scroll", h);
-  }, []);
-
-  return (
-    <div ref={scrollRef} className="col-block-h" style={{ position: "relative", height: "80vh", overflow: "hidden" }}>
-      <div ref={ref} style={{ position: "absolute", inset: 0, willChange: "transform" }}>
-        <img src={img} alt={title} style={{ width: "100%", height: "115%", objectFit: "cover", display: "block" }} />
-      </div>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(90,0,22,.84) 0%, rgba(128,0,32,.22) 42%, rgba(14,26,74,.28) 100%)" }} />
-      <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 18% 78%, rgba(196,152,10,.05) 0%, transparent 38%), radial-gradient(circle at 82% 18%, rgba(196,152,10,.04) 0%, transparent 32%)", pointerEvents: "none" }} />
-
-      <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 90, textAlign: "center", color: "white" }}>
-        <div className={`rv d1 ${on ? "on" : ""}`} style={{ width: 32, height: 1, background: "rgba(212,175,55,.65)", marginBottom: 16 }} />
-        <span className={`ey rv ${on ? "on" : ""}`} style={{ color: "rgba(212,175,55,.88)", marginBottom: 14, fontSize: 9, letterSpacing: ".34em" }}>Collection</span>
-
-        {/* Cinzel collection title */}
-        <h3 className={`cinzel rv d2 ${on ? "on" : ""}`} style={{ fontSize: "clamp(32px,6.5vw,68px)", fontWeight: 400, lineHeight: 1.08, marginBottom: 16, letterSpacing: ".06em" }}>
-          {title.toUpperCase()}
-        </h3>
-
-        <p className={`rv d3 ${on ? "on" : ""}`} style={{ fontFamily: FONT.body, fontSize: 14, fontWeight: 300, color: "rgba(255,255,255,.76)", marginBottom: 40, maxWidth: 420, lineHeight: 1.72, letterSpacing: ".03em" }}>
-          {subtitle}
-        </p>
-        <div className={`rv d4 ${on ? "on" : ""}`}>
-          <Link to={`/collections`} className="col-btn">Explore Collection</Link>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -2041,8 +1991,8 @@ const IG_IMGS = [IMG.ig1, IMG.ig2, IMG.ig3, IMG.ig4, IMG.ig5, IMG.ig6];
 
 function InstagramGrid() {
   const [ref, on] = useInView(0.08);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [igPosts, setIgPosts] = useState<any[]>([]);
-  const [, setLoadingIg] = useState(true);
 
   useEffect(() => {
     const loadInstagram = async () => {
@@ -2053,8 +2003,6 @@ function InstagramGrid() {
         }
       } catch (e) {
         console.error("Failed to load Instagram posts", e);
-      } finally {
-        setLoadingIg(false);
       }
     };
     loadInstagram();
@@ -2319,28 +2267,7 @@ export default function HomePage() {
 <GoldenThread />
 <LoomStory />
 <FestiveCollectionsSection />
-<GoldenThread />
-
-        <div style={{ marginBottom: 0 }}>
-          <CollectionBlock
-            img={IMG.collection1}
-            title="The Terracotta Weave"
-            subtitle="Inspired by the red soil of Bengal — raw, earthy, eternal."
-            slug="wedding-collection"
-          />
-        </div>
-
-        <GoldenThread />
-
-        <div style={{ marginBottom: 0 }}>
-          <CollectionBlock
-            img={IMG.collection2}
-            title="Indigo Memories"
-            subtitle="Deep blues that tell stories of the night sky over the village."
-            slug="wedding-collection"
-          />
-        </div>
-
+        <FeaturedCollections />
         <GoldenThread />
         <CorePillarsStrip />
         <GoldenThread />

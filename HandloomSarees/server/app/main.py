@@ -99,28 +99,26 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.exceptions import add_exception_handlers
+from app.core.rate_limit import limiter
 
 app = FastAPI(
     title=settings.APP_NAME,
+    version=settings.APP_VERSION,
     debug=settings.DEBUG,
 )
 
-from fastapi.middleware.cors import CORSMiddleware
-
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -128,7 +126,7 @@ app.add_middleware(
 
 add_exception_handlers(app)
 
-app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/")

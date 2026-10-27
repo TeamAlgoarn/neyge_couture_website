@@ -153,6 +153,7 @@ export default function FestiveCollectionPage() {
   }, []);
 
   const { slug = '' } = useParams();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -252,7 +253,7 @@ export default function FestiveCollectionPage() {
             </div>
           ) : (
             <div className="product-grid">
-              {products.map((product: any, idx: number) => (
+              {products.map((product: any /* eslint-disable-line @typescript-eslint/no-explicit-any */, idx: number) => (
                 <div
                   key={product.id}
                   style={{ animation: `fadeUp .6s ease ${idx * 0.06}s both` }}

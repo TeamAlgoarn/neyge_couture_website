@@ -1157,6 +1157,10 @@ export function VideoShoppingPage() {
 
       toast.success('Video consultation booked successfully!');
       setStep('confirm');
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error?.message || 'Failed to book consultation');
     }

@@ -1,6 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
+from app.core.dependencies import require_admin
 from app.core.database import get_supabase_admin
 from app.repositories.chatbot_repository import ChatbotRepository
 from app.services.chatbot_service import ChatbotService
@@ -36,6 +37,7 @@ def get_chatbot_leads(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     service: ChatbotService = Depends(get_chatbot_service),
+    _: dict = Depends(require_admin),
 ):
     leads = service.get_leads(
         flow=flow,
@@ -56,6 +58,7 @@ def update_chatbot_lead_status(
     lead_id: str,
     payload: ChatbotLeadUpdateStatus,
     service: ChatbotService = Depends(get_chatbot_service),
+    _: dict = Depends(require_admin),
 ):
     lead = service.update_status(lead_id, payload.status.value)
 

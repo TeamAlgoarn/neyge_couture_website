@@ -135,6 +135,10 @@ const CSS = `
 `;
 
 export function FestivePopup() {
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<any>(null);
   const [open, setOpen] = useState(false);
 

@@ -30,12 +30,16 @@
 #         return None
 
 
-from supabase import Client, create_client
+from supabase import Client, ClientOptions, create_client
 
 from app.core.config import settings
 
 _supabase_admin: Client | None = None
 _supabase_public: Client | None = None
+
+
+def _supabase_client_options() -> ClientOptions:
+    return ClientOptions(schema=settings.SUPABASE_DB_SCHEMA)
 
 
 def get_supabase_admin() -> Client:
@@ -44,6 +48,7 @@ def get_supabase_admin() -> Client:
         _supabase_admin = create_client(
             settings.SUPABASE_URL,
             settings.SUPABASE_SERVICE_ROLE_KEY,
+            options=_supabase_client_options(),
         )
     return _supabase_admin
 
@@ -54,5 +59,15 @@ def get_supabase_public() -> Client:
         _supabase_public = create_client(
             settings.SUPABASE_URL,
             settings.SUPABASE_ANON_KEY,
+            options=_supabase_client_options(),
         )
     return _supabase_public
+
+
+def create_supabase_public_client() -> Client:
+    """Create an isolated anon client for request-scoped auth operations."""
+    return create_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_ANON_KEY,
+        options=_supabase_client_options(),
+    )

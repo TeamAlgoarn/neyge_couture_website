@@ -721,6 +721,8 @@ import {
   Star,
   Truck,
   RotateCcw,
+  Phone,
+  MessageCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -788,6 +790,7 @@ const CSS = `
 .pd-gallery-card{padding:20px}
 .pd-main-image-wrap{position:relative;border-radius:22px;overflow:hidden;background:#f5eee7;max-width:320px;margin:0 auto;height:auto;max-height:420px}
 .pd-main-image{width:100%;height:auto;object-fit:cover;display:block}
+.pd-image-empty{min-height:320px;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#8b735f;font-family:'Josefin Sans',sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
 .pd-nav-btn{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:none;border-radius:999px;background:rgba(255,255,255,.88);color:${C.maroon};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.08)}
 .pd-nav-btn.left{left:14px}
 .pd-nav-btn.right{right:14px}
@@ -818,6 +821,15 @@ const CSS = `
 .pd-btn-cart:disabled{opacity:.55;cursor:not-allowed}
 .pd-btn-wish{width:52px;height:52px;border-radius:16px;border:1px solid rgba(196,152,10,.35);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .pd-btn-wish.active{background:rgba(128,0,32,.06);border-color:rgba(128,0,32,.22)}
+
+.pd-enquiry-box{margin-bottom:22px;padding:16px;border-radius:18px;background:rgba(196,152,10,.06);border:1px dashed rgba(196,152,10,.3)}
+.pd-enquiry-title{font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:700;color:${C.maroon};margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pd-enquiry-row{display:flex;gap:12px}
+.pd-btn-call,.pd-btn-wa{flex:1;min-height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:transform 0.2s}
+.pd-btn-call:hover,.pd-btn-wa:hover{transform:scale(1.02)}
+.pd-btn-call{background:#fff;border:1px solid ${C.maroon};color:${C.maroon}}
+.pd-btn-wa{background:#25D366;border:none;color:#fff}
+
 .pd-trust{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:12px}
 @media(max-width:560px){.pd-trust{grid-template-columns:1fr}}
 .pd-trust-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;background:rgba(255,249,240,.9)}
@@ -863,6 +875,11 @@ type BackendProduct = {
   fabric?: string | null;
   stock?: number | null;
   technique?: string | null;
+  design?: string | null;
+  zari?: string | null;
+  certification?: string | null;
+  brand?: string | null;
+  sku?: string | null;
   artisan?: {
     name?: string;
     region?: string;
@@ -871,6 +888,10 @@ type BackendProduct = {
   occasion?: string[];
   care_instructions?: string | null;
   is_featured?: boolean;
+  has_fall?: boolean;
+  fall_price?: number;
+  has_in_skirt?: boolean;
+  in_skirt_price?: number;
 };
 
 type ProductApiResponse = {
@@ -920,6 +941,11 @@ function mapProductToSaree(product: BackendProduct): Saree {
     fabric: product.fabric || '',
     occasion: product.occasion || [],
     weavingTechnique: product.technique || '',
+    design: product.design || '',
+    zari: product.zari || '',
+    certification: product.certification || '',
+    brand: product.brand || '',
+    sku: product.sku || '',
     artisanDetails: product.artisan?.name
       ? `${product.artisan.name}${product.artisan.region ? ` - ${product.artisan.region}` : ''}${product.artisan.experience ? ` · ${product.artisan.experience}` : ''}`
       : '',
@@ -932,6 +958,10 @@ function mapProductToSaree(product: BackendProduct): Saree {
     length: '5.5 meters',
     newArrival: false,
     bestSeller: false,
+    has_fall: product.has_fall ?? false,
+    fall_price: product.fall_price ?? 0,
+    has_in_skirt: product.has_in_skirt ?? false,
+    in_skirt_price: product.in_skirt_price ?? 0,
   };
 }
 
@@ -956,6 +986,10 @@ async function getProductBySlugOrId(identifier: string): Promise<BackendProduct 
   try {
     const response = (await getProductBySlug(identifier)) as ProductApiResponse;
     if (response?.data) return response.data;
+
+
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error?.response?.status !== 404) {
       throw error;
@@ -988,7 +1022,7 @@ export function ProductDetailPage() {
   const [relatedSarees, setRelatedSarees] = useState<Saree[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
@@ -1008,6 +1042,7 @@ export function ProductDetailPage() {
           setSaree(null);
           setRelatedSarees([]);
           setSelectedImage(0);
+          setSelectedAddons([]);
           setLoading(false);
           setAdding(false);
         }
@@ -1037,7 +1072,7 @@ export function ProductDetailPage() {
 
         setSaree(mapped);
         setSelectedImage(0);
-        setAdding(false);
+        setSelectedAddons([]);
 
         try {
           const relatedResponse = (await getProducts({
@@ -1109,15 +1144,40 @@ export function ProductDetailPage() {
     ? saree.originalPrice! - saree.price
     : 0;
 
+  const toggleAddon = (addonId: string) => {
+    setSelectedAddons((prev) =>
+      prev.includes(addonId)
+        ? prev.filter((a) => a !== addonId)
+        : [...prev, addonId]
+    );
+  };
+
+  const addonsPreviewTotal = useMemo(() => {
+    if (!saree) return 0;
+    let total = 0;
+    if (selectedAddons.includes('fall')) total += saree.fall_price ?? 0;
+    if (selectedAddons.includes('in_skirt')) total += saree.in_skirt_price ?? 0;
+    return total;
+  }, [saree, selectedAddons]);
+
+  const enquiryMessage = saree ? `Hi, I want to enquire about blouse stitching for:
+*Product*: ${saree.name}
+*ID/SKU*: ${saree.id}
+*Colour*: ${saree.color || 'N/A'}
+*URL*: ${window.location.origin}/product/${saree.slug || saree.id}` : '';
+
+  const whatsappUrl = `https://wa.me/919113991711?text=${encodeURIComponent(enquiryMessage)}`;
+
   const handleAddToCart = async () => {
     if (!saree || adding) return;
 
     try {
       setAdding(true);
-      await addToCart(saree, 1);
+      await addToCart(saree, 1, selectedAddons);
       toast.success('Added to cart!');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to add to cart');
+      toast.error(error?.response?.data?.message || error?.response?.data?.detail || 'Failed to add to cart');
     } finally {
       setAdding(false);
     }
@@ -1208,11 +1268,21 @@ export function ProductDetailPage() {
           <div className="pd-main-grid">
             <div className="pd-gallery-card pd-fadeup">
               <div className="pd-main-image-wrap">
-                <img
-                  src={activeImage}
-                  alt={saree.name}
-                  className="pd-main-image"
-                />
+                {activeImage ? (
+                  <img
+                    src={activeImage}
+                    alt={saree.name}
+                    className="pd-main-image"
+                    onError={(event) => {
+                      event.currentTarget.style.display = 'none';
+                      const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div className="pd-image-empty" style={{ display: activeImage ? 'none' : 'flex' }}>
+                  Image unavailable
+                </div>
 
                 {safeImages.length > 1 && (
                   <>
@@ -1273,7 +1343,9 @@ export function ProductDetailPage() {
 
               <div className="pd-price-box">
                 <div className="pd-price-row-main">
-                  <span className="pd-price-main">{formatCurrency(saree.price)}</span>
+                  <span className="pd-price-main">
+                    {formatCurrency(saree.price)}
+                  </span>
 
                   {hasDiscount && (
                     <>
@@ -1330,6 +1402,109 @@ export function ProductDetailPage() {
                 ))}
               </div>
 
+              {/* ── Add-on Selector (Issue #8) ── */}
+              {saree && (saree.has_fall || saree.has_in_skirt) && (
+                <div style={{
+                  background: 'rgba(196,152,10,.06)',
+                  border: '1px solid rgba(196,152,10,.22)',
+                  borderRadius: 18,
+                  padding: '18px 22px',
+                  marginBottom: 20,
+                }}>
+                  <div style={{
+                    fontFamily: "'Cinzel', serif",
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: C.maroon,
+                    marginBottom: 14,
+                    letterSpacing: '.03em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}>
+                    <Sparkles size={16} color={C.gold} />
+                    Customise Your Saree
+                  </div>
+
+                  {saree.has_fall && (
+                    <label style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 14px', borderRadius: 12,
+                      border: selectedAddons.includes('fall')
+                        ? '1.5px solid rgba(128,0,32,.4)'
+                        : '1px solid rgba(196,152,10,.2)',
+                      background: selectedAddons.includes('fall')
+                        ? 'rgba(128,0,32,.06)'
+                        : 'rgba(255,249,240,.5)',
+                      cursor: 'pointer', marginBottom: 8, transition: 'all .2s',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedAddons.includes('fall')}
+                        onChange={() => toggleAddon('fall')}
+                        style={{ accentColor: C.maroon, width: 16, height: 16 }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "'Josefin Sans'", fontSize: 13, fontWeight: 500, color: C.maroon }}>
+                          Fall & Pico Stitching
+                        </div>
+                        <div style={{ fontFamily: "'Josefin Sans'", fontSize: 11, color: '#9a8070', fontWeight: 300 }}>
+                          Professional edge finishing
+                        </div>
+                      </div>
+                      <span style={{ fontFamily: "'Cinzel'", fontSize: 14, fontWeight: 600, color: C.maroon }}>
+                        + {formatCurrency(saree.fall_price ?? 0)}
+                      </span>
+                    </label>
+                  )}
+
+                  {saree.has_in_skirt && (
+                    <label style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 14px', borderRadius: 12,
+                      border: selectedAddons.includes('in_skirt')
+                        ? '1.5px solid rgba(128,0,32,.4)'
+                        : '1px solid rgba(196,152,10,.2)',
+                      background: selectedAddons.includes('in_skirt')
+                        ? 'rgba(128,0,32,.06)'
+                        : 'rgba(255,249,240,.5)',
+                      cursor: 'pointer', marginBottom: 8, transition: 'all .2s',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedAddons.includes('in_skirt')}
+                        onChange={() => toggleAddon('in_skirt')}
+                        style={{ accentColor: C.maroon, width: 16, height: 16 }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "'Josefin Sans'", fontSize: 13, fontWeight: 500, color: C.maroon }}>
+                          Matching In-Skirt (Petticoat)
+                        </div>
+                        <div style={{ fontFamily: "'Josefin Sans'", fontSize: 11, color: '#9a8070', fontWeight: 300 }}>
+                          Custom colour-matched petticoat
+                        </div>
+                      </div>
+                      <span style={{ fontFamily: "'Cinzel'", fontSize: 14, fontWeight: 600, color: C.maroon }}>
+                        + {formatCurrency(saree.in_skirt_price ?? 0)}
+                      </span>
+                    </label>
+                  )}
+
+                  {addonsPreviewTotal > 0 && (
+                    <div style={{
+                      marginTop: 10, paddingTop: 10,
+                      borderTop: '1px solid rgba(196,152,10,.15)',
+                      display: 'flex', justifyContent: 'space-between',
+                      fontFamily: "'Josefin Sans'", fontSize: 13,
+                    }}>
+                      <span style={{ color: '#9a8070' }}>Effective Price</span>
+                      <span style={{ fontFamily: "'Cinzel'", fontSize: 15, fontWeight: 600, color: C.maroon }}>
+                        {formatCurrency(saree.price + addonsPreviewTotal)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="pd-cta-row">
                 <button
                   className="pd-btn-cart"
@@ -1353,6 +1528,26 @@ export function ProductDetailPage() {
                     fill={inWishlist ? C.maroon : 'none'}
                   />
                 </button>
+              </div>
+
+              <div className="pd-enquiry-box">
+                <div className="pd-enquiry-title">
+                  <Sparkles size={16} color={C.gold} />
+                  Want Blouse Stitching?
+                </div>
+                <div className="pd-enquiry-row">
+                  <a href="tel:+919113991711" className="pd-btn-call">
+                    <Phone size={16} /> Call Us
+                  </a>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pd-btn-wa"
+                  >
+                    <MessageCircle size={16} /> WhatsApp
+                  </a>
+                </div>
               </div>
 
               <div className="pd-trust">
@@ -1385,7 +1580,12 @@ export function ProductDetailPage() {
                   ['Length', saree.length || '5.5 meters'],
                   ['Blouse Piece', saree.blousePiece ? 'Included' : 'Not Included'],
                   ['Weaving Technique', saree.weavingTechnique || 'Traditional handloom'],
-                ].map(([k, v]) => (
+                  ['Design', saree.design],
+                  ['Zari', saree.zari],
+                  ['Certification', saree.certification],
+                  ['Brand', saree.brand],
+                  ['SKU', saree.sku],
+                ].filter(([, value]) => Boolean(value)).map(([k, v]) => (
                   <div key={k} className="pd-spec-row">
                     <span className="pd-spec-key">{k}</span>
                     <span className="pd-spec-val">{v}</span>
@@ -1421,7 +1621,11 @@ export function ProductDetailPage() {
               <div className="pd-related-grid">
                 {relatedSarees.map((item) => (
                   <Link key={item.id} to={getProductUrl(item)} className="pd-related-card">
-                    <img src={item.image} alt={item.name} />
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} />
+                    ) : (
+                      <div className="pd-image-empty">Image unavailable</div>
+                    )}
                     <div className="pd-related-body">
                       <div className="pd-related-name">{item.name}</div>
                       <div className="pd-related-price">{formatCurrency(item.price)}</div>

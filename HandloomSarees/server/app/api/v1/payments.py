@@ -1,10 +1,18 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.core.dependencies import get_current_user
+from app.api.v1.whatsapp import (
+    WhatsAppTemplateConfigurationError,
+    send_order_confirmation_template,
+)
+from app.core.dependencies import get_current_user, require_admin
+from app.schemas.payment import PaymentFailedRequest, RefundRequest
 from app.services.payment_service import PaymentService
 from app.utils.response import success_response
-from app.api.v1.whatsapp import send_whatsapp_message
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
@@ -45,28 +53,91 @@ async def verify_payment(
         razorpay_signature=payload.razorpay_signature,
     )
 
-    # ── Send WhatsApp notification after payment ──────────────────────────
+    # Notifications are deliberately outside payment finalization. A Meta
+    # outage or missing approved template must never change payment success.
     try:
-        order = data.get("order", {})
-        customer_name = current_user.get("profile", {}).get("full_name", "Customer")
-        phone = current_user.get("profile", {}).get("phone", "")
-        order_id = order.get("id", payload.razorpay_order_id)
-        amount = str(order.get("total_amount", ""))
+        profile = current_user.get("profile", {})
+        customer_name = profile.get("name") or profile.get("full_name") or "Customer"
+        phone = profile.get("phone", "")
+        order_id = data.get("id", payload.razorpay_order_id)
+        amount_value = data.get("total_amount")
+        amount = f"{float(amount_value):.2f}" if amount_value is not None else ""
 
-        if phone:
-            message = f"""Hi {customer_name}! 🎉
-
-Your payment has been confirmed at Neyge Couture.
-
-Order ID: {order_id}
-Amount Paid: ₹{amount}
-
-We will notify you once your order is shipped. Thank you for shopping with us! 🛍️
-
-www.negyecouture.com"""
-            await send_whatsapp_message(phone, message)
-    except Exception as e:
-        print(f"WhatsApp notification error: {e}")
-    # ─────────────────────────────────────────────────────────────────────
+        if profile.get("whatsapp_opt_in") is True and phone:
+            await send_order_confirmation_template(
+                phone=phone,
+                customer_name=customer_name,
+                order_id=order_id,
+                amount=amount,
+            )
+        elif profile.get("whatsapp_opt_in") is not True:
+            logger.info(
+                "Skipped post-payment WhatsApp notification: customer has not opted in"
+            )
+        else:
+            logger.info(
+                "Skipped post-payment WhatsApp notification: customer profile has no phone"
+            )
+    except WhatsAppTemplateConfigurationError:
+        logger.warning(
+            "Skipped post-payment WhatsApp notification: order confirmation template is not configured"
+        )
+    except Exception as exc:
+        logger.warning(
+            "Post-payment WhatsApp notification failed; payment remains finalized error_type=%s",
+            type(exc).__name__,
+        )
 
     return success_response("Payment verified successfully", data)
+
+
+# ── Payment Failure (Frontend Callback) ──────────────────────────────────
+
+@router.post("/failed", response_model=dict)
+async def report_payment_failure(
+    payload: PaymentFailedRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Called by the frontend when Razorpay reports a payment failure.
+    Marks the payment session as failed — does NOT touch inventory.
+    """
+    user_id = resolve_user_id(current_user)
+
+    data = PaymentService.handle_payment_failure(
+        razorpay_order_id=payload.razorpay_order_id,
+        user_id=user_id,
+        error_description=payload.error_description,
+    )
+
+    return success_response("Payment failure recorded", data)
+
+
+# ── Refund Endpoints (Admin Only) ────────────────────────────────────────
+
+@router.post("/refund", response_model=dict)
+async def initiate_refund(
+    payload: RefundRequest,
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Initiate a refund via Razorpay API. Admin-only.
+    Partial refund: specify amount in INR. Full refund: omit amount.
+    """
+    data = PaymentService.initiate_refund(
+        order_id=payload.order_id,
+        amount=payload.amount,
+        reason=payload.reason,
+    )
+
+    return success_response("Refund initiated successfully", data)
+
+
+@router.get("/refund/{refund_id}/status", response_model=dict)
+async def get_refund_status(
+    refund_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Fetch refund status from Razorpay. Admin-only."""
+    data = PaymentService.get_refund_status(refund_id)
+    return success_response("Refund status fetched", data)

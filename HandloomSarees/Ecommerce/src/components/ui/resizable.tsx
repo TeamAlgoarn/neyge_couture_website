@@ -4,15 +4,45 @@ import * as ResizablePrimitive from "react-resizable-panels"
 import { cn } from "@/lib/utils"
 
 // Type cast to bypass module resolution issues
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PanelGroup = (ResizablePrimitive as any).PanelGroup || (ResizablePrimitive as any).default?.PanelGroup
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Panel = (ResizablePrimitive as any).Panel || (ResizablePrimitive as any).default?.Panel
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PanelResizeHandle = (ResizablePrimitive as any).PanelResizeHandle || (ResizablePrimitive as any).default?.PanelResizeHandle
+ 
 
 const ResizablePanelGroup = ({
     className,
     ...props
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: any) => (
     <PanelGroup
+ 
         className={cn(
             "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
             className
@@ -20,6 +50,7 @@ const ResizablePanelGroup = ({
         {...props}
     />
 )
+ 
 
 const ResizablePanel = Panel
 
@@ -27,6 +58,7 @@ const ResizableHandle = ({
     withHandle,
     className,
     ...props
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: any) => (
     <PanelResizeHandle
         className={cn(

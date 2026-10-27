@@ -281,6 +281,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import api from '@/api/client';
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
@@ -359,7 +360,14 @@ const CSS = `
 .fc-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;
 }
-@media(max-width:900px){ .fc-grid { grid-template-columns: 1fr; gap: 22px; } }
+.fc-grid.fc-count-1 { grid-template-columns: minmax(280px, 720px); justify-content: center; }
+.fc-grid.fc-count-2 { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+.fc-grid .fc-card:nth-child(even) { margin-top: 36px; }
+@media(max-width:900px){
+  .fc-grid,
+  .fc-grid.fc-count-1,
+  .fc-grid.fc-count-2 { grid-template-columns: 1fr; gap: 22px; }
+}
 
 .fc-card {
   position: relative; border-radius: 24px; overflow: hidden;
@@ -378,6 +386,20 @@ const CSS = `
   transition: transform 1s cubic-bezier(.4,0,.2,1);
 }
 .fc-card:hover .fc-card-img { transform: scale(1.08); }
+.fc-card-img-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  text-align: center;
+  color: rgba(128,0,32,.72);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(196,152,10,.24), transparent 36%),
+    linear-gradient(145deg, #fff9f0, #dfc7aa);
+}
 
 .fc-card-overlay {
   position: absolute; inset: 0;
@@ -464,6 +486,7 @@ const CSS = `
 
 @media(max-width:480px){
   .fc-card-panel { padding: 20px 20px; }
+  .fc-grid .fc-card:nth-child(even) { margin-top: 0; }
 }
 `;
 
@@ -477,7 +500,8 @@ type CollectionItem = {
   image_url?: string;
   thumbnail?: string;
   is_active?: boolean;
-  is_featured?: boolean;
+  featured?: boolean;
+  sort_order?: number;
 };
 
 type CollectionsResponse = {
@@ -491,9 +515,6 @@ const OVERLAYS = [
   'linear-gradient(to top, rgba(75,0,130,.88) 0%, rgba(128,0,32,.55) 45%, transparent 80%)',
   'linear-gradient(to top, rgba(10,4,2,.90) 0%, rgba(128,0,32,.55) 45%, transparent 80%)',
 ];
-
-const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop';
 
 export function FeaturedCollections() {
   const [collections, setCollections] = useState<CollectionItem[]>([]);
@@ -512,7 +533,7 @@ export function FeaturedCollections() {
 
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [collections.length]);
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -520,14 +541,14 @@ export function FeaturedCollections() {
         setLoading(true);
         setError('');
 
-        const res = await fetch('http://127.0.0.1:8000/api/v1/collections');
-        const data: CollectionsResponse = await res.json();
+        const { data } = await api.get<CollectionsResponse>('/collections/homepage');
 
         const items = Array.isArray(data?.data) ? data.data : [];
-        const activeItems = items.filter((item) => item.is_active !== false);
-        const featuredItems = activeItems.filter((item) => item.is_featured);
-
-        setCollections(featuredItems.length > 0 ? featuredItems : activeItems);
+        setCollections(
+          items
+            .filter((item) => item.is_active !== false && item.featured !== false)
+            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+        );
       } catch (err) {
         console.error('Failed to fetch collections', err);
         setError('Failed to load collections');
@@ -538,6 +559,8 @@ export function FeaturedCollections() {
 
     fetchCollections();
   }, []);
+
+  if (loading || error || collections.length === 0) return null;
 
   return (
     <>
@@ -562,21 +585,13 @@ export function FeaturedCollections() {
             </p>
           </div>
 
-          {loading ? (
-            <div className="fc-loading">Loading collections...</div>
-          ) : error ? (
-            <div className="fc-error">{error}</div>
-          ) : collections.length === 0 ? (
-            <div className="fc-empty">No collections available right now.</div>
-          ) : (
-            <div className="fc-grid">
+          <div className={`fc-grid fc-count-${Math.min(collections.length, 3)}`}>
               {collections.map((col, i) => {
                 const image =
                   col.banner_image ||
                   col.image ||
                   col.image_url ||
-                  col.thumbnail ||
-                  FALLBACK_IMAGE;
+                  col.thumbnail;
 
                 return (
                   <Link
@@ -585,11 +600,19 @@ export function FeaturedCollections() {
                     className={`fc-card ${isVisible ? 'visible' : 'hidden'}`}
                     style={{ transitionDelay: `${i * 180}ms` }}
                   >
-                    <img
-                      src={image}
-                      alt={col.name}
-                      className="fc-card-img"
-                    />
+                    <div className="fc-card-img-fallback" aria-hidden="true">
+                      {col.name}
+                    </div>
+                    {image && (
+                      <img
+                        src={image}
+                        alt={col.name}
+                        className="fc-card-img"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
 
                     <div
                       className="fc-card-overlay"
@@ -617,8 +640,7 @@ export function FeaturedCollections() {
                   </Link>
                 );
               })}
-            </div>
-          )}
+          </div>
         </div>
       </section>
     </>

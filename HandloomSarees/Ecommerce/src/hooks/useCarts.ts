@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import api from "@/api/client";
+import { updateCartQuantity as updateCartQuantityApi, removeFromCart as removeFromCartApi } from "@/api/cart";
 import { tokenStorage } from "@/lib/token";
 import type { CartItem, Saree } from "@/types";
 
@@ -34,12 +35,19 @@ type BackendCartProduct = {
   occasion?: string[] | string | null;
   care_instructions?: string | null;
   is_featured?: boolean;
+  has_fall?: boolean;
+  fall_price?: number;
+  has_in_skirt?: boolean;
+  in_skirt_price?: number;
 };
 
 type BackendCartItem = {
   id: string;
   product_id: string;
   quantity: number;
+  product_price?: number;
+  selected_addons?: Array<{ id: string; name: string; price: number }>;
+  addons_total?: number;
   unit_price: number;
   line_total: number;
   product: BackendCartProduct;
@@ -62,9 +70,9 @@ type CartContextType = {
   loading: boolean;
   initialized: boolean;
   refreshCart: () => Promise<void>;
-  addToCart: (saree: Saree, quantity?: number) => Promise<void>;
-  removeFromCart: (sareeId: string) => Promise<void>;
-  updateQuantity: (sareeId: string, quantity: number) => Promise<void>;
+  addToCart: (saree: Saree, quantity?: number, selectedAddons?: string[]) => Promise<void>;
+  removeFromCart: (sareeId: string, cartItemId?: string, selectedAddons?: string[]) => Promise<void>;
+  updateQuantity: (sareeId: string, quantity: number, cartItemId?: string, selectedAddons?: string[]) => Promise<void>;
   clearCart: () => Promise<void>;
   getCartTotal: () => number;
   getCartCount: () => number;
@@ -109,12 +117,24 @@ function mapProductToSaree(product: BackendCartProduct): Saree {
     featured: product.is_featured || false,
     blousePiece: false,
     length: "",
+    has_fall: product.has_fall ?? false,
+    fall_price: product.fall_price ?? 0,
+    has_in_skirt: product.has_in_skirt ?? false,
+    in_skirt_price: product.in_skirt_price ?? 0,
   };
 }
 
 function getCurrentToken(): string {
   try {
+ 
+ 
+ 
+ 
+ 
+ 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof (tokenStorage as any).get === "function") {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (tokenStorage as any).get() || "";
     }
 
@@ -150,12 +170,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const res = await api.get<CartResponse>("/cart");
       const backendItems = res.data?.data?.items || [];
 
+ 
       const mappedItems: CartItem[] = backendItems.map((item) => ({
+        id: item.id,
         saree: mapProductToSaree(item.product),
         quantity: item.quantity,
+        selected_addons: item.selected_addons || [],
+        addons_total: item.addons_total || 0,
+        product_price: item.product_price || item.unit_price,
+        unit_price: item.unit_price,
+        line_total: item.line_total,
       }));
+ 
 
       setCart(mappedItems);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error?.response?.status === 401) {
         setCart([]);
@@ -204,17 +233,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [loadCart]);
 
   const addToCart = useCallback(
-    async (saree: Saree, quantity: number = 1) => {
+    async (saree: Saree, quantity: number = 1, selectedAddons: string[] = []) => {
       if (!tokenStorage.has()) return;
+ 
 
       setLoading(true);
       try {
         await api.post("/cart/add", {
           product_id: saree.id,
           quantity,
+          selected_addons: selectedAddons,
         });
 
         await loadCart();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to add to cart", error);
         if (error?.response?.data) {
@@ -226,18 +258,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [loadCart]
   );
+ 
 
   const removeFromCart = useCallback(
-    async (sareeId: string) => {
+    async (sareeId: string, cartItemId?: string, selectedAddons: string[] = []) => {
       if (!tokenStorage.has()) return;
 
       setLoading(true);
       try {
-        await api.post("/cart/remove", {
-          product_id: sareeId,
-        });
+        await removeFromCartApi(sareeId, cartItemId, selectedAddons);
 
         await loadCart();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to remove from cart", error);
         if (error?.response?.data) {
@@ -251,32 +283,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const updateQuantity = useCallback(
-    async (sareeId: string, quantity: number) => {
+    async (sareeId: string, quantity: number, cartItemId?: string, selectedAddons: string[] = []) => {
       if (!tokenStorage.has()) return;
 
       setLoading(true);
       try {
         if (quantity <= 0) {
-          await api.post("/cart/remove", {
-            product_id: sareeId,
-          });
+          await removeFromCartApi(sareeId, cartItemId, selectedAddons);
 
           await loadCart();
           return;
         }
 
-        // Safe workaround:
-        // remove old line item first, then add again with exact new quantity
-        await api.post("/cart/remove", {
-          product_id: sareeId,
-        });
-
-        await api.post("/cart/add", {
-          product_id: sareeId,
-          quantity,
-        });
+        // Single API call to update quantity directly using helper
+        await updateCartQuantityApi(sareeId, quantity, cartItemId, selectedAddons);
 
         await loadCart();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error("Failed to update cart quantity", error);
         if (error?.response?.data) {
@@ -289,20 +312,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [loadCart]
   );
 
+
   const clearCart = useCallback(async () => {
     if (!tokenStorage.has()) return;
+ 
 
     setLoading(true);
     try {
       await Promise.all(
-        cart.map((item) =>
-          api.post("/cart/remove", {
-            product_id: item.saree.id,
-          })
-        )
+        cart.map((item) => removeFromCartApi(item.saree.id))
       );
 
       await loadCart();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Failed to clear cart", error);
       if (error?.response?.data) {
@@ -315,7 +337,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCartTotal = useCallback(() => {
     return cart.reduce(
-      (total, item) => total + item.saree.price * item.quantity,
+      (total, item) =>
+        total +
+        (item.line_total ??
+          (item.unit_price ?? item.saree.price) * item.quantity),
       0
     );
   }, [cart]);

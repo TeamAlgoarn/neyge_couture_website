@@ -77,6 +77,9 @@ type LoginResponse = {
       name?: string;
       phone?: string;
       role?: string;
+      whatsapp_opt_in?: boolean;
+      whatsapp_opt_in_at?: string | null;
+      whatsapp_opt_in_source?: 'checkout' | 'profile' | 'admin_import' | null;
     };
   };
 };
@@ -91,6 +94,9 @@ type MeResponse = {
     name?: string;
     phone?: string;
     role?: string;
+    whatsapp_opt_in?: boolean;
+    whatsapp_opt_in_at?: string | null;
+    whatsapp_opt_in_source?: 'checkout' | 'profile' | 'admin_import' | null;
   };
 };
 
@@ -101,6 +107,9 @@ function mapBackendUserToFrontendUser(user: {
   name?: string;
   phone?: string;
   role?: string;
+  whatsapp_opt_in?: boolean;
+  whatsapp_opt_in_at?: string | null;
+  whatsapp_opt_in_source?: 'checkout' | 'profile' | 'admin_import' | null;
 }): User {
   return {
     id: user.id,
@@ -108,6 +117,9 @@ function mapBackendUserToFrontendUser(user: {
     email: user.email,
     phone: user.phone || "",
     role: user.role,
+    whatsapp_opt_in: user.whatsapp_opt_in === true,
+    whatsapp_opt_in_at: user.whatsapp_opt_in_at || null,
+    whatsapp_opt_in_source: user.whatsapp_opt_in_source || null,
     addresses: [],
   };
 }
@@ -186,6 +198,21 @@ export const authService = {
       localStorage.removeItem(USER_STORAGE_KEY);
       return null;
     }
+  },
+
+  updateWhatsAppPreference: async (
+    whatsappOptIn: boolean,
+    source: 'checkout' | 'profile'
+  ): Promise<User> => {
+    const res = await api.patch<MeResponse>('/auth/preferences', {
+      whatsapp_opt_in: whatsappOptIn,
+      source,
+    });
+    const existingUser = authService.getCurrentUser();
+    const mappedUser = mapBackendUserToFrontendUser(res.data.data);
+    mappedUser.addresses = existingUser?.addresses || [];
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(mappedUser));
+    return mappedUser;
   },
 
   updateUser: (user: User): void => {

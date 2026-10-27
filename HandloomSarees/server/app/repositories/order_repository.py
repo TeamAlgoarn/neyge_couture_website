@@ -82,3 +82,29 @@ class OrderRepository:
             .execute()
         )
         return result.data or []
+
+    @staticmethod
+    def update_by_id(order_id: str, payload: dict) -> dict | None:
+        client = get_supabase_admin()
+        result = (
+            client.table("orders")
+            .update(payload)
+            .eq("id", order_id)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+
+    @staticmethod
+    def get_by_razorpay_order_id(razorpay_order_id: str) -> dict | None:
+        """Find an order by razorpay_order_id."""
+        if not razorpay_order_id:
+            return None
+        client = get_supabase_admin()
+        result = (
+            client.table("orders")
+            .select("*")
+            .eq("razorpay_order_id", razorpay_order_id)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None

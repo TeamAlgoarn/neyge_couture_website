@@ -44,11 +44,11 @@ def _split(v: Any) -> list[str]:
 
 
 class ProductCreateRequest(BaseModel):
-    name: str = Field(..., min_length=2, max_length=180)
+    name: Optional[str] = Field(default=None, min_length=2, max_length=180)
     slug: Optional[str] = Field(default=None, max_length=220)
-    price: float = Field(..., ge=0)
+    price: float = Field(..., gt=0)
     discount_price: Optional[float] = Field(default=None, ge=0)
-    images: List[str] = Field(default_factory=list)
+    images: List[str] = Field(default_factory=list, max_length=10)
     thumbnail: Optional[str] = None
     short_description: Optional[str] = None
     story: Optional[str] = None
@@ -58,6 +58,16 @@ class ProductCreateRequest(BaseModel):
     color: Optional[Any] = None           # list[str] | str  →  stored as str
 
     technique: Optional[str] = None
+    design: Optional[str] = Field(default=None, max_length=180)
+    zari: Optional[str] = Field(default=None, max_length=120)
+    certification: Optional[str] = Field(default=None, max_length=180)
+    brand: Optional[str] = Field(default="Neyge Couture", max_length=120)
+    sku: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+    )
     origin: Optional[str] = None
     collection_id: Optional[str] = None
     occasion: List[str] = Field(default_factory=list)
@@ -67,12 +77,51 @@ class ProductCreateRequest(BaseModel):
     is_active: bool = True
     care_instructions: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
+    has_fall: bool = False
+    fall_price: Optional[float] = Field(default=0.0, ge=0)
+    has_in_skirt: bool = False
+    in_skirt_price: Optional[float] = Field(default=0.0, ge=0)
 
     # validators: normalise whatever arrives into a plain string for DB
     @field_validator("color", "fabric", mode="before")
     @classmethod
     def normalise_to_string(cls, v):
         return _join(v)
+
+    @field_validator(
+        "name",
+        "slug",
+        "thumbnail",
+        "short_description",
+        "story",
+        "technique",
+        "design",
+        "zari",
+        "certification",
+        "brand",
+        "sku",
+        "origin",
+        "collection_id",
+        "care_instructions",
+        mode="before",
+    )
+    @classmethod
+    def normalise_optional_text(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
+
+    @field_validator("sku")
+    @classmethod
+    def normalise_sku(cls, value):
+        return value.upper() if value else None
+
+    @field_validator("stock", mode="before")
+    @classmethod
+    def default_blank_stock_to_zero(cls, value):
+        return 0 if value is None or value == "" else value
 
     @field_validator("discount_price")
     @classmethod
@@ -86,9 +135,9 @@ class ProductCreateRequest(BaseModel):
 class ProductUpdateRequest(BaseModel):
     name: Optional[str] = Field(default=None, min_length=2, max_length=180)
     slug: Optional[str] = Field(default=None, max_length=220)
-    price: Optional[float] = Field(default=None, ge=0)
+    price: Optional[float] = Field(default=None, gt=0)
     discount_price: Optional[float] = Field(default=None, ge=0)
-    images: Optional[List[str]] = None
+    images: Optional[List[str]] = Field(default=None, max_length=10)
     thumbnail: Optional[str] = None
     short_description: Optional[str] = None
     story: Optional[str] = None
@@ -98,6 +147,16 @@ class ProductUpdateRequest(BaseModel):
     color: Optional[Any] = None
 
     technique: Optional[str] = None
+    design: Optional[str] = Field(default=None, max_length=180)
+    zari: Optional[str] = Field(default=None, max_length=120)
+    certification: Optional[str] = Field(default=None, max_length=180)
+    brand: Optional[str] = Field(default=None, max_length=120)
+    sku: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+    )
     origin: Optional[str] = None
     collection_id: Optional[str] = None
     occasion: Optional[List[str]] = None
@@ -107,11 +166,45 @@ class ProductUpdateRequest(BaseModel):
     is_active: Optional[bool] = None
     care_instructions: Optional[str] = None
     tags: Optional[List[str]] = None
+    has_fall: Optional[bool] = None
+    fall_price: Optional[float] = Field(default=None, ge=0)
+    has_in_skirt: Optional[bool] = None
+    in_skirt_price: Optional[float] = Field(default=None, ge=0)
 
     @field_validator("color", "fabric", mode="before")
     @classmethod
     def normalise_to_string(cls, v):
         return _join(v)
+
+    @field_validator(
+        "name",
+        "slug",
+        "thumbnail",
+        "short_description",
+        "story",
+        "technique",
+        "design",
+        "zari",
+        "certification",
+        "brand",
+        "sku",
+        "origin",
+        "collection_id",
+        "care_instructions",
+        mode="before",
+    )
+    @classmethod
+    def normalise_optional_text(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
+
+    @field_validator("sku")
+    @classmethod
+    def normalise_sku(cls, value):
+        return value.upper() if value else None
 
 
 class ProductResponse(BaseModel):
@@ -126,6 +219,11 @@ class ProductResponse(BaseModel):
     story: Optional[str] = None
     fabric: Optional[str] = None          # returned as plain string "Silk,Cotton"
     technique: Optional[str] = None
+    design: Optional[str] = None
+    zari: Optional[str] = None
+    certification: Optional[str] = None
+    brand: Optional[str] = None
+    sku: Optional[str] = None
     origin: Optional[str] = None
     color: Optional[str] = None           # returned as plain string "Red,Gold"
     collection_id: Optional[str] = None
@@ -136,6 +234,10 @@ class ProductResponse(BaseModel):
     is_active: bool
     care_instructions: Optional[str] = None
     tags: List[str]
+    has_fall: bool = False
+    fall_price: float = 0.0
+    has_in_skirt: bool = False
+    in_skirt_price: float = 0.0
     created_at: datetime
     updated_at: datetime
 
@@ -177,6 +279,11 @@ class PublicProductResponse(BaseModel):
     short_description: str | None = None
     fabric: str | None = None            # "Silk,Cotton" — frontend splits for display
     technique: str | None = None
+    design: str | None = None
+    zari: str | None = None
+    certification: str | None = None
+    brand: str | None = None
+    sku: str | None = None
     origin: str | None = None
     color: str | None = None             # "Red,Gold"   — frontend splits for display
     occasion: list[str] = []
@@ -184,6 +291,10 @@ class PublicProductResponse(BaseModel):
     stock: int | None = None
     is_featured: bool = False
     tags: list[str] = []
+    has_fall: bool = False
+    fall_price: float = 0.0
+    has_in_skirt: bool = False
+    in_skirt_price: float = 0.0
     collection: PublicCollectionSummary | None = None
 
 

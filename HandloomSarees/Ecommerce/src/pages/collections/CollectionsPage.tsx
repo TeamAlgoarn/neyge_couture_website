@@ -329,7 +329,6 @@ export function CollectionsPage() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [showFilters, setShowFilters] = useState(false);
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -348,6 +347,10 @@ export function CollectionsPage() {
         else if (Array.isArray(raw?.items)) items = raw.items;
 
         setCollections(items.filter((c) => c.is_active !== false));
+
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err?.response?.data?.message || err?.message || 'Failed to load collections');
       } finally {

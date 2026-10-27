@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.addresses import router as addresses_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.cart import router as cart_router
 from app.api.v1.collections import router as collections_router
@@ -14,9 +15,11 @@ from app.api.v1 import festive_collections
 from app.api.v1 import chatbot
 from app.api.v1 import whatsapp          # ← ADD THIS
 from app.api.v1 import instagram 
+from app.api.v1 import webhooks
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
+api_router.include_router(addresses_router)
 api_router.include_router(collections_router)
 api_router.include_router(products_router)
 api_router.include_router(cart_router)
@@ -30,6 +33,7 @@ api_router.include_router(festive_collections.router, tags=["Festive Collections
 api_router.include_router(chatbot.router)
 api_router.include_router(whatsapp.router)    # ← ADD THIS
 api_router.include_router(instagram.router) 
+api_router.include_router(webhooks.router)
 
 @api_router.get("/health", tags=["Health"])
 async def health_check():

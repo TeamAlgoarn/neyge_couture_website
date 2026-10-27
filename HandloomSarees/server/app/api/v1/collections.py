@@ -74,6 +74,21 @@ async def list_active_collections():
     return success_response("Collections fetched successfully", data)
 
 
+@router.get("/homepage", response_model=dict)
+async def list_homepage_collections():
+    data = CollectionService.list_homepage()
+    return success_response("Homepage collections fetched successfully", data)
+
+
+@router.get("/id/{collection_id}", response_model=dict)
+async def get_collection_by_id(
+    collection_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    data = CollectionService.get_by_id(collection_id)
+    return success_response("Collection fetched successfully", data)
+
+
 @router.get("/{slug}", response_model=dict)
 async def get_collection_by_slug(slug: str):
     data = CollectionService.get_by_slug(slug)
