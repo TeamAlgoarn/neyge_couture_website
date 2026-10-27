@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import adminApi from "../lib/adminApi";
@@ -262,6 +262,8 @@ type Product = {
   is_active?: boolean;
 };
 
+const PAGE_SIZE = 12;
+
 export default function AdminProducts() {
   // ✅ Scroll to top when this page loads
   useEffect(() => {
@@ -271,14 +273,21 @@ export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(totalProducts / PAGE_SIZE));
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const res = await adminApi.get("/products");
-      console.log("PRODUCTS API RESPONSE:", res.data);
+      const res = await adminApi.get("/products/admin/all", {
+        params: {
+          page,
+          page_size: PAGE_SIZE,
+        },
+      });
 
       let items: Product[] = [];
 
@@ -295,17 +304,17 @@ export default function AdminProducts() {
       }
 
       setProducts(items);
- 
- 
- 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+      const total = res.data?.data?.pagination?.total;
+      setTotalProducts(
+        Number.isInteger(total) && total >= 0 ? total : items.length
+      );
+    } catch (err: unknown) {
       console.error("Failed to fetch products:", err);
-      setError(err?.message || "Failed to fetch products");
+      setError(err instanceof Error ? err.message : "Failed to fetch products");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   const handleDelete = async (id: string) => {
     const ok = window.confirm("Are you sure you want to delete this product?");
@@ -320,9 +329,7 @@ export default function AdminProducts() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  useEffect(() => { void fetchProducts(); }, [fetchProducts]);
 
   return (
     <>
@@ -348,7 +355,7 @@ export default function AdminProducts() {
             <>
               <div className="admin-stats">
                 <span className="admin-stats-text">
-                  Total products: <span className="admin-stats-number">{products.length}</span>
+                  Total products: <span className="admin-stats-number">{totalProducts}</span>
                 </span>
               </div>
 
@@ -425,6 +432,37 @@ export default function AdminProducts() {
                   ))
                 )}
               </div>
+
+              {totalProducts > PAGE_SIZE && (
+                <div style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 16,
+                  marginTop: 24,
+                  flexWrap: "wrap",
+                }}>
+                  <button
+                    type="button"
+                    disabled={loading || page <= 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </button>
+
+                  <span>
+                    Page {page} of {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={loading || page >= totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

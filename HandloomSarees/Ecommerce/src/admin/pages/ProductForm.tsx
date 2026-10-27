@@ -833,7 +833,7 @@ export default function ProductForm() {
 
     const fetchProduct = async () => {
       try {
-        const res = await adminApi.get<ProductResponse>(`/products/${id}`);
+        const res = await adminApi.get<ProductResponse>(`/products/admin/${id}`);
         const product = res.data?.data || res.data?.product || res.data;
 
         if (product) {

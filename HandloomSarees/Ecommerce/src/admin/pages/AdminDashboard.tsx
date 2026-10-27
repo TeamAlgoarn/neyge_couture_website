@@ -263,6 +263,7 @@ export default function AdminDashboard() {
   }, []);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [festiveCollections, setFestiveCollections] = useState<FestiveCollection[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -270,9 +271,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
- 
- 
- 
+
+
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const extractArray = (data: any) => {
     if (Array.isArray(data)) return data;
@@ -302,7 +303,7 @@ export default function AdminDashboard() {
           ordersRes,
           videoBookingsRes,
         ] = await Promise.all([
-          adminApi.get("/products"),
+          adminApi.get("/products/admin/all", { params: { page: 1, page_size: 5 } }),
           adminApi.get("/collections"),
           adminApi.get("/admin/festive-collections"),
           adminApi.get("/orders/admin/all"),
@@ -310,12 +311,19 @@ export default function AdminDashboard() {
         ]);
 
         setProducts(extractArray(productsRes.data));
+        const productTotal = productsRes.data?.data?.pagination?.total;
+
+        if (!Number.isInteger(productTotal) || productTotal < 0) {
+          throw new Error("Invalid product pagination total");
+        }
+
+        setTotalProducts(productTotal);
         setCollections(extractArray(collectionsRes.data));
- 
+
         setFestiveCollections(extractArray(festiveCollectionsRes.data));
- 
+
         setOrders(extractArray(ordersRes.data));
- 
+
         setVideoBookings(extractArray(videoBookingsRes.data));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
@@ -368,7 +376,7 @@ export default function AdminDashboard() {
   const STATS = [
     {
       label: "Total Products",
-      value: products.length,
+      value: totalProducts,
       icon: Package,
       link: "/admin/products",
       color: C.goldV,
